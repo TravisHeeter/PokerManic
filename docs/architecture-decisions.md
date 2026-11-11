@@ -27,3 +27,4 @@
 18. **SSR-safe opening hand:** A seeded opening shuffle runs identically on server and client; fresh random shuffles run only after user interaction.
 19. **Demo scope:** The page shows rank/suit cards and draw-pile counts. No selection, scoring, persistence, or round rules are implied.
 20. **Visible acceptance:** The smoke test confirms milestone text and exactly eight rendered playing-card elements on initial SSR.
+21. **Sequential milestone numbers:** Starting after historical Milestone 2A/2B, use only whole-number milestone labels: 3, 4, 5, and onward. No A/B/C subdivisions. Every milestone is independently testable, updates the homepage, and has a passing acceptance gate.

@@ -142,7 +142,7 @@ random shuffling happens only when the user clicks.
 
 No card selection, scoring, or persistence is implemented yet; those are later milestones.
 
-To try the page on the `feat/milestone-2b-visual-hand` branch:
+To try the page on the `fix/milestone-2b-on-main` branch (the merge correction):
 
 ```bash
 nvm use
@@ -153,3 +153,7 @@ pnpm dev
 Visit http://localhost:3000. Try Shuffle & deal, Deal next hand (until fewer than
 8 cards remain), and Reset deck. Run `pnpm smoke` with both servers running;
 the smoke test verifies server-rendered cards and the Milestone 2B label.
+
+## Milestone naming convention
+
+Milestone 2A and 2B were historical development slices. **Future milestones use only consecutive whole numbers:** Milestone 3, Milestone 4, Milestone 5, etc.—no lettered subdivisions. Each milestone must include a visible homepage update and pass the automated acceptance checks before merging.
