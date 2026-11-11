@@ -274,3 +274,18 @@ pnpm dev
 ```
 
 In a separate terminal run `pnpm smoke`. At `http://localhost:3000`, confirm that the shop is visible from Round 1 with the wallet at 0, with buy buttons disabled only because you cannot yet afford a perk. Win a round; verify the wallet receives a reward. Advance without purchasing, then buy a perk **during Round 2**. Verify the wallet decreases but existing round limits remain unchanged. Advance again to verify the upgraded limit is reflected in gameplay. Purchase Manual Hand Selection mid-round whenever affordable: Manual mode should enable immediately, and selecting a lower High Card should work without advancing another round. Switch back to Automatic. Starting a new run should clear purchases and reset the wallet.
+
+## Milestone 5 UI component refactor
+
+The initial single-file Nuxt game page has been separated into components under `apps/web/app/components/`:
+
+- `RoundStatus.vue` — chip thresholds, counters, win/loss actions.
+- `PlayingCardHand.vue` — selectable visual cards, suit palette, selection highlights.
+- `ScoringPanel.vue` — eligible hand radio buttons, Manual/Automatic mode, scoring actions.
+- `PerkShop.vue` — always-open shop, upgrade chips, perk prices, levels and purchase actions.
+- `DevelopmentProgress.vue` — milestone overview.
+- `SystemStatus.vue` — backend status and retry controls.
+
+`apps/web/app/pages/index.vue` remains the **single stateful page orchestrator**: it calls the pure `@pokermanic/engine`, owns run/progression state, and passes data into child components through typed props. Components send typed events back to the page for game actions. The gameplay rules and public UI behaviors are unchanged. These components are auto-imported by Nuxt; no manual registration or global stores are necessary.
+
+Run `pnpm typecheck`, `pnpm test`, `pnpm build`, `pnpm smoke` and manually verify card selection, auto/manual modes, shop purchases during a round, scoring, discards, next-round progression, and restarting a run. This is a refactor within **Milestone 5**, not a new milestone.

@@ -69,6 +69,10 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /Discard selected/);
   assert.match(html, /Start new run/);
   assert.match(html, /Perk shop — always open/);
+  // These sections are rendered by separate Nuxt auto-imported components.
+  assert.match(html, /Poker hand evaluation/);
+  assert.match(html, /Development progress/);
+  assert.match(html, /System status/);
   assert.match(html, /Shop open throughout your run/);
   assert.doesNotMatch(html, /Shop closed/);
   assert.match(html, /Upgrade chips available/);
