@@ -1,6 +1,6 @@
-# PokerManic — Milestone 2A: Card engine
+# PokerManic — Milestone 3: Poker hand evaluation and scoring
 
-Browser-based poker-inspired roguelike. Milestone 1 established the full stack; Milestone 2A adds a tested, framework-independent deck engine. Card rendering and gameplay are next.
+Browser-based poker-inspired roguelike. Milestone 1 established the stack; Milestone 2 added the deck and visual cards. Milestone 3 adds five-card poker hand recognition and provisional scoring.
 
 ## Prerequisites
 
@@ -84,7 +84,7 @@ docs/
 - `NEST_API_BASE_URL` changes the **Nuxt server-side** API base URL; default `http://localhost:4000`.
 - `PORT` changes the NestJS port; if you change it, also adjust `NEST_API_BASE_URL`.
 - The echo route is a temporary validation demonstration, not a gameplay feature.
-- Game rules/scoring will live in a future framework-independent `packages/engine` package.
+- Pure game rules and provisional scoring live in the framework-independent `packages/engine` package.
 
 ## Verification disclosure
 
@@ -157,3 +157,22 @@ the smoke test verifies server-rendered cards and the Milestone 2B label.
 ## Milestone naming convention
 
 Milestone 2A and 2B were historical development slices. **Future milestones use only consecutive whole numbers:** Milestone 3, Milestone 4, Milestone 5, etc.—no lettered subdivisions. Each milestone must include a visible homepage update and pass the automated acceptance checks before merging.
+
+## Milestone 3: Hand evaluation and scoring
+
+Select exactly five of the eight visible cards on http://localhost:3000. Selected cards are raised and highlighted. The evaluation panel previews one of ten categories: high card, pair, two pair, three of a kind, straight, flush, full house, four of a kind, straight flush, or royal flush. Clicking **Score selected hand** confirms the category and score. Use **Clear selection** to try a different five-card combination; Shuffle & deal, Deal next hand, and Reset deck also clear the prior selection and score.
+
+`packages/engine/src/scoring.ts` is a deterministic, framework-independent evaluator. It requires exactly five unique standard cards, handles ace-low straights and category precedence, and returns `category`, `label`, `baseChips`, `multiplier`, and `score`.
+
+**Provisional scoring:** `score = baseChips × multiplier` using the `POKER_HAND_VALUES` table in the engine; bonuses based on the individual card ranks, jokers, progression, deck modifiers, and scored rounds are intentionally not implemented yet.
+
+Check from the repository root:
+
+```bash
+pnpm install
+pnpm typecheck
+pnpm test
+pnpm build
+```
+
+Run `pnpm dev` and in a second terminal `pnpm smoke`. Test selecting five cards, scoring them, clearing selection, changing hands, and resetting. **Milestone 4** will introduce game rounds after Milestone 3 passes its local and CI gates.

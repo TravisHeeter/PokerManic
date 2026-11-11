@@ -53,8 +53,12 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   const html = await response.text();
   assert.match(html, /PokerManic/);
   assert.match(html, /API connected/);
-  assert.match(html, /Milestone 2B/);
-  assert.match(html, /Visual card hand/);
+  assert.match(html, /Milestone 3/);
+  assert.match(html, /Poker hand scoring/);
+  assert.match(html, /Select five cards to evaluate a poker hand/);
+  assert.match(html, /Score selected hand/);
+  assert.match(html, /Clear selection/);
+  assert.match(html, /Milestone 4/);
   assert.match(html, /Remaining in deck/);
   assert.match(html, /Shuffle &amp; deal|Shuffle & deal/);
   assert.match(html, /Deal next hand/);
@@ -67,5 +71,5 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
 if (process.exitCode) {
   console.error('The current milestone is NOT verified. Fix failures before proceeding.');
 } else {
-  console.log('Milestone 2B smoke tests passed.');
+  console.log('Milestone 3 smoke tests passed.');
 }

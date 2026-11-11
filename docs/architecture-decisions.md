@@ -28,3 +28,11 @@
 19. **Demo scope:** The page shows rank/suit cards and draw-pile counts. No selection, scoring, persistence, or round rules are implied.
 20. **Visible acceptance:** The smoke test confirms milestone text and exactly eight rendered playing-card elements on initial SSR.
 21. **Sequential milestone numbers:** Starting after historical Milestone 2A/2B, use only whole-number milestone labels: 3, 4, 5, and onward. No A/B/C subdivisions. Every milestone is independently testable, updates the homepage, and has a passing acceptance gate.
+
+## Milestone 3 decisions
+
+22. **Five-card recognition in pure engine:** `evaluatePokerHand` validates five distinct cards, detects the ten standard hand categories (including royal flush), and scores them without mutating cards.
+23. **Ace-low straight:** A-2-3-4-5 is a straight, including its straight-flush variant, but is not a royal flush. Other ace wraparounds are not valid straights.
+24. **Provisional scoring:** Each category has a fixed base-chip value and multiplier. The first scoring model is `baseChips × multiplier`. Individual rank bonuses, jokers, hand upgrades, game rounds, and persistence are outside Milestone 3.
+25. **Frontend interaction:** Players may select or deselect up to five cards in the eight-card hand. A five-card selection previews a category and score; the Score button confirms the evaluation. Drawing, shuffling, or resetting clears the selection and last score.
+26. **Sequential labels:** The current homepage is **Milestone 3**; the historical 2A and 2B stages are collectively shown as Milestone 2. Next is Milestone 4, with no subdivisions.
