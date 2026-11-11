@@ -52,6 +52,7 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.equal(response.status, 200);
   const html = await response.text();
   assert.match(html, /PokerManic/);
+  assert.match(html, /favicon\.svg\?v=1/);
   assert.match(html, /API connected/);
   assert.match(html, /Milestone 3/);
   assert.match(html, /Poker hand scoring/);
@@ -66,6 +67,15 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   // The first hand is seeded: both server and browser hydrate the same eight cards.
   assert.equal((html.match(/data-testid="playing-card"/g) ?? []).length, 8);
   assert.match(html, /data-testid="deck-count"[^>]*>44</);
+});
+
+await run('Custom PokerManic favicon is served', async () => {
+  const response = await fetch(`${webUrl}/favicon.svg`);
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get('content-type') ?? '', /image\/svg\+xml/);
+  const svg = await response.text();
+  assert.match(svg, /<circle[^>]*fill="#fff"/);
+  assert.match(svg, /<path[^>]*fill="#d00000"/);
 });
 
 if (process.exitCode) {

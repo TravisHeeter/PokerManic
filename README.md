@@ -176,3 +176,9 @@ pnpm build
 ```
 
 Run `pnpm dev` and in a second terminal `pnpm smoke`. Test selecting five cards, scoring them, clearing selection, changing hands, and resetting. **Milestone 4** will introduce game rounds after Milestone 3 passes its local and CI gates.
+
+## Favicon
+
+The PokerManic tab icon is the approved red, hand-painted **M** on a white circle, inspired by the expressionist lettering associated with Fritz Lang's 1931 film `M`. The optimized SVG is at `apps/web/public/favicon.svg`, and Nuxt exposes it via the `app.head.link` configuration. The icon renders at any resolution, with transparent corners outside the circular white background.
+
+The SSR smoke test verifies that the icon is referenced from the page and that its asset is served successfully. If the browser still displays a previous favicon, hard-refresh or clear the site's cached favicon.
