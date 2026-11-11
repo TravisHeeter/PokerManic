@@ -89,3 +89,29 @@ docs/
 ## Verification disclosure
 
 The scaffold was generated in an environment without access to the npm registry. Only its offline structure could be checked here; its dependency resolution, builds, and runtime smoke tests **must be verified locally** before the milestone is considered complete.
+
+## Milestone 2A: Card engine (no UI yet)
+
+A framework-independent TypeScript package lives at `packages/engine`. It uses
+Zod-derived `Card` types from `packages/contracts` but does not depend on
+Vue, Nuxt, NestJS, browser globals, or a database.
+
+- `createStandardDeck()` returns a fresh ordered deck containing 52 unique rank/suit pairs.
+- `shuffleDeck(deck, random?)` performs a non-mutating Fisher–Yates shuffle.
+  An injectable random source makes shuffling deterministic in tests.
+- `dealCards(deck, count)` returns a hand and remaining deck without mutation.
+  Invalid counts throw `RangeError`.
+
+From the repository root, after `pnpm install`, run:
+
+```bash
+pnpm --filter @pokermanic/contracts build
+pnpm --filter @pokermanic/engine test
+pnpm typecheck
+pnpm test
+pnpm build
+```
+
+The UI is intentionally unchanged in 2A. We will render cards only after these
+engine and regression checks pass. Card instance IDs, scoring, and modifiers are
+future steps and are not part of this initial standard-deck model.

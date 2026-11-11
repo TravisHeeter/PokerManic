@@ -18,3 +18,6 @@ export const echoResponseSchema = z.object({
   echo: z.string(),
 });
 export type EchoResponse = z.infer<typeof echoResponseSchema>;
+
+// Playing card types are shared; the pure game engine implements the rules.
+export * from './cards.js';
