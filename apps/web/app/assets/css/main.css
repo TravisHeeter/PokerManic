@@ -1,0 +1,7 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+body {
+  min-height: 100vh;
+  background: radial-gradient(circle at 20% 15%, #1a2830 0%, #090c15 55%, #07090d 100%);
+}
