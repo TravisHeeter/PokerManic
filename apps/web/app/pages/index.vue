@@ -1,15 +1,23 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import type { Card, CardSuit } from '@pokermanic/contracts';
-import { createStandardDeck, dealCards, listEligiblePokerHands, resolveScoringOption, shuffleDeck } from '@pokermanic/engine';
-import type { ScoringOption } from '@pokermanic/engine';
+import type { CardSuit } from '@pokermanic/contracts';
+import {
+  DEFAULT_ROUND_RULES,
+  advanceRound,
+  discardCards,
+  listEligiblePokerHands,
+  playScoringHand,
+  resolveScoringOption,
+  startRun,
+} from '@pokermanic/engine';
+import type { RunState, ScoringOption } from '@pokermanic/engine';
 
 useSeoMeta({
-  title: 'PokerManic | Milestone 3 — Hand evaluation and scoring',
-  description: 'Find eligible poker hands and preview the future manual selection perk.',
+  title: 'PokerManic | Milestone 4 — Survival rounds',
+  description: 'Survive escalating poker chip thresholds with limited hands and discards.',
 });
 
-const HAND_SIZE = 8;
+const rules = DEFAULT_ROUND_RULES;
 const SUIT_SYMBOLS: Record<CardSuit, string> = {
   hearts: '♥',
   diamonds: '♦',
@@ -23,8 +31,8 @@ const SUIT_TEXT: Record<CardSuit, string> = {
   spades: 'text-slate-800',
 };
 
-// A seeded opening hand is identical in SSR and browser hydration.
-// Subsequent shuffles use Math.random only when the user clicks.
+// The first shuffled deck is reproducible during SSR and browser hydration.
+// New rounds and player-triggered restarts use genuine random shuffles.
 function openingRandom(): () => number {
   let state = 20261111;
   return () => {
@@ -33,23 +41,18 @@ function openingRandom(): () => number {
   };
 }
 
-function openingHand() {
-  return dealCards(shuffleDeck(createStandardDeck(), openingRandom()), HAND_SIZE);
-}
-
-const firstDeal = openingHand();
-const hand = ref<Card[]>(firstDeal.hand);
-const remainingDeck = ref<Card[]>(firstDeal.remainingDeck);
-const handsDealt = ref(1);
-const lastAction = ref('Eight cards dealt from the demo deck.');
-const canDealNext = computed(() => remainingDeck.value.length >= HAND_SIZE);
+const run = ref<RunState>(startRun(rules, openingRandom()));
+const hand = computed(() => run.value.hand);
+const remainingDeck = computed(() => run.value.drawPile);
+const inRound = computed(() => run.value.phase === 'playing');
 const selectedIndexes = ref<number[]>([]);
 const selectedInputIndexes = computed(() => hand.value.flatMap((_, i) =>
   selectedIndexes.value.includes(i) ? [i] : []));
 const selectedCards = computed(() => selectedInputIndexes.value.map((i) => hand.value[i]!));
-const eligibleOptions = computed(() => selectedCards.value.length === 5
+const eligibleOptions = computed(() => selectedCards.value.length === rules.cardsPerPlay
   ? listEligiblePokerHands(selectedCards.value) : []);
-// Temporary test fixture. Actual unlocking/persistence belongs to the progression system.
+
+// Temporary developer preview only: no purchasable/persistent perk has been unlocked.
 const demoPerkUnlocked = ref(false);
 const selectionMode = ref<'automatic' | 'manual'>('automatic');
 const manualOptionId = ref<string>();
@@ -60,6 +63,12 @@ const preview = computed(() => resolveScoringOption(eligibleOptions.value, {
 const scoringCardIndexes = computed(() => preview.value?.scoringCardIndices
   .map((i) => selectedInputIndexes.value[i]!) ?? []);
 const scoredHand = ref<ScoringOption | null>(null);
+const lastAction = ref('Run started. Select five cards to score or discard up to five.');
+const canDiscardSelection = computed(() => inRound.value
+  && run.value.discardsRemaining > 0
+  && selectedIndexes.value.length >= 1
+  && selectedIndexes.value.length <= rules.maxCardsPerDiscard
+  && selectedIndexes.value.length <= remainingDeck.value.length);
 
 function clearSelection() {
   selectedIndexes.value = [];
@@ -87,9 +96,10 @@ function chooseScoringOption(optionId: string) {
 }
 
 function toggleCard(index: number) {
+  if (!inRound.value) return;
   if (selectedIndexes.value.includes(index)) {
     selectedIndexes.value = selectedIndexes.value.filter((value) => value !== index);
-  } else if (selectedIndexes.value.length < 5) {
+  } else if (selectedIndexes.value.length < rules.cardsPerPlay) {
     selectedIndexes.value = [...selectedIndexes.value, index];
   }
   manualOptionId.value = undefined;
@@ -97,30 +107,39 @@ function toggleCard(index: number) {
 }
 
 function scoreSelectedHand() {
-  if (!preview.value) return;
-  scoredHand.value = preview.value;
+  if (!preview.value || !inRound.value) return;
+  const next = playScoringHand(run.value, selectedInputIndexes.value, {
+    manualSelectionUnlocked: demoPerkUnlocked.value,
+    selectionMode: selectionMode.value,
+  }, manualOptionId.value, rules);
+  const scored = next.lastScored;
+  run.value = next;
+  clearSelection();
+  scoredHand.value = scored;
+  lastAction.value = scored
+    ? `Scored ${scored.label}: +${scored.score} chips. ${next.roundChips} / ${next.roundTarget} this round.`
+    : 'Hand scored.';
 }
 
-function replaceWithFreshDeck(shuffle: boolean) {
+function discardSelectedCards() {
+  if (!canDiscardSelection.value) return;
+  const count = selectedIndexes.value.length;
+  run.value = discardCards(run.value, selectedIndexes.value, rules);
   clearSelection();
-  const deck = shuffle ? shuffleDeck(createStandardDeck()) : createStandardDeck();
-  const next = dealCards(deck, HAND_SIZE);
-  hand.value = next.hand;
-  remainingDeck.value = next.remainingDeck;
-  handsDealt.value = 1;
-  lastAction.value = shuffle
-    ? 'Fresh deck shuffled. A new eight-card hand was dealt.'
-    : 'Deck reset to its original order. The first eight cards were dealt.';
+  lastAction.value = `Discarded ${count} ${count === 1 ? 'card' : 'cards'} and drew replacements.`;
 }
 
-function dealNextHand() {
-  if (!canDealNext.value) return;
+function nextRound() {
+  if (run.value.phase !== 'round_won') return;
+  run.value = advanceRound(run.value, rules);
   clearSelection();
-  const next = dealCards(remainingDeck.value, HAND_SIZE);
-  hand.value = next.hand;
-  remainingDeck.value = next.remainingDeck;
-  handsDealt.value += 1;
-  lastAction.value = `Hand ${handsDealt.value} dealt. ${remainingDeck.value.length} cards remain in the deck.`;
+  lastAction.value = `Round ${run.value.round} started. Reach ${run.value.roundTarget} chips to survive.`;
+}
+
+function restartRun() {
+  run.value = startRun(rules);
+  clearSelection();
+  lastAction.value = 'A new run started at Round 1. Previous run scores were reset.';
 }
 
 const { data: health, error, status, refresh } = await useFetch('/api/health');
@@ -131,7 +150,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
     <div class="mx-auto max-w-6xl space-y-9">
       <header class="space-y-4">
         <div class="flex flex-wrap items-center gap-3">
-          <p class="uppercase tracking-[0.25em] text-sm text-amber-300">Milestone 3 / Poker hand scoring</p>
+          <p class="uppercase tracking-[0.25em] text-sm text-amber-300">Milestone 4 / Survival rounds</p>
           <UBadge color="primary" variant="subtle">Current milestone</UBadge>
         </div>
         <div class="space-y-2">
@@ -148,46 +167,93 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
             <div class="flex flex-wrap items-start justify-between gap-4">
               <div class="space-y-1">
                 <p class="text-xs font-semibold uppercase tracking-widest text-amber-300">
-                  Milestone 3 interactive scoring demo
+                  Milestone 4 playable survival demo
                 </p>
                 <h2 id="hand-heading" class="text-3xl font-bold">Your hand</h2>
                 <p class="text-sm text-muted">
-                  Choose exactly five cards, recognize the poker hand, then calculate its score. Game rounds and modifiers come later.
+                  Play five cards to earn chips, or discard up to five to improve your hand. Beat the escalating target before your scoring hands run out.
                 </p>
               </div>
               <UBadge color="success" variant="subtle">Card engine connected</UBadge>
             </div>
 
-            <div class="grid grid-cols-3 gap-3">
-              <div class="rounded-lg border border-default p-3">
-                <p class="text-xs text-muted">Cards in hand</p>
-                <p data-testid="hand-count" class="mt-1 text-2xl font-bold">{{ hand.length }}</p>
+            <div class="space-y-4 rounded-xl border border-amber-300/30 p-4" aria-label="Round status">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="space-y-1">
+                  <p class="text-xs uppercase tracking-widest text-amber-300">Endless survival</p>
+                  <h3 data-testid="round-number" class="text-2xl font-bold">Round {{ run.round }}</h3>
+                </div>
+                <UBadge :color="run.phase === 'round_won' ? 'success' : run.phase === 'game_over' ? 'error' : 'primary'"
+                  variant="subtle" data-testid="run-phase">
+                  {{ run.phase === 'round_won' ? 'Target reached' : run.phase === 'game_over' ? 'Run over' : 'In progress' }}
+                </UBadge>
               </div>
-              <div class="rounded-lg border border-default p-3">
-                <p class="text-xs text-muted">Remaining in deck</p>
-                <p data-testid="deck-count" class="mt-1 text-2xl font-bold">{{ remainingDeck.length }}</p>
+              <div class="space-y-2">
+                <div class="flex items-center justify-between text-sm">
+                  <span>Round chips</span>
+                  <span data-testid="round-score" class="font-semibold">{{ run.roundChips }} / {{ run.roundTarget }}</span>
+                </div>
+                <progress :value="Math.min(run.roundChips, run.roundTarget)" :max="run.roundTarget"
+                  class="h-3 w-full accent-amber-400" aria-label="Progress toward chip target" />
               </div>
-              <div class="rounded-lg border border-default p-3">
-                <p class="text-xs text-muted">Hands dealt</p>
-                <p class="mt-1 text-2xl font-bold">{{ handsDealt }}</p>
+              <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <div class="rounded-lg border border-default p-3">
+                  <p class="text-xs text-muted">Chip target</p>
+                  <p data-testid="chip-target" class="mt-1 text-xl font-bold">{{ run.roundTarget }}</p>
+                </div>
+                <div class="rounded-lg border border-default p-3">
+                  <p class="text-xs text-muted">Hands remaining</p>
+                  <p data-testid="hands-remaining" class="mt-1 text-xl font-bold">{{ run.handsRemaining }}</p>
+                </div>
+                <div class="rounded-lg border border-default p-3">
+                  <p class="text-xs text-muted">Discards remaining</p>
+                  <p data-testid="discards-remaining" class="mt-1 text-xl font-bold">{{ run.discardsRemaining }}</p>
+                </div>
+                <div class="rounded-lg border border-default p-3">
+                  <p class="text-xs text-muted">Cards in hand</p>
+                  <p data-testid="hand-count" class="mt-1 text-xl font-bold">{{ hand.length }}</p>
+                </div>
+                <div class="rounded-lg border border-default p-3">
+                  <p class="text-xs text-muted">Remaining in deck</p>
+                  <p data-testid="deck-count" class="mt-1 text-xl font-bold">{{ remainingDeck.length }}</p>
+                </div>
+                <div class="rounded-lg border border-default p-3">
+                  <p class="text-xs text-muted">Run total chips</p>
+                  <p data-testid="total-score" class="mt-1 text-xl font-bold">{{ run.totalChips }}</p>
+                </div>
               </div>
+              <div v-if="run.phase === 'round_won'" class="space-y-3">
+                <p class="text-sm text-green-400">Target reached! Continue when ready. The next round has a higher chip target.</p>
+                <UButton data-testid="next-round" icon="i-lucide-arrow-right" @click="nextRound">Next round</UButton>
+              </div>
+              <div v-else-if="run.phase === 'game_over'" class="space-y-2">
+                <p class="text-sm text-red-400">
+                  Run over — you needed {{ run.roundTarget }} chips but earned {{ run.roundChips }}.
+                  You survived through Round {{ run.round }}.
+                </p>
+                <UButton data-testid="restart-run" @click="restartRun">Start new run</UButton>
+              </div>
+              <p v-else class="text-xs text-muted">
+                Targets increase every round. Longer runs gradually gain additional scoring hands and discards.
+                There is no fixed final round.
+              </p>
             </div>
 
             <p class="text-sm text-muted">
-              Choose five cards to play. The game scores the strongest qualifying hand automatically
+              Choose five cards to score, or select one to five cards to discard. The game scores the strongest qualifying hand automatically
               until the Manual Hand Selection perk is unlocked.
-              <strong data-testid="selected-count" class="text-highlighted">{{ selectedIndexes.length }} of 5 selected</strong>
+              <strong data-testid="selected-count" class="text-highlighted">{{ selectedIndexes.length }} of {{ rules.cardsPerPlay }} selected</strong>
             </p>
 
             <div data-testid="card-hand" aria-label="Current eight-card hand" class="grid grid-cols-4 gap-2 sm:grid-cols-8 sm:gap-3">
               <button
                 v-for="(card, index) in hand"
                 type="button"
-                :key="`${handsDealt}-${index}-${card.suit}-${card.rank}`"
+                :key="`${run.round}-${run.handsPlayed}-${index}-${card.suit}-${card.rank}`"
                 data-testid="playing-card"
                 :aria-label="`${selectedIndexes.includes(index) ? 'Deselect' : 'Select'} ${card.rank} of ${card.suit}`"
                 :aria-pressed="selectedIndexes.includes(index)"
-                :disabled="selectedIndexes.length === 5 && !selectedIndexes.includes(index)"
+                :disabled="!inRound || (selectedIndexes.length === rules.cardsPerPlay && !selectedIndexes.includes(index))"
                 @click="toggleCard(index)"
                 class="relative flex aspect-[5/7] select-none flex-col justify-between rounded-xl border border-slate-200 bg-[#faf8f1] p-2 text-left shadow-lg shadow-black/30 transition-all hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 disabled:cursor-not-allowed disabled:opacity-60 sm:p-3"
                 :data-scoring-card="scoringCardIndexes.includes(index) ? 'true' : 'false'"
@@ -217,7 +283,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
                     <strong>{{ preview.label }}</strong> — {{ preview.baseChips }} chips
                     × {{ preview.multiplier }} multiplier = <strong>{{ preview.score }} points</strong>
                   </p>
-                  <p v-else class="text-sm text-muted">Choose exactly five cards to see the hand type and score.</p>
+                  <p v-else class="text-sm text-muted">Choose five cards to see the hand type and score.</p>
                 </div>
                 <UBadge color="neutral" variant="subtle">Base values only</UBadge>
               </div>
@@ -267,7 +333,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
               </div>
 
               <div class="flex flex-wrap items-center gap-3">
-                <UButton data-testid="score-hand" :disabled="!preview" @click="scoreSelectedHand">
+                <UButton data-testid="score-hand" :disabled="!preview || !inRound || run.handsRemaining === 0" @click="scoreSelectedHand">
                   Score selected hand
                 </UButton>
                 <UButton data-testid="clear-selection" color="neutral" variant="ghost" :disabled="selectedIndexes.length === 0" @click="clearSelection">
@@ -275,35 +341,33 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
                 </UButton>
               </div>
               <p v-if="scoredHand" data-testid="scored-hand" aria-live="polite" class="text-sm font-semibold text-amber-300">
-                Scored {{ scoredHand.label }}: {{ scoredHand.score }} points.
+                Scored {{ scoredHand.label }}: +{{ scoredHand.score }} chips.
               </p>
               <p class="text-xs text-muted">
-                Only the highlighted scoring cards count toward the selected formation. Base chips × multiplier
-                are provisional; card-specific multipliers, discarding, chip thresholds, rounds, perks, and persistence come later.
+                Only the highlighted cards contribute to scoring, but all five committed cards leave your hand.
+                Cards discarded using the separate action are replaced without earning chips.
+                Chip values are provisional; paid perks, card-specific multipliers, and persistence come later.
               </p>
             </div>
 
             <div class="flex flex-wrap gap-3">
-              <UButton data-testid="shuffle-deal" icon="i-lucide-shuffle" @click="replaceWithFreshDeck(true)">
-                Shuffle &amp; deal
+              <UButton data-testid="discard-selected" icon="i-lucide-trash-2"
+                color="neutral" variant="outline" :disabled="!canDiscardSelection"
+                @click="discardSelectedCards">
+                Discard selected ({{ selectedIndexes.length }})
               </UButton>
-              <UButton
-                data-testid="deal-next"
-                icon="i-lucide-layers"
-                color="neutral"
-                variant="outline"
-                :disabled="!canDealNext"
-                @click="dealNextHand"
-              >
-                Deal next hand
+              <UButton data-testid="clear-selection" color="neutral" variant="ghost"
+                :disabled="selectedIndexes.length === 0" @click="clearSelection">
+                Clear selection
               </UButton>
-              <UButton data-testid="reset-deck" icon="i-lucide-rotate-ccw" color="neutral" variant="ghost" @click="replaceWithFreshDeck(false)">
-                Reset deck
+              <UButton data-testid="new-run" icon="i-lucide-rotate-ccw"
+                color="neutral" variant="ghost" @click="restartRun">
+                Start new run
               </UButton>
             </div>
             <p aria-live="polite" class="text-sm text-muted">{{ lastAction }}</p>
-            <p v-if="!canDealNext" class="text-sm text-amber-300">
-              Fewer than eight cards remain. Shuffle a fresh deck or reset to continue.
+            <p v-if="remainingDeck.length === 0" class="text-sm text-amber-300">
+              The draw pile is empty for this round. You may continue scoring cards already in hand.
             </p>
           </div>
         </UCard>
@@ -323,14 +387,15 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
             <UBadge color="success" variant="subtle">Implemented</UBadge>
           </div>
           <div class="rounded-lg border border-default p-4 space-y-2">
-            <p class="text-xs uppercase tracking-wide text-muted">Milestone 3</p>
-            <p class="font-semibold">Poker hand scoring</p>
+            <p class="text-xs uppercase tracking-wide text-muted">Milestone 4</p>
+            <p class="font-semibold">Survival rounds</p>
             <UBadge color="primary" variant="subtle">Current</UBadge>
           </div>
         </div>
         <p class="text-sm text-muted">
-          Milestone 2 created the deck and card interface. Milestone 3 adds eligible-hand discovery,
-          automatic scoring and a temporary manual-perk preview. Up next: Milestone 4 — escalating survival rounds.
+          Milestone 3 delivered eligible-hand discovery and automatic scoring, with a temporary perk preview.
+          Milestone 4 adds playable rounds, score thresholds, hands and discards.
+          Up next: Milestone 5 — player upgrades and progression foundations.
         </p>
       </section>
 
