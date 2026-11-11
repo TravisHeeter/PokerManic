@@ -14,7 +14,8 @@
     "nuxt": "^4.6.4",
     "tailwindcss": "^4.1.0",
     "vue": "^3.5.0",
-    "zod": "^4.0.0"
+    "zod": "^4.0.0",
+    "@pokermanic/engine": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.9.0",
