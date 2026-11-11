@@ -52,9 +52,18 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.equal(response.status, 200);
   const html = await response.text();
   assert.match(html, /PokerManic/);
+  assert.match(html, /favicon\.svg\?v=1/);
   assert.match(html, /API connected/);
-  assert.match(html, /Milestone 2B/);
-  assert.match(html, /Visual card hand/);
+  assert.match(html, /Milestone 3/);
+  assert.match(html, /Poker hand scoring/);
+  assert.match(html, /Choose five cards to play/);
+  assert.match(html, /Hand selection/);
+  assert.match(html, /Preview unlocked perk/);
+  assert.match(html, /Automatic selection active/);
+  assert.match(html, /Manual/);
+  assert.match(html, /Score selected hand/);
+  assert.match(html, /Clear selection/);
+  assert.match(html, /Milestone 4/);
   assert.match(html, /Remaining in deck/);
   assert.match(html, /Shuffle &amp; deal|Shuffle & deal/);
   assert.match(html, /Deal next hand/);
@@ -64,8 +73,17 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /data-testid="deck-count"[^>]*>44</);
 });
 
+await run('Custom PokerManic favicon is served', async () => {
+  const response = await fetch(`${webUrl}/favicon.svg`);
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get('content-type') ?? '', /image\/svg\+xml/);
+  const svg = await response.text();
+  assert.match(svg, /<circle[^>]*fill="#fff"/);
+  assert.match(svg, /<path[^>]*fill="#d00000"/);
+});
+
 if (process.exitCode) {
   console.error('The current milestone is NOT verified. Fix failures before proceeding.');
 } else {
-  console.log('Milestone 2B smoke tests passed.');
+  console.log('Milestone 3 smoke tests passed.');
 }
