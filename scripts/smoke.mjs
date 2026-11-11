@@ -54,21 +54,24 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /PokerManic/);
   assert.match(html, /favicon\.svg\?v=1/);
   assert.match(html, /API connected/);
-  assert.match(html, /Milestone 4/);
-  assert.match(html, /Survival rounds/);
+  assert.match(html, /Milestone 5/);
+  assert.match(html, /Run upgrades/);
   assert.match(html, /Round 1/);
   assert.match(html, /Chip target/);
   assert.match(html, /Hands remaining/);
   assert.match(html, /Discards remaining/);
-  assert.match(html, /Run total chips/);
+  assert.match(html, /Run scoring chips/);
   assert.match(html, /No fixed final round|no fixed final round/);
   assert.match(html, /Hand selection/);
-  assert.match(html, /Preview unlocked perk/);
+  assert.match(html, /Manual Selection locked/);
   assert.match(html, /Automatic selection active/);
   assert.match(html, /Score selected hand/);
   assert.match(html, /Discard selected/);
   assert.match(html, /Start new run/);
-  assert.match(html, /Milestone 5/);
+  assert.match(html, /Between-round perk shop/);
+  assert.match(html, /Upgrade chips available/);
+  assert.match(html, /Manual hand selection/);
+  assert.match(html, /Milestone 6/);
   assert.match(html, /Remaining in deck/);
   // The first hand is seeded: both server and browser hydrate the same eight cards.
   assert.equal((html.match(/data-testid="playing-card"/g) ?? []).length, 8);
@@ -76,6 +79,7 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /data-testid="chip-target"[^>]*>60</);
   assert.match(html, /data-testid="hands-remaining"[^>]*>4</);
   assert.match(html, /data-testid="discards-remaining"[^>]*>3</);
+  assert.match(html, /data-testid="upgrade-chip-balance"[^>]*>0</);
 });
 
 await run('Custom PokerManic favicon is served', async () => {
@@ -90,5 +94,5 @@ await run('Custom PokerManic favicon is served', async () => {
 if (process.exitCode) {
   console.error('The current milestone is NOT verified. Fix failures before proceeding.');
 } else {
-  console.log('Milestone 4 smoke tests passed.');
+  console.log('Milestone 5 smoke tests passed.');
 }

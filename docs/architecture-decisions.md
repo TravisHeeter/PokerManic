@@ -57,3 +57,13 @@
 39. **Round gates:** Reaching the target enters `round_won`, requiring explicit Next round. Exhausting scoring hands before the target enters `game_over` and disallows further scoring/discarding. A new run restarts score and round.
 40. **No fake perk economy:** The previous Manual Selection developer preview stays labeled as nonpersistent; purchased perks and permanent privileges have not been implemented. Scoring chips are not represented as spendable currency.
 41. **Visible acceptance:** The homepage shows Milestone 4, targets, counters, progression, defeat and restart, while keeping scoring-option radios and favicon. Vitest validates engine transitions, and SSR smoke asserts the Milestone 4 controls and initial values.
+
+## Milestone 5 decisions
+
+42. **Run-only economy:** Gameplay scoring chips track chip thresholds and cumulative scores. A separate `RunProgress.upgradeChips` balance becomes spendable only between rounds. Winning awards `max(1, floor(roundChips / 10))` upgrade chips without subtracting scoring chips.
+43. **Idempotent reward:** The pure progression engine tracks `rewardedThroughRound` and rejects duplicate payouts or skipped-round claims.
+44. **Between-round shop:** Purchases are legal only while `RunState.phase === 'round_won'` after the reward is claimed; costs increase by level, perks have explicit caps, and insufficient balance is rejected.
+45. **Upgradeable limits:** Run-level upgrades adjust `RoundRules` for the next round: held cards, cards committed per play (up to eight in this version), cards discarded per action (up to eight), hands per round and discards per round. Hardcoded UI count restrictions are replaced by effective rules.
+46. **Earned Manual Selection:** The developer preview button is removed. Manual mode is unlocked by an actual run-only purchase. Automatic stays available, chooses the highest-ranked category and disables scoring-choice radio buttons.
+47. **Not persistent:** All shop currency and purchases reset when the run restarts. Separating `RunState` from `RunProgress` is a foundation for later separate permanent progression/transcendence; no fake meta-upgrades or backend account persistence.
+48. **Visible milestone gate:** Homepage reads Milestone 5, shows wallet and shop with clear enabled/disabled purchase states, and retains round UI, favicon, API health and scoring controls. SSR smoke asserts the shop and starting balance; engine unit tests validate rewards, purchasing and effective rules.

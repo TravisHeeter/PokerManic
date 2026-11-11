@@ -1,4 +1,4 @@
-# PokerManic — Milestone 4: Endless survival rounds
+# PokerManic — Milestone 5: Run upgrades and perk shop
 
 Browser-based poker survival roguelite in development. Milestone 1 established the stack; Milestone 2 added the deck and visual cards. Milestone 3 added player-directed scoring foundations. Milestone 4 makes the game playable with escalating round thresholds, limited scoring hands, discards, and round progression.
 
@@ -239,3 +239,38 @@ pnpm smoke
 At http://localhost:3000 check the initial 60-chip target, 4 hands, 3 discards, 8 held cards and 44 in the draw pile. Score a hand and see chips and hands remaining change. Discard 1–5 cards and verify that only the discard count decreases. Try the temporary Manual perk preview, including High Card choices. Reach a target and advance to Round 2. Lose a run by exhausting scoring hands below the target and restart it. Confirm the red M favicon still appears.
 
 **Up next: Milestone 5** — configurable progression and player-upgrade foundations. Permanent perks, transcendence, purchasing currencies and persistence will be added in subsequent milestones, not implied by the current demonstration.
+
+## Milestone 5: Spendable upgrade chips and run-only perks
+
+The first functional perk economy is part of **Milestone 5**, with a separate in-run currency and a between-round shop. It is intentionally distinct from the scoring system, and this is **not** permanent/transcendent progression.
+
+**Game flow:** Beat a round's scoring-chip target. The game awards **upgrade chips** equal to `floor(roundChips / 10)` (minimum 1). Those chips accumulate in a separate wallet; the round's scoring chips are not deducted. A shop becomes available in the won-round phase. Purchase any affordable perk or click **Next round** without purchasing. The purchased run-only levels affect **the following round**, not the round just completed. The same shop cannot pay its reward twice.
+
+The provisional run perks:
+
+| Perk | Initial cost | Maximum upgrades | Effect |
+|---|---:|---:|---|
+| Extra scoring hand | 5 | 4 | +1 scoring attempt per round |
+| Extra discard action | 4 | 4 | +1 discard per round |
+| Hand size | 8 | 4 | +1 held card (8 → 12) |
+| Cards per play | 12 | 3 | +1 card committed for scoring (5 → 8) |
+| Cards per discard | 7 | 3 | +1 card discarded per action (5 → 8) |
+| Manual Hand Selection | 10 | 1 | Enables Manual mode and choosing specific contributing scoring cards |
+
+Each upgrade's price increases with its current level (`baseCost × (level + 1)`). The caps reflect the current pure engine limit of **eight cards per scoring play**, rather than a permanent design restriction. The existing radio-button interface is now **genuinely unlocked by purchasing** the perk, not a developer-only preview. Automatic remains available and is the default for every new run. When Manual is unlocked, it can score an individually chosen High Card even when higher cards exist.
+
+Purchases are permitted only in the post-round phase, and the controls remain disabled otherwise. A new run resets the run-only wallet, perk levels, and scoring history. A later milestone will introduce separately persisted/meta-currency and transcendence; **no permanent privileges exist yet**.
+
+The upgrade rules are defined and tested in `packages/engine/src/progression.ts`, independent of Vue/Nuxt. The Nuxt page visibly identifies Milestone 5 and displays the wallet and shop.
+
+### Run upgrade acceptance tests
+
+```bash
+pnpm install
+pnpm typecheck
+pnpm test
+pnpm build
+pnpm dev
+```
+
+In a separate terminal run `pnpm smoke`. At `http://localhost:3000`, confirm that the wallet starts at 0, shop buttons are unavailable while playing, and Manual mode is locked. Win a round; verify the wallet receives a reward and the shop opens. Buy a perk and check that the wallet decreases. Advance; verify the upgraded limit is reflected in gameplay. Purchase Manual Hand Selection in a future won-round shop to enable Manual mode, then choose a lower High Card and switch back to Automatic. Starting a new run should clear purchases and reset the wallet.
