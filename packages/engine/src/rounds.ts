@@ -154,19 +154,42 @@ function selectedIndices(indices: readonly number[], handSize: number, minimum: 
   return [...indices].sort((a, b) => a - b);
 }
 
-function replacePlayedCards(state: Readonly<RunState>, indices: readonly number[]): {
-  hand: Card[];
-  drawPile: Card[];
-  removed: Card[];
-} {
+function replaceCards(
+  state: Readonly<RunState>,
+  indices: readonly number[],
+  destination: 'played' | 'discarded',
+  random: () => number,
+): Pick<RunState, 'hand' | 'drawPile' | 'playedCards' | 'discardedCards'> & { recycled: boolean } {
   const selected = new Set(indices);
   const kept = state.hand.filter((_, index) => !selected.has(index));
   const removed = state.hand.filter((_, index) => selected.has(index));
-  const replacements = dealCards(state.drawPile, Math.min(removed.length, state.drawPile.length));
+  let drawPile = [...state.drawPile];
+  let playedCards = destination === 'played'
+    ? [...state.playedCards, ...removed] : [...state.playedCards];
+  let discardedCards = destination === 'discarded'
+    ? [...state.discardedCards, ...removed] : [...state.discardedCards];
+  const replacements: Card[] = [];
+  let recycled = false;
+
+  while (replacements.length < removed.length) {
+    if (!drawPile.length) {
+      const recyclable = [...playedCards, ...discardedCards];
+      if (!recyclable.length) break;
+      drawPile = shuffleDeck(recyclable, random);
+      playedCards = [];
+      discardedCards = [];
+      recycled = true;
+    }
+    const draw = dealCards(drawPile, Math.min(removed.length - replacements.length, drawPile.length));
+    replacements.push(...draw.hand);
+    drawPile = draw.remainingDeck;
+  }
   return {
-    hand: [...kept, ...replacements.hand],
-    drawPile: replacements.remainingDeck,
-    removed,
+    hand: [...kept, ...replacements],
+    drawPile,
+    playedCards,
+    discardedCards,
+    recycled,
   };
 }
 
@@ -177,6 +200,7 @@ export function playScoringHand(
   settings: Readonly<HandSelectionSettings> = { manualSelectionUnlocked: false, selectionMode: 'automatic' },
   manualOptionId?: string,
   rules: Readonly<RoundRules> = DEFAULT_ROUND_RULES,
+  random: () => number = Math.random,
 ): RunState {
   validateRoundRules(rules);
   activeRound(state);
@@ -195,42 +219,44 @@ export function playScoringHand(
   if (!Number.isSafeInteger(updatedChips) || !Number.isSafeInteger(updatedTotal)) {
     throw new RangeError('Score exceeds safe integer precision.');
   }
-  const next = replacePlayedCards(state, chosen);
+  const next = replaceCards(state, chosen, 'played', random);
   const handsRemaining = state.handsRemaining - 1;
   const won = updatedChips >= state.roundTarget;
-  const lost = !won && (handsRemaining === 0 || next.hand.length < rules.cardsPerPlay);
+  const lost = !won && handsRemaining === 0;
   return {
     ...state,
-    ...next,
+    hand: next.hand,
+    drawPile: next.drawPile,
+    playedCards: next.playedCards,
+    discardedCards: next.discardedCards,
     phase: won ? 'round_won' : lost ? 'game_over' : 'playing',
     roundChips: updatedChips,
     totalChips: updatedTotal,
     handsRemaining,
     handsPlayed: state.handsPlayed + 1,
-    playedCards: [...state.playedCards, ...next.removed],
     lastScored: selected,
   };
 }
 
-/** Discard 1..maxCardsPerDiscard unscored cards, replacing them from the draw pile. */
+/** Discard 1..maxCardsPerDiscard unscored cards; recycle used cards when needed. */
 export function discardCards(
   state: Readonly<RunState>,
   indices: readonly number[],
   rules: Readonly<RoundRules> = DEFAULT_ROUND_RULES,
+  random: () => number = Math.random,
 ): RunState {
   validateRoundRules(rules);
   activeRound(state);
   if (state.discardsRemaining <= 0) throw new Error('No discards remain.');
   const chosen = selectedIndices(indices, state.hand.length, 1, rules.maxCardsPerDiscard);
-  if (chosen.length > state.drawPile.length) {
-    throw new Error('Not enough cards remain in the draw pile for this discard.');
-  }
-  const next = replacePlayedCards(state, chosen);
+  const next = replaceCards(state, chosen, 'discarded', random);
   return {
     ...state,
-    ...next,
+    hand: next.hand,
+    drawPile: next.drawPile,
+    playedCards: next.playedCards,
+    discardedCards: next.discardedCards,
     discardsRemaining: state.discardsRemaining - 1,
-    discardedCards: [...state.discardedCards, ...next.removed],
     lastScored: null,
   };
 }

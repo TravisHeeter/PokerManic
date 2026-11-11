@@ -95,7 +95,8 @@ describe('Milestone 4 round rules', () => {
     expect(() => discardCards(state, [0,1,2,3,4,5])).toThrow(RangeError);
     expect(() => discardCards(state, [0,0])).toThrow(RangeError);
     expect(() => discardCards({...state, discardsRemaining:0}, [0])).toThrow();
-    expect(() => discardCards({...state, drawPile:[]}, [0])).toThrow();
+    expect(discardCards({...state, drawPile:[], playedCards: [c('2', 'spades')]}, [0],
+      DEFAULT_ROUND_RULES, () => 0.5).hand).toHaveLength(8);
   });
 
   it('advances only a won round and keeps lifetime chip totals', () => {
@@ -137,5 +138,25 @@ describe('Milestone 4 round rules', () => {
     expect(discardCards(state,[0,1,2,3,4,5,6,7],rules).hand).toHaveLength(10);
     expect(() => startRun({...rules,cardsPerPlay:9})).toThrow(RangeError);
     expect(() => startRun({...rules,maxCardsPerDiscard:11})).toThrow(RangeError);
+  });
+});
+
+describe('draw pile recycling', () => {
+  it('recycles the played and discarded piles so long rounds can use more than 52 draws', () => {
+    const rules: RoundRules = {
+      ...DEFAULT_ROUND_RULES, baseHandsPerRound: 16, baseChipTarget: 999999,
+    };
+    let state = startRun(rules, () => 0.5);
+    for (let i = 0; i < 11; i++) {
+      state = playScoringHand(state, firstFive, undefined, undefined, rules, () => 0.5);
+      expect(state.phase).toBe('playing');
+      expect(state.hand).toHaveLength(8);
+      expect([...state.hand, ...state.drawPile, ...state.playedCards, ...state.discardedCards])
+        .toHaveLength(52);
+      expect(new Set([...state.hand,...state.drawPile,...state.playedCards,...state.discardedCards]
+        .map((card) => `${card.suit}:${card.rank}`)).size).toBe(52);
+    }
+    expect(state.handsRemaining).toBe(5);
+    expect(state.roundChips).toBeGreaterThan(0);
   });
 });

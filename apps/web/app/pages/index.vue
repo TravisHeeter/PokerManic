@@ -67,8 +67,7 @@ const lastAction = ref('Run started. Select five cards to score or discard up to
 const canDiscardSelection = computed(() => inRound.value
   && run.value.discardsRemaining > 0
   && selectedIndexes.value.length >= 1
-  && selectedIndexes.value.length <= rules.maxCardsPerDiscard
-  && selectedIndexes.value.length <= remainingDeck.value.length);
+  && selectedIndexes.value.length <= rules.maxCardsPerDiscard);
 
 function clearSelection() {
   selectedIndexes.value = [];
@@ -356,18 +355,14 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
                 @click="discardSelectedCards">
                 Discard selected ({{ selectedIndexes.length }})
               </UButton>
-              <UButton data-testid="clear-selection" color="neutral" variant="ghost"
-                :disabled="selectedIndexes.length === 0" @click="clearSelection">
-                Clear selection
-              </UButton>
               <UButton data-testid="new-run" icon="i-lucide-rotate-ccw"
                 color="neutral" variant="ghost" @click="restartRun">
                 Start new run
               </UButton>
             </div>
             <p aria-live="polite" class="text-sm text-muted">{{ lastAction }}</p>
-            <p v-if="remainingDeck.length === 0" class="text-sm text-amber-300">
-              The draw pile is empty for this round. You may continue scoring cards already in hand.
+            <p class="text-xs text-muted">
+              If the draw pile empties, used cards are shuffled back in automatically. There is no deck-exhaustion loss.
             </p>
           </div>
         </UCard>
