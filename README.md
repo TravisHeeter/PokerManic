@@ -126,3 +126,34 @@ features completed, honest UI limitations, and next step. Update the SSR asserti
 in `scripts/smoke.mjs` to cover the newly displayed milestone and include them
 in the existing CI gate before merging. This is a required acceptance criterion,
 not an optional UI enhancement.
+
+## Milestone 2B: Visual card hand
+
+The home page now renders an eight-card hand using `@pokermanic/engine` in Vue.
+Its initial deal is deterministic during server rendering so browser hydration matches;
+random shuffling happens only when the user clicks.
+
+- **Shuffle & deal:** shuffle a fresh 52-card deck and draw eight cards.
+- **Deal next hand:** replace the displayed hand with the next eight cards;
+  the remaining-deck counter decreases by eight and never duplicates cards.
+- **Reset deck:** restore the ordered 52-card deck and deal the first eight.
+- **Card counter:** show eight cards in the hand, cards remaining in the draw pile,
+  and number of hands dealt since the most recent reset.
+
+No card selection, scoring, or persistence is implemented yet; those are later milestones.
+
+To try the page on the `fix/milestone-2b-on-main` branch (the merge correction):
+
+```bash
+nvm use
+pnpm install
+pnpm dev
+```
+
+Visit http://localhost:3000. Try Shuffle & deal, Deal next hand (until fewer than
+8 cards remain), and Reset deck. Run `pnpm smoke` with both servers running;
+the smoke test verifies server-rendered cards and the Milestone 2B label.
+
+## Milestone naming convention
+
+Milestone 2A and 2B were historical development slices. **Future milestones use only consecutive whole numbers:** Milestone 3, Milestone 4, Milestone 5, etc.—no lettered subdivisions. Each milestone must include a visible homepage update and pass the automated acceptance checks before merging.

@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "pnpm --filter @pokermanic/contracts build && pnpm --filter @pokermanic/engine build && pnpm --parallel --filter @pokermanic/api --filter @pokermanic/web dev",
     "build": "pnpm --filter @pokermanic/contracts build && pnpm --filter @pokermanic/engine build && pnpm --filter @pokermanic/api build && pnpm --filter @pokermanic/web build",
-    "typecheck": "pnpm --filter @pokermanic/contracts build && pnpm --filter @pokermanic/contracts typecheck && pnpm --filter @pokermanic/engine typecheck && pnpm --filter @pokermanic/api typecheck && pnpm --filter @pokermanic/web typecheck",
+    "typecheck": "pnpm --filter @pokermanic/contracts build && pnpm --filter @pokermanic/engine build && pnpm --filter @pokermanic/contracts typecheck && pnpm --filter @pokermanic/engine typecheck && pnpm --filter @pokermanic/api typecheck && pnpm --filter @pokermanic/web typecheck",
     "test": "pnpm --filter @pokermanic/contracts build && pnpm -r --if-present test",
     "smoke": "node scripts/smoke.mjs",
     "verify:scaffold": "node scripts/verify-scaffold.mjs"
