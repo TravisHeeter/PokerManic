@@ -30,7 +30,7 @@ const emit = defineEmits<{
                     <strong>{{ preview.label }}</strong> — {{ preview.baseChips }} chips
                     × {{ preview.multiplier }} multiplier = <strong>{{ preview.score }} points</strong>
                   </p>
-                  <p v-else class="text-sm text-muted">Choose five cards to see the hand type and score.</p>
+                  <p v-else class="text-sm text-muted">Choose 5 to {{ cardsPerPlay }} cards to see the hand type and score.</p>
                 </div>
                 <UBadge color="neutral" variant="subtle">Base values only</UBadge>
               </div>
@@ -77,7 +77,7 @@ const emit = defineEmits<{
                     </span>
                   </label>
                 </div>
-                <p v-else class="text-xs text-muted">Choose {{ cardsPerPlay }} cards to see eligible formations.</p>
+                <p v-else class="text-xs text-muted">Choose 5 to {{ cardsPerPlay }} cards to see eligible formations.</p>
               </div>
 
               <div class="flex flex-wrap items-center gap-3">
@@ -92,7 +92,7 @@ const emit = defineEmits<{
                 Scored {{ scoredHand.label }}: +{{ scoredHand.score }} chips.
               </p>
               <p class="text-xs text-muted">
-                Only highlighted cards contribute to scoring, but all {{ cardsPerPlay }} committed cards leave your hand.
+                Only highlighted cards contribute to scoring, but all {{ selectedCards.length }} committed cards leave your hand.
                 Cards discarded using the separate action are replaced without earning chips.
                 Chip and perk prices are provisional. Permanent upgrades, card-specific multipliers, and transcendence come later.
               </p>

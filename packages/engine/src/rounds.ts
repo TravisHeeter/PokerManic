@@ -58,7 +58,7 @@ function validateRuleInteger(value: number, name: string, minimum: number): void
 
 export function validateRoundRules(rules: Readonly<RoundRules>): void {
   validateRuleInteger(rules.handSize, 'handSize', 1);
-  validateRuleInteger(rules.cardsPerPlay, 'cardsPerPlay', 1);
+  validateRuleInteger(rules.cardsPerPlay, 'cardsPerPlay', 5);
   validateRuleInteger(rules.maxCardsPerDiscard, 'maxCardsPerDiscard', 1);
   validateRuleInteger(rules.baseHandsPerRound, 'baseHandsPerRound', 1);
   validateRuleInteger(rules.baseDiscardsPerRound, 'baseDiscardsPerRound', 0);
@@ -193,7 +193,7 @@ function replaceCards(
   };
 }
 
-/** Commit all five selected cards; only the chosen qualifying subset contributes chips. */
+/** Commit 5..maxCardsPerPlay selected cards; only the chosen scoring subset contributes chips. */
 export function playScoringHand(
   state: Readonly<RunState>,
   indices: readonly number[],
@@ -205,7 +205,7 @@ export function playScoringHand(
   validateRoundRules(rules);
   activeRound(state);
   if (state.handsRemaining <= 0) throw new Error('No scoring hands remain.');
-  const chosen = selectedIndices(indices, state.hand.length, rules.cardsPerPlay, rules.cardsPerPlay);
+  const chosen = selectedIndices(indices, state.hand.length, 5, rules.cardsPerPlay);
   const cards = chosen.map((index) => state.hand[index]!);
   const options = listEligiblePokerHands(cards);
   const manual = settings.manualSelectionUnlocked && settings.selectionMode === 'manual';

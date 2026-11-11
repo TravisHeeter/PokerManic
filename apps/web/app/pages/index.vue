@@ -45,7 +45,8 @@ const selectedIndexes = ref<number[]>([]);
 const selectedInputIndexes = computed(() => hand.value.flatMap((_, i) =>
   selectedIndexes.value.includes(i) ? [i] : []));
 const selectedCards = computed(() => selectedInputIndexes.value.map((i) => hand.value[i]!));
-const eligibleOptions = computed(() => selectedCards.value.length === rules.value.cardsPerPlay
+const eligibleOptions = computed(() => selectedCards.value.length >= 5
+  && selectedCards.value.length <= rules.value.cardsPerPlay
   ? listEligiblePokerHands(selectedCards.value) : []);
 
 const manualUnlocked = computed(() => manualSelectionUnlocked(progress.value));
@@ -139,11 +140,16 @@ function restartRun() {
 function buyPerk(id: RunUpgradeId) {
   // The engine enforces affordability and prevents purchases after defeat.
   progress.value = purchaseRunUpgrade(run.value, progress.value, id);
-  // A purchase never interrupts the player's selected cards or current round.
-  // Manual selection is immediately usable; rule modifiers start next round.
+  // The maximum playable-card count and Manual Selection are immediate.
+  // Hand size and round action allowances remain fixed until next round.
+  if (id === 'cards_per_play') {
+    rules.value = { ...rules.value, cardsPerPlay: nextRoundRules.value.cardsPerPlay };
+  }
   lastAction.value = id === 'manual_selection'
     ? 'Manual Hand Selection unlocked! Switch to Manual to choose your scoring cards.'
-    : 'Perk purchased. Your upgraded limits take effect next round.';
+    : id === 'cards_per_play'
+      ? `You can now score 5 to ${rules.value.cardsPerPlay} cards per play, immediately.`
+      : 'Perk purchased. Your upgraded limits take effect next round.';
 }
 
 const { data: health, error, status, refresh } = await useFetch('/api/health');
@@ -175,7 +181,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
                 </p>
                 <h2 id="hand-heading" class="text-3xl font-bold">Your hand</h2>
                 <p class="text-sm text-muted">
-                  Play {{ rules.cardsPerPlay }} cards to earn scoring chips, or discard up to {{ rules.maxCardsPerDiscard }}.
+                  Play 5 to {{ rules.cardsPerPlay }} cards to earn scoring chips, or discard up to {{ rules.maxCardsPerDiscard }}.
                   Beat the target, earn upgrade chips, and spend them whenever you like during your run.
                 </p>
               </div>

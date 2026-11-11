@@ -28,7 +28,7 @@ const canBuy = (id: RunUpgradeId) => {
                 <h2 id="shop-heading" class="text-2xl font-bold">Perk shop — always open</h2>
                 <p class="text-sm text-muted">
                   Clear rounds to earn upgrade chips, then shop any time during an active run.
-                  Rule upgrades apply next round; Manual Selection unlocks immediately. Scoring chips are never spent.
+                  Cards per Play and Manual Selection apply immediately. Other rule upgrades apply next round. Scoring chips are never spent.
                 </p>
               </div>
               <div class="rounded-lg border border-default p-3">
@@ -55,10 +55,10 @@ const canBuy = (id: RunUpgradeId) => {
               </div>
             </div>
             <p class="text-xs text-muted">
-              Current round: {{ rules.handSize }} held cards, {{ rules.cardsPerPlay }} cards per play,
+              Current round: {{ rules.handSize }} held cards, up to {{ rules.cardsPerPlay }} cards per play,
               {{ rules.maxCardsPerDiscard }} cards per discard, {{ rules.baseHandsPerRound }} base hands,
               and {{ rules.baseDiscardsPerRound }} base discards.
-              Next round: {{ nextRoundRules.handSize }} held cards, {{ nextRoundRules.cardsPerPlay }} cards per play,
+              Next round: {{ nextRoundRules.handSize }} held cards, up to {{ nextRoundRules.cardsPerPlay }} cards per play,
               {{ nextRoundRules.maxCardsPerDiscard }} cards per discard, {{ nextRoundRules.baseHandsPerRound }} base hands,
               and {{ nextRoundRules.baseDiscardsPerRound }} base discards.
               Run upgrades reset on a new run.

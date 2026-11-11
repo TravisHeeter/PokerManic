@@ -124,6 +124,39 @@ describe('Milestone 4 round rules', () => {
     expect(() => advanceRound(lost)).toThrow();
   });
 
+
+  it('allows both five-card and six-card plays with a six-card maximum', () => {
+    const rules: RoundRules = { ...DEFAULT_ROUND_RULES, cardsPerPlay: 6, baseChipTarget: 9999 };
+    const state = fixture();
+    const five = playScoringHand(state, [0,1,2,3,4], undefined, undefined, rules, () => 0.5);
+    expect(five.lastScored?.category).toBe('straight');
+    expect(five.playedCards).toHaveLength(5);
+    const six = playScoringHand(state, [0,1,2,3,4,5], undefined, undefined, rules, () => 0.5);
+    expect(six.lastScored?.category).toBe('straight');
+    expect(six.playedCards).toHaveLength(6);
+    expect(six.hand).toHaveLength(8);
+    expect(six.drawPile).toHaveLength(38);
+    expect(six.handsRemaining).toBe(state.handsRemaining - 1);
+    expect(() => playScoringHand(state, [0,1,2,3], undefined, undefined, rules)).toThrow(RangeError);
+    expect(() => playScoringHand(state, [0,1,2,3,4,5,6], undefined, undefined, rules)).toThrow(RangeError);
+  });
+
+  it('supports full six-card scoring patterns when all six contribute', () => {
+    const rules: RoundRules = { ...DEFAULT_ROUND_RULES, cardsPerPlay: 6, baseChipTarget: 9999 };
+    const state = fixture();
+    const sixCards = [
+      c('A','hearts'), c('A','clubs'), c('K','hearts'), c('K','clubs'),
+      c('Q','diamonds'), c('Q','spades'),
+    ];
+    const ids = new Set(sixCards.map(card => `${card.rank}:${card.suit}`));
+    const all = [...sixCards, ...createStandardDeck().filter(card => !ids.has(`${card.rank}:${card.suit}`))];
+    const prepared = { ...state, hand: all.slice(0,8), drawPile: all.slice(8) };
+    const six = playScoringHand(prepared, [0,1,2,3,4,5], undefined, undefined, rules, () => 0.5);
+    expect(six.lastScored?.category).toBe('three_pair');
+    expect(six.lastScored?.scoringCardIndices).toHaveLength(6);
+    expect(six.playedCards).toHaveLength(6);
+  });
+
   it('accepts future hand/discard upgrades through rules without changing the engine', () => {
     const rules: RoundRules = {
       ...DEFAULT_ROUND_RULES, handSize: 10, cardsPerPlay: 6, maxCardsPerDiscard: 8,
