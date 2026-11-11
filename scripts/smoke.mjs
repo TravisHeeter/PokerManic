@@ -54,23 +54,28 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /PokerManic/);
   assert.match(html, /favicon\.svg\?v=1/);
   assert.match(html, /API connected/);
-  assert.match(html, /Milestone 3/);
-  assert.match(html, /Poker hand scoring/);
-  assert.match(html, /Choose five cards to play/);
+  assert.match(html, /Milestone 4/);
+  assert.match(html, /Survival rounds/);
+  assert.match(html, /Round 1/);
+  assert.match(html, /Chip target/);
+  assert.match(html, /Hands remaining/);
+  assert.match(html, /Discards remaining/);
+  assert.match(html, /Run total chips/);
+  assert.match(html, /No fixed final round|no fixed final round/);
   assert.match(html, /Hand selection/);
   assert.match(html, /Preview unlocked perk/);
   assert.match(html, /Automatic selection active/);
-  assert.match(html, /Manual/);
   assert.match(html, /Score selected hand/);
-  assert.match(html, /Clear selection/);
-  assert.match(html, /Milestone 4/);
+  assert.match(html, /Discard selected/);
+  assert.match(html, /Start new run/);
+  assert.match(html, /Milestone 5/);
   assert.match(html, /Remaining in deck/);
-  assert.match(html, /Shuffle &amp; deal|Shuffle & deal/);
-  assert.match(html, /Deal next hand/);
-  assert.match(html, /Milestone 3/);
   // The first hand is seeded: both server and browser hydrate the same eight cards.
   assert.equal((html.match(/data-testid="playing-card"/g) ?? []).length, 8);
   assert.match(html, /data-testid="deck-count"[^>]*>44</);
+  assert.match(html, /data-testid="chip-target"[^>]*>60</);
+  assert.match(html, /data-testid="hands-remaining"[^>]*>4</);
+  assert.match(html, /data-testid="discards-remaining"[^>]*>3</);
 });
 
 await run('Custom PokerManic favicon is served', async () => {
@@ -85,5 +90,5 @@ await run('Custom PokerManic favicon is served', async () => {
 if (process.exitCode) {
   console.error('The current milestone is NOT verified. Fix failures before proceeding.');
 } else {
-  console.log('Milestone 3 smoke tests passed.');
+  console.log('Milestone 4 smoke tests passed.');
 }
