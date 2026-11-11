@@ -1,6 +1,6 @@
-# PokerManic — Milestone 1: Foundation
+# PokerManic — Milestone 2A: Card engine
 
-Browser-based poker-inspired roguelike. This starter deliberately has **no gameplay yet**: the goal is to verify the stack works end to end before implementing the deck engine.
+Browser-based poker-inspired roguelike. Milestone 1 established the full stack; Milestone 2A adds a tested, framework-independent deck engine. Card rendering and gameplay are next.
 
 ## Prerequisites
 
@@ -112,6 +112,17 @@ pnpm test
 pnpm build
 ```
 
-The UI is intentionally unchanged in 2A. We will render cards only after these
-engine and regression checks pass. Card instance IDs, scoring, and modifiers are
+The home page now displays the **Milestone 2A — Card engine** summary, the implemented features,
+current API status, and the next milestone. It intentionally does not render a playable hand.
+The smoke test asserts these milestone labels are present in the server-rendered HTML.
+We will render cards only after these engine and regression checks pass. Card instance IDs, scoring, and modifiers are
 future steps and are not part of this initial standard-deck model.
+
+## Milestone page requirement (every milestone)
+
+Each milestone, including backend-only or engine-only work, **must update** the
+summary on `apps/web/app/pages/index.vue`. Include the current milestone label,
+features completed, honest UI limitations, and next step. Update the SSR assertions
+in `scripts/smoke.mjs` to cover the newly displayed milestone and include them
+in the existing CI gate before merging. This is a required acceptance criterion,
+not an optional UI enhancement.

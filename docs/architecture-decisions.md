@@ -18,3 +18,5 @@
 13. **Predictable state:** Deck creation, shuffling, and dealing return new arrays instead of mutating caller-owned collections.
 14. **Testable randomness:** The shuffle uses Fisher–Yates and accepts an injected random function to produce reproducible unit tests.
 15. **Incremental gate:** Validate engine tests and all existing integration checks before designing the Vue card UI.
+
+16. **Visible milestone requirement:** Every milestone must advance the Nuxt homepage’s milestone label, implementation summary, and next-step text—even if no new gameplay UI exists. The SSR smoke test must assert the current label to guard against stale pages.
