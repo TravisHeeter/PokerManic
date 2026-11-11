@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import type { CardSuit } from '@pokermanic/contracts';
 import {
   DEFAULT_ROUND_RULES,
-  RUN_UPGRADES,
   advanceRound,
   applyRunUpgrades,
   awardRoundUpgradeChips,
@@ -14,7 +12,6 @@ import {
   purchaseRunUpgrade,
   resolveScoringOption,
   startRun,
-  upgradeCost,
   manualSelectionUnlocked,
 } from '@pokermanic/engine';
 import type { RunState, ScoringOption, RunUpgradeId, RunProgress } from '@pokermanic/engine';
@@ -29,24 +26,6 @@ const progress = ref<RunProgress>(createRunProgress());
 // silently change the number of selected cards, existing hand size or allowances.
 const rules = ref({ ...DEFAULT_ROUND_RULES });
 const nextRoundRules = computed(() => applyRunUpgrades(DEFAULT_ROUND_RULES, progress.value));
-const perkCatalog = RUN_UPGRADES;
-const priceFor = (id: RunUpgradeId) => upgradeCost(progress.value, id);
-const canBuy = (id: RunUpgradeId) => {
-  const cost = priceFor(id);
-  return run.value.phase !== 'game_over' && cost !== null && progress.value.upgradeChips >= cost;
-};
-const SUIT_SYMBOLS: Record<CardSuit, string> = {
-  hearts: '♥',
-  diamonds: '♦',
-  clubs: '♣',
-  spades: '♠',
-};
-const SUIT_TEXT: Record<CardSuit, string> = {
-  hearts: 'text-[#87565D]',
-  diamonds: 'text-[#998258]',
-  clubs: 'text-[#577A75]',
-  spades: 'text-slate-800',
-};
 
 // The first shuffled deck is reproducible during SSR and browser hydration.
 // New rounds and player-triggered restarts use genuine random shuffles.
@@ -158,7 +137,7 @@ function restartRun() {
 }
 
 function buyPerk(id: RunUpgradeId) {
-  if (!canBuy(id)) return;
+  // The engine enforces affordability and prevents purchases after defeat.
   progress.value = purchaseRunUpgrade(run.value, progress.value, id);
   // A purchase never interrupts the player's selected cards or current round.
   // Manual selection is immediately usable; rule modifiers start next round.
@@ -203,180 +182,23 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
               <UBadge color="success" variant="subtle">Card engine connected</UBadge>
             </div>
 
-            <div class="space-y-4 rounded-xl border border-amber-300/30 p-4" aria-label="Round status">
-              <div class="flex flex-wrap items-center justify-between gap-3">
-                <div class="space-y-1">
-                  <p class="text-xs uppercase tracking-widest text-amber-300">Endless survival</p>
-                  <h3 data-testid="round-number" class="text-2xl font-bold">Round {{ run.round }}</h3>
-                </div>
-                <UBadge :color="run.phase === 'round_won' ? 'success' : run.phase === 'game_over' ? 'error' : 'primary'"
-                  variant="subtle" data-testid="run-phase">
-                  {{ run.phase === 'round_won' ? 'Target reached' : run.phase === 'game_over' ? 'Run over' : 'In progress' }}
-                </UBadge>
-              </div>
-              <div class="space-y-2">
-                <div class="flex items-center justify-between text-sm">
-                  <span>Round chips</span>
-                  <span data-testid="round-score" class="font-semibold">{{ run.roundChips }} / {{ run.roundTarget }}</span>
-                </div>
-                <progress :value="Math.min(run.roundChips, run.roundTarget)" :max="run.roundTarget"
-                  class="h-3 w-full accent-amber-400" aria-label="Progress toward chip target" />
-              </div>
-              <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                <div class="rounded-lg border border-default p-3">
-                  <p class="text-xs text-muted">Chip target</p>
-                  <p data-testid="chip-target" class="mt-1 text-xl font-bold">{{ run.roundTarget }}</p>
-                </div>
-                <div class="rounded-lg border border-default p-3">
-                  <p class="text-xs text-muted">Hands remaining</p>
-                  <p data-testid="hands-remaining" class="mt-1 text-xl font-bold">{{ run.handsRemaining }}</p>
-                </div>
-                <div class="rounded-lg border border-default p-3">
-                  <p class="text-xs text-muted">Discards remaining</p>
-                  <p data-testid="discards-remaining" class="mt-1 text-xl font-bold">{{ run.discardsRemaining }}</p>
-                </div>
-                <div class="rounded-lg border border-default p-3">
-                  <p class="text-xs text-muted">Cards in hand</p>
-                  <p data-testid="hand-count" class="mt-1 text-xl font-bold">{{ hand.length }}</p>
-                </div>
-                <div class="rounded-lg border border-default p-3">
-                  <p class="text-xs text-muted">Remaining in deck</p>
-                  <p data-testid="deck-count" class="mt-1 text-xl font-bold">{{ remainingDeck.length }}</p>
-                </div>
-                <div class="rounded-lg border border-default p-3">
-                  <p class="text-xs text-muted">Run scoring chips</p>
-                  <p data-testid="total-score" class="mt-1 text-xl font-bold">{{ run.totalChips }}</p>
-                </div>
-              </div>
-              <div v-if="run.phase === 'round_won'" class="space-y-3">
-                <p class="text-sm text-green-400">Target reached! Continue when ready. The next round has a higher chip target.</p>
-                <UButton data-testid="next-round" icon="i-lucide-arrow-right" @click="nextRound">Next round</UButton>
-              </div>
-              <div v-else-if="run.phase === 'game_over'" class="space-y-2">
-                <p class="text-sm text-red-400">
-                  Run over — you needed {{ run.roundTarget }} chips but earned {{ run.roundChips }}.
-                  You survived through Round {{ run.round }}.
-                </p>
-                <UButton data-testid="restart-run" @click="restartRun">Start new run</UButton>
-              </div>
-              <p v-else class="text-xs text-muted">
-                Targets increase every round. Longer runs gradually gain additional scoring hands and discards.
-                There is no fixed final round.
-              </p>
-            </div>
 
-            <p class="text-sm text-muted">
-              Choose {{ rules.cardsPerPlay }} cards to score, or select up to {{ rules.maxCardsPerDiscard }} to discard.
-              The game scores the strongest qualifying hand automatically
-              until the Manual Hand Selection perk is unlocked.
-              <strong data-testid="selected-count" class="text-highlighted">{{ selectedIndexes.length }} selected · {{ rules.cardsPerPlay }} to score</strong>
-            </p>
+            <RoundStatus :run="run" :hand="hand" :remaining-deck="remainingDeck"
+              @next-round="nextRound" @restart-run="restartRun" />
 
-            <div data-testid="card-hand" aria-label="Current eight-card hand" class="grid grid-cols-4 gap-2 sm:grid-cols-8 sm:gap-3">
-              <button
-                v-for="(card, index) in hand"
-                type="button"
-                :key="`${run.round}-${run.handsPlayed}-${index}-${card.suit}-${card.rank}`"
-                data-testid="playing-card"
-                :aria-label="`${selectedIndexes.includes(index) ? 'Deselect' : 'Select'} ${card.rank} of ${card.suit}`"
-                :aria-pressed="selectedIndexes.includes(index)"
-                :disabled="!inRound || (selectedIndexes.length === Math.max(rules.cardsPerPlay, rules.maxCardsPerDiscard) && !selectedIndexes.includes(index))"
-                @click="toggleCard(index)"
-                class="relative flex aspect-[5/7] select-none flex-col justify-between rounded-xl border border-slate-200 bg-[#faf8f1] p-2 text-left shadow-lg shadow-black/30 transition-all hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 disabled:cursor-not-allowed disabled:opacity-60 sm:p-3"
-                :data-scoring-card="scoringCardIndexes.includes(index) ? 'true' : 'false'"
-                :class="[
-                  SUIT_TEXT[card.suit],
-                  scoringCardIndexes.includes(index) ? '-translate-y-2 ring-4 ring-amber-300' :
-                    selectedIndexes.includes(index) ? '-translate-y-1 ring-2 ring-sky-500' : '',
-                ]"
-              >
-                <div class="flex flex-col items-start leading-none">
-                  <span class="text-lg font-bold sm:text-2xl">{{ card.rank }}</span>
-                  <span class="mt-1 text-lg sm:text-xl">{{ SUIT_SYMBOLS[card.suit] }}</span>
-                </div>
-                <span aria-hidden="true" class="self-center text-3xl sm:text-5xl">{{ SUIT_SYMBOLS[card.suit] }}</span>
-                <div aria-hidden="true" class="flex rotate-180 flex-col items-start leading-none">
-                  <span class="text-lg font-bold sm:text-2xl">{{ card.rank }}</span>
-                  <span class="mt-1 text-lg sm:text-xl">{{ SUIT_SYMBOLS[card.suit] }}</span>
-                </div>
-              </button>
-            </div>
+            <PlayingCardHand :hand="hand" :selected-indexes="selectedIndexes"
+              :scoring-card-indexes="scoringCardIndexes"
+              :cards-per-play="rules.cardsPerPlay" :max-cards-per-discard="rules.maxCardsPerDiscard"
+              :round="run.round" :hands-played="run.handsPlayed" :in-round="inRound"
+              @toggle-card="toggleCard" />
 
-            <div class="space-y-4 rounded-lg border border-default p-4">
-              <div class="flex flex-wrap items-start justify-between gap-3">
-                <div class="space-y-1">
-                  <h3 class="font-semibold text-lg">Poker hand evaluation</h3>
-                  <p v-if="preview" data-testid="hand-preview" class="text-sm">
-                    <strong>{{ preview.label }}</strong> — {{ preview.baseChips }} chips
-                    × {{ preview.multiplier }} multiplier = <strong>{{ preview.score }} points</strong>
-                  </p>
-                  <p v-else class="text-sm text-muted">Choose five cards to see the hand type and score.</p>
-                </div>
-                <UBadge color="neutral" variant="subtle">Base values only</UBadge>
-              </div>
-              <div class="space-y-3 rounded-lg border border-default p-3">
-                <div class="flex flex-wrap items-center justify-between gap-3">
-                  <div class="space-y-1">
-                    <h4 class="font-semibold">Hand selection</h4>
-                    <p class="text-xs text-muted">
-                      Automatic chooses the highest-ranking formation, not necessarily the highest scoring after upgrades.
-                    </p>
-                  </div>
-                  <UBadge :color="manualUnlocked ? 'success' : 'neutral'" variant="subtle" data-testid="manual-perk-status">
-                    {{ manualUnlocked ? 'Manual Selection purchased' : 'Manual Selection locked' }}
-                  </UBadge>
-                </div>
-                <p class="text-xs text-muted">
-                  Purchase Manual Hand Selection from the post-round shop to enable the Manual mode.
-                  Automatic mode is always available.
-                </p>
-                <div role="group" aria-label="Hand selection mode" class="flex flex-wrap gap-2">
-                  <UButton data-testid="automatic-mode" size="sm" :variant="selectionMode === 'automatic' ? 'solid' : 'outline'"
-                    @click="setSelectionMode('automatic')">Automatic</UButton>
-                  <UButton data-testid="manual-mode" size="sm" :variant="selectionMode === 'manual' ? 'solid' : 'outline'"
-                    :disabled="!manualUnlocked" @click="setSelectionMode('manual')">Manual</UButton>
-                </div>
-                <p v-if="selectionMode === 'automatic'" class="text-xs text-muted">
-                  Automatic selection active. Scoring choices below are disabled.
-                </p>
-                <p v-else class="text-xs text-muted">
-                  Select a formation below. Highlighted cards are the ones that contribute to scoring.
-                </p>
-                <div v-if="eligibleOptions.length" data-testid="scoring-options"
-                  class="max-h-64 space-y-2 overflow-y-auto" role="radiogroup" aria-label="Qualifying scoring hands">
-                  <label v-for="option in eligibleOptions" :key="option.id"
-                    class="flex items-start gap-2 rounded-md border border-default p-2 text-sm"
-                    :class="!manualUnlocked || selectionMode === 'automatic' ? 'opacity-55' : 'cursor-pointer'">
-                    <input type="radio" name="scoring-option" class="mt-1 accent-amber-400"
-                      :value="option.id" :checked="preview?.id === option.id"
-                      :disabled="!manualUnlocked || selectionMode === 'automatic'"
-                      @change="chooseScoringOption(option.id)">
-                    <span>{{ option.label }}:
-                      <span class="text-muted">{{ option.scoringCardIndices.map(i =>
-                        selectedCards[i]!.rank + ' of ' + selectedCards[i]!.suit).join(', ') }}</span>
-                    </span>
-                  </label>
-                </div>
-                <p v-else class="text-xs text-muted">Choose {{ rules.cardsPerPlay }} cards to see eligible formations.</p>
-              </div>
-
-              <div class="flex flex-wrap items-center gap-3">
-                <UButton data-testid="score-hand" :disabled="!preview || !inRound || run.handsRemaining === 0" @click="scoreSelectedHand">
-                  Score selected hand
-                </UButton>
-                <UButton data-testid="clear-selection" color="neutral" variant="ghost" :disabled="selectedIndexes.length === 0" @click="clearSelection">
-                  Clear selection
-                </UButton>
-              </div>
-              <p v-if="scoredHand" data-testid="scored-hand" aria-live="polite" class="text-sm font-semibold text-amber-300">
-                Scored {{ scoredHand.label }}: +{{ scoredHand.score }} chips.
-              </p>
-              <p class="text-xs text-muted">
-                Only highlighted cards contribute to scoring, but all {{ rules.cardsPerPlay }} committed cards leave your hand.
-                Cards discarded using the separate action are replaced without earning chips.
-                Chip and perk prices are provisional. Permanent upgrades, card-specific multipliers, and transcendence come later.
-              </p>
-            </div>
+            <ScoringPanel :preview="preview" :scored-hand="scoredHand"
+              :eligible-options="eligibleOptions" :selected-cards="selectedCards"
+              :selected-count="selectedIndexes.length" :manual-unlocked="manualUnlocked"
+              :selection-mode="selectionMode" :cards-per-play="rules.cardsPerPlay"
+              :in-round="inRound" :hands-remaining="run.handsRemaining"
+              @set-selection-mode="setSelectionMode" @choose-scoring-option="chooseScoringOption"
+              @score-hand="scoreSelectedHand" @clear-selection="clearSelection" />
 
             <div class="flex flex-wrap gap-3">
               <UButton data-testid="discard-selected" icon="i-lucide-trash-2"
@@ -391,111 +213,18 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
             </div>
             <p aria-live="polite" class="text-sm text-muted">{{ lastAction }}</p>
             <p class="text-xs text-muted">
-              Played and discarded cards are recycled when needed. Perks purchased between rounds modify the next round.
+              Played and discarded cards are recycled when needed. Rule upgrades purchased during play apply to the next round.
             </p>
           </div>
         </UCard>
       </section>
 
-      <section aria-labelledby="shop-heading" class="space-y-3">
-        <UCard>
-          <div class="space-y-4">
-            <div class="flex flex-wrap items-start justify-between gap-3">
-              <div class="space-y-1">
-                <p class="text-xs font-semibold uppercase tracking-widest text-amber-300">Milestone 5 · Run upgrades</p>
-                <h2 id="shop-heading" class="text-2xl font-bold">Perk shop — always open</h2>
-                <p class="text-sm text-muted">
-                  Clear rounds to earn upgrade chips, then shop any time during an active run.
-                  Rule upgrades apply next round; Manual Selection unlocks immediately. Scoring chips are never spent.
-                </p>
-              </div>
-              <div class="rounded-lg border border-default p-3">
-                <p class="text-xs text-muted">Upgrade chips available</p>
-                <p data-testid="upgrade-chip-balance" class="text-2xl font-bold">{{ progress.upgradeChips }}</p>
-              </div>
-            </div>
-            <p v-if="run.phase !== 'game_over'" data-testid="shop-open" class="text-sm text-green-400">
-              Shop open throughout your run. Purchase any affordable upgrade whenever you like.
-            </p>
-            <p v-else data-testid="shop-ended" class="text-sm text-muted">
-              This run has ended. The shop is still visible, but run-only perks cannot be purchased after defeat.
-              Start a new run to play again.
-            </p>
-            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              <div v-for="perk in perkCatalog" :key="perk.id" class="space-y-2 rounded-lg border border-default p-3">
-                <h3 class="font-semibold">{{ perk.label }}</h3>
-                <p class="text-xs text-muted">{{ perk.description }}</p>
-                <p class="text-xs text-muted">Level {{ progress.levels[perk.id] }} / {{ perk.maxLevel }}</p>
-                <UButton size="sm" :data-testid="`buy-${perk.id}`"
-                  :disabled="!canBuy(perk.id)" @click="buyPerk(perk.id)">
-                  {{ priceFor(perk.id) === null ? 'Max level' : `Buy for ${priceFor(perk.id)} upgrade chips` }}
-                </UButton>
-              </div>
-            </div>
-            <p class="text-xs text-muted">
-              Current round: {{ rules.handSize }} held cards, {{ rules.cardsPerPlay }} cards per play,
-              {{ rules.maxCardsPerDiscard }} cards per discard, {{ rules.baseHandsPerRound }} base hands,
-              and {{ rules.baseDiscardsPerRound }} base discards.
-              Next round: {{ nextRoundRules.handSize }} held cards, {{ nextRoundRules.cardsPerPlay }} cards per play,
-              {{ nextRoundRules.maxCardsPerDiscard }} cards per discard, {{ nextRoundRules.baseHandsPerRound }} base hands,
-              and {{ nextRoundRules.baseDiscardsPerRound }} base discards.
-              Run upgrades reset on a new run.
-            </p>
-          </div>
-        </UCard>
-      </section>
+      <PerkShop :phase="run.phase" :progress="progress" :rules="rules"
+        :next-round-rules="nextRoundRules" @buy-perk="buyPerk" />
 
-      <section aria-labelledby="progress-heading" class="space-y-3">
-        <h2 id="progress-heading" class="text-xl font-semibold">Development progress</h2>
-        <div class="grid gap-3 sm:grid-cols-3">
-          <div class="rounded-lg border border-default p-4 space-y-2">
-            <p class="text-xs uppercase tracking-wide text-muted">Milestone 1</p>
-            <p class="font-semibold">Foundation</p>
-            <UBadge color="success" variant="subtle">Implemented</UBadge>
-          </div>
-          <div class="rounded-lg border border-primary p-4 space-y-2">
-            <p class="text-xs uppercase tracking-wide text-muted">Milestone 2</p>
-            <p class="font-semibold">Deck and visual cards</p>
-            <UBadge color="success" variant="subtle">Implemented</UBadge>
-          </div>
-          <div class="rounded-lg border border-default p-4 space-y-2">
-            <p class="text-xs uppercase tracking-wide text-muted">Milestone 5</p>
-            <p class="font-semibold">Run upgrades</p>
-            <UBadge color="primary" variant="subtle">Current</UBadge>
-          </div>
-        </div>
-        <p class="text-sm text-muted">
-          Milestone 4 delivered endless rounds, thresholds and discards. Milestone 5 adds
-          spendable upgrade chips, a between-round shop, and unlockable Manual Selection.
-          Up next: Milestone 6 — persistent progression groundwork.
-        </p>
-      </section>
+      <DevelopmentProgress />
 
-      <section aria-labelledby="system-heading">
-        <UCard>
-          <div class="space-y-4">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <h2 id="system-heading" class="text-xl font-semibold">System status</h2>
-              <UBadge :color="error ? 'error' : health ? 'success' : 'neutral'" variant="subtle">
-                {{ error ? 'API unavailable' : health ? 'API connected' : 'Connecting' }}
-              </UBadge>
-            </div>
-            <div v-if="health" class="grid gap-2 text-sm sm:grid-cols-3">
-              <p><span class="text-muted">Backend:</span> {{ health.service }}</p>
-              <p><span class="text-muted">Contract:</span> {{ health.version }}</p>
-              <p><span class="text-muted">Status:</span> {{ health.status }}</p>
-            </div>
-            <p v-else-if="error" class="text-sm text-error">
-              Unable to reach the API. Start both servers with pnpm dev and try again.
-            </p>
-            <p v-else class="text-sm text-muted">Checking backend connection…</p>
-
-            <UButton color="primary" variant="soft" :loading="status === 'pending'" @click="refresh()">
-              Check connection again
-            </UButton>
-          </div>
-        </UCard>
-      </section>
+      <SystemStatus :health="health" :error="error" :status="status" @refresh="refresh" />
     </div>
   </UContainer>
 </template>
