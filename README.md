@@ -289,3 +289,7 @@ The initial single-file Nuxt game page has been separated into components under 
 `apps/web/app/pages/index.vue` remains the **single stateful page orchestrator**: it calls the pure `@pokermanic/engine`, owns run/progression state, and passes data into child components through typed props. Components send typed events back to the page for game actions. The gameplay rules and public UI behaviors are unchanged. These components are auto-imported by Nuxt; no manual registration or global stores are necessary.
 
 Run `pnpm typecheck`, `pnpm test`, `pnpm build`, `pnpm smoke` and manually verify card selection, auto/manual modes, shop purchases during a round, scoring, discards, next-round progression, and restarting a run. This is a refactor within **Milestone 5**, not a new milestone.
+
+## Milestone 5 — Sort cards by rank or suit
+
+The `PlayingCardHand.vue` component now has **Dealt order** (default), **Rank** (Ace to Two, with suit tiebreaks), and **Suit** (♠, ♥, ♦, ♣, highest ranks first within each suit) buttons. Sorting changes only the visual order and never mutates `RunState.hand` or changes the game's draw order. All card actions and highlights use preserved original indices, so sorting does not change selected cards or their scoring or discard behavior. Sort preferences remain active across hands during a page session. Unit tests cover both orderings and selection identity. This remains Milestone 5.

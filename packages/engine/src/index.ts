@@ -13,3 +13,5 @@ export {
   purchaseRunUpgrade, applyRunUpgrades, manualSelectionUnlocked,
 } from './progression.js';
 export type { RunUpgradeId, RunUpgradeDefinition, RunProgress } from './progression.js';
+export { sortHandForDisplay } from './hand-sort.js';
+export type { HandSortMode, IndexedCard } from './hand-sort.js';
