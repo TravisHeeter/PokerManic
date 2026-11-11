@@ -1,6 +1,6 @@
-# PokerManic — Milestone 3: Poker hand evaluation and scoring
+# PokerManic — Milestone 4: Endless survival rounds
 
-Browser-based poker survival roguelite in development. Milestone 1 established the stack; Milestone 2 added the deck and visual cards. Milestone 3 adds five-card poker hand recognition and provisional scoring.
+Browser-based poker survival roguelite in development. Milestone 1 established the stack; Milestone 2 added the deck and visual cards. Milestone 3 added player-directed scoring foundations. Milestone 4 makes the game playable with escalating round thresholds, limited scoring hands, discards, and round progression.
 
 ## Prerequisites
 
@@ -192,3 +192,50 @@ The engine enumerates **all eligible scoring subsets**, not just the highest ran
 **Testing in Milestone 3:** The homepage remains a five-card scoring demonstration. It starts in **Automatic** with Manual disabled; its **Preview unlocked perk** button is a temporary, clearly labeled development switch, not an earned unlock, purchase, or persistent account setting. In Manual, radio choices show all qualifying formations; the chosen set of scoring cards is highlighted. Automatic disables radio inputs again. No rank-specific bonuses are live yet.
 
 **Planned roguelite systems, not implemented yet:** Endless escalating chip-target rounds with possible longer rounds; purchasable and persistent upgrades; configurable hand size, cards playable per hand, cards discarded at once (eventually up to eight), hands per round, and discards per round; transcendence resets a run but retains separately modeled permanent advantages. Build game state with separate run and permanent progression, and distinguish score from spendable chip currency. Cards will gain unique instance IDs when per-card modifiers arrive. Perk purchases, score multipliers attached to individual cards, progression and persistence remain future milestones. No milestone letter subdivisions.
+
+## Milestone 4: Endless survival rounds
+
+Milestone 4 turns the Milestone 3 scoring demo into the first **playable run loop**.
+
+- **Round 1:** 60-chip target, four scoring hands and three discard actions.
+- **Playing cards:** Select exactly five and press **Score selected hand**. All five cards leave your hand, but only the chosen eligible scoring subset contributes chips. The game refills your hand from the draw pile and subtracts one scoring hand. The confirmed scoring option remains automatic unless the Manual Hand Selection perk preview is activated.
+- **Discarding:** Select one to five cards and press **Discard selected**. They are replaced and one discard action is consumed. Discarding earns no chips.
+- **Progression:** Once round chips meet the target, the game pauses in a success state; press **Next round** to shuffle a fresh 52-card deck and face a higher target. Run total chips carry forward; round chips, hands, and discards reset.
+- **Defeat:** Using the final scoring hand without reaching the chip target ends the run. **Start new run** returns to Round 1 and resets the total.
+- **Card recycling:** If a round's draw pile empties, played and discarded cards are reshuffled back into the draw pile as needed, so a run is not lost merely because the deck was exhausted. Hand selection and card identity are preserved within each new draw.
+- **No maximum round:** The target and action-limit functions accept positive round numbers, with no fixed end-of-game round. At high rounds additional scoring hands and discards increase round length; the exact pacing is provisional and bounded by safe integer arithmetic.
+
+Round configuration resides entirely in `packages/engine/src/rounds.ts` as `DEFAULT_ROUND_RULES`:
+
+| Rule | Milestone 4 default |
+|---|---:|
+| Hand size | 8 |
+| Cards committed per scoring hand | 5 |
+| Maximum cards discarded per action | 5 |
+| Starting scoring hands | 4 |
+| Starting discards | 3 |
+| Extra scoring hand | Every 4 completed rounds |
+| Extra discard | Every 6 completed rounds |
+| Chip target (round `n`) | `60 + 40(n - 1) + 15(n - 1)²` |
+
+These are **temporary balance parameters**. Future perks can increase these values without changing the core scoring algorithm. Score chips are **not a spendable currency** yet; store and progression mechanics remain out of scope. The developer-only manual hand-selection preview is retained, not treated as an earned upgrade.
+
+### Local acceptance tests
+
+```bash
+pnpm install
+pnpm typecheck
+pnpm test
+pnpm build
+pnpm dev
+```
+
+In a second terminal with both servers running:
+
+```bash
+pnpm smoke
+```
+
+At http://localhost:3000 check the initial 60-chip target, 4 hands, 3 discards, 8 held cards and 44 in the draw pile. Score a hand and see chips and hands remaining change. Discard 1–5 cards and verify that only the discard count decreases. Try the temporary Manual perk preview, including High Card choices. Reach a target and advance to Round 2. Lose a run by exhausting scoring hands below the target and restart it. Confirm the red M favicon still appears.
+
+**Up next: Milestone 5** — configurable progression and player-upgrade foundations. Permanent perks, transcendence, purchasing currencies and persistence will be added in subsequent milestones, not implied by the current demonstration.
