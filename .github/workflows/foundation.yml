@@ -1,0 +1,75 @@
+name: Foundation verification
+
+on:
+  push:
+    branches:
+      - main
+      - "feat/**"
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  foundation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.16.1
+          run_install: false
+
+      - name: Use project Node version
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Verify project structure
+        run: pnpm verify:scaffold
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Production builds
+        run: pnpm build
+
+      - name: Start production servers and wait for readiness
+        run: |
+          node apps/api/dist/main.js >/tmp/pokermanic-api.log 2>&1 &
+          PORT=3000 NITRO_PORT=3000 NEST_API_BASE_URL=http://127.0.0.1:4000 \
+            node apps/web/.output/server/index.mjs >/tmp/pokermanic-web.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:4000/api/health >/dev/null \
+              && curl -fsS http://127.0.0.1:3000 >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo 'API server log:'
+          cat /tmp/pokermanic-api.log
+          echo 'Nuxt server log:'
+          cat /tmp/pokermanic-web.log
+          exit 1
+
+      - name: End-to-end smoke tests
+        env:
+          SMOKE_API_URL: http://127.0.0.1:4000
+          SMOKE_WEB_URL: http://127.0.0.1:3000
+        run: pnpm smoke
+
+      - name: Print server logs on failure
+        if: failure()
+        run: |
+          cat /tmp/pokermanic-api.log 2>/dev/null || true
+          cat /tmp/pokermanic-web.log 2>/dev/null || true
