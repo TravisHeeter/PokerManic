@@ -3,21 +3,35 @@ import { computed, ref } from 'vue';
 import type { CardSuit } from '@pokermanic/contracts';
 import {
   DEFAULT_ROUND_RULES,
+  RUN_UPGRADES,
   advanceRound,
+  applyRunUpgrades,
+  awardRoundUpgradeChips,
+  createRunProgress,
   discardCards,
   listEligiblePokerHands,
   playScoringHand,
+  purchaseRunUpgrade,
   resolveScoringOption,
   startRun,
+  upgradeCost,
+  manualSelectionUnlocked,
 } from '@pokermanic/engine';
-import type { RunState, ScoringOption } from '@pokermanic/engine';
+import type { RunState, ScoringOption, RunUpgradeId, RunProgress } from '@pokermanic/engine';
 
 useSeoMeta({
-  title: 'PokerManic | Milestone 4 — Survival rounds',
-  description: 'Survive escalating poker chip thresholds with limited hands and discards.',
+  title: 'PokerManic | Milestone 5 — Run upgrades',
+  description: 'Earn upgrade chips on round wins and purchase perks between survival rounds.',
 });
 
-const rules = DEFAULT_ROUND_RULES;
+const progress = ref<RunProgress>(createRunProgress());
+const rules = computed(() => applyRunUpgrades(DEFAULT_ROUND_RULES, progress.value));
+const perkCatalog = RUN_UPGRADES;
+const priceFor = (id: RunUpgradeId) => upgradeCost(progress.value, id);
+const canBuy = (id: RunUpgradeId) => {
+  const cost = priceFor(id);
+  return run.value.phase === 'round_won' && cost !== null && progress.value.upgradeChips >= cost;
+};
 const SUIT_SYMBOLS: Record<CardSuit, string> = {
   hearts: '♥',
   diamonds: '♦',
@@ -41,7 +55,7 @@ function openingRandom(): () => number {
   };
 }
 
-const run = ref<RunState>(startRun(rules, openingRandom()));
+const run = ref<RunState>(startRun(DEFAULT_ROUND_RULES, openingRandom()));
 const hand = computed(() => run.value.hand);
 const remainingDeck = computed(() => run.value.drawPile);
 const inRound = computed(() => run.value.phase === 'playing');
@@ -49,25 +63,24 @@ const selectedIndexes = ref<number[]>([]);
 const selectedInputIndexes = computed(() => hand.value.flatMap((_, i) =>
   selectedIndexes.value.includes(i) ? [i] : []));
 const selectedCards = computed(() => selectedInputIndexes.value.map((i) => hand.value[i]!));
-const eligibleOptions = computed(() => selectedCards.value.length === rules.cardsPerPlay
+const eligibleOptions = computed(() => selectedCards.value.length === rules.value.cardsPerPlay
   ? listEligiblePokerHands(selectedCards.value) : []);
 
-// Temporary developer preview only: no purchasable/persistent perk has been unlocked.
-const demoPerkUnlocked = ref(false);
+const manualUnlocked = computed(() => manualSelectionUnlocked(progress.value));
 const selectionMode = ref<'automatic' | 'manual'>('automatic');
 const manualOptionId = ref<string>();
 const preview = computed(() => resolveScoringOption(eligibleOptions.value, {
-  manualSelectionUnlocked: demoPerkUnlocked.value,
+  manualSelectionUnlocked: manualUnlocked.value,
   selectionMode: selectionMode.value,
 }, manualOptionId.value));
 const scoringCardIndexes = computed(() => preview.value?.scoringCardIndices
   .map((i) => selectedInputIndexes.value[i]!) ?? []);
 const scoredHand = ref<ScoringOption | null>(null);
-const lastAction = ref('Run started. Select five cards to score or discard up to five.');
+const lastAction = ref('Run started. Earn upgrade chips by clearing rounds. Buy perks between rounds.');
 const canDiscardSelection = computed(() => inRound.value
   && run.value.discardsRemaining > 0
   && selectedIndexes.value.length >= 1
-  && selectedIndexes.value.length <= rules.maxCardsPerDiscard);
+  && selectedIndexes.value.length <= rules.value.maxCardsPerDiscard);
 
 function clearSelection() {
   selectedIndexes.value = [];
@@ -75,21 +88,14 @@ function clearSelection() {
   scoredHand.value = null;
 }
 
-function toggleDemoPerk() {
-  demoPerkUnlocked.value = !demoPerkUnlocked.value;
-  if (!demoPerkUnlocked.value) selectionMode.value = 'automatic';
-  manualOptionId.value = undefined;
-  scoredHand.value = null;
-}
-
-function setSelectionMode(mode: 'automatic' | 'manual') {
-  if (mode === 'manual' && !demoPerkUnlocked.value) return;
+ function setSelectionMode(mode: 'automatic' | 'manual') {
+  if (mode === 'manual' && !manualUnlocked.value) return;
   selectionMode.value = mode;
   scoredHand.value = null;
 }
 
 function chooseScoringOption(optionId: string) {
-  if (!demoPerkUnlocked.value || selectionMode.value !== 'manual') return;
+  if (!manualUnlocked.value || selectionMode.value !== 'manual') return;
   manualOptionId.value = optionId;
   scoredHand.value = null;
 }
@@ -98,7 +104,7 @@ function toggleCard(index: number) {
   if (!inRound.value) return;
   if (selectedIndexes.value.includes(index)) {
     selectedIndexes.value = selectedIndexes.value.filter((value) => value !== index);
-  } else if (selectedIndexes.value.length < rules.cardsPerPlay) {
+  } else if (selectedIndexes.value.length < Math.max(rules.value.cardsPerPlay, rules.value.maxCardsPerDiscard)) {
     selectedIndexes.value = [...selectedIndexes.value, index];
   }
   manualOptionId.value = undefined;
@@ -108,11 +114,14 @@ function toggleCard(index: number) {
 function scoreSelectedHand() {
   if (!preview.value || !inRound.value) return;
   const next = playScoringHand(run.value, selectedInputIndexes.value, {
-    manualSelectionUnlocked: demoPerkUnlocked.value,
+    manualSelectionUnlocked: manualUnlocked.value,
     selectionMode: selectionMode.value,
-  }, manualOptionId.value, rules);
+  }, manualOptionId.value, rules.value);
   const scored = next.lastScored;
   run.value = next;
+  if (next.phase === 'round_won') {
+    progress.value = awardRoundUpgradeChips(next, progress.value);
+  }
   clearSelection();
   scoredHand.value = scored;
   lastAction.value = scored
@@ -123,22 +132,31 @@ function scoreSelectedHand() {
 function discardSelectedCards() {
   if (!canDiscardSelection.value) return;
   const count = selectedIndexes.value.length;
-  run.value = discardCards(run.value, selectedIndexes.value, rules);
+  run.value = discardCards(run.value, selectedIndexes.value, rules.value);
   clearSelection();
   lastAction.value = `Discarded ${count} ${count === 1 ? 'card' : 'cards'} and drew replacements.`;
 }
 
 function nextRound() {
   if (run.value.phase !== 'round_won') return;
-  run.value = advanceRound(run.value, rules);
+  run.value = advanceRound(run.value, rules.value);
   clearSelection();
   lastAction.value = `Round ${run.value.round} started. Reach ${run.value.roundTarget} chips to survive.`;
 }
 
 function restartRun() {
-  run.value = startRun(rules);
+  progress.value = createRunProgress();
+  run.value = startRun(rules.value);
+  selectionMode.value = 'automatic';
   clearSelection();
-  lastAction.value = 'A new run started at Round 1. Previous run scores were reset.';
+  lastAction.value = 'New run started. Run-only perks, upgrade chips and prior scores were reset.';
+}
+
+function buyPerk(id: RunUpgradeId) {
+  if (!canBuy(id)) return;
+  progress.value = purchaseRunUpgrade(run.value, progress.value, id);
+  clearSelection();
+  lastAction.value = 'Perk purchased. Its effect applies starting next round.';
 }
 
 const { data: health, error, status, refresh } = await useFetch('/api/health');
@@ -149,7 +167,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
     <div class="mx-auto max-w-6xl space-y-9">
       <header class="space-y-4">
         <div class="flex flex-wrap items-center gap-3">
-          <p class="uppercase tracking-[0.25em] text-sm text-amber-300">Milestone 4 / Survival rounds</p>
+          <p class="uppercase tracking-[0.25em] text-sm text-amber-300">Milestone 5 / Run upgrades</p>
           <UBadge color="primary" variant="subtle">Current milestone</UBadge>
         </div>
         <div class="space-y-2">
@@ -166,11 +184,12 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
             <div class="flex flex-wrap items-start justify-between gap-4">
               <div class="space-y-1">
                 <p class="text-xs font-semibold uppercase tracking-widest text-amber-300">
-                  Milestone 4 playable survival demo
+                  Milestone 5 playable upgrade demo
                 </p>
                 <h2 id="hand-heading" class="text-3xl font-bold">Your hand</h2>
                 <p class="text-sm text-muted">
-                  Play five cards to earn chips, or discard up to five to improve your hand. Beat the escalating target before your scoring hands run out.
+                  Play {{ rules.cardsPerPlay }} cards to earn scoring chips, or discard up to {{ rules.maxCardsPerDiscard }}.
+                  Beat the target, earn upgrade chips, and buy perks between rounds.
                 </p>
               </div>
               <UBadge color="success" variant="subtle">Card engine connected</UBadge>
@@ -217,7 +236,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
                   <p data-testid="deck-count" class="mt-1 text-xl font-bold">{{ remainingDeck.length }}</p>
                 </div>
                 <div class="rounded-lg border border-default p-3">
-                  <p class="text-xs text-muted">Run total chips</p>
+                  <p class="text-xs text-muted">Run scoring chips</p>
                   <p data-testid="total-score" class="mt-1 text-xl font-bold">{{ run.totalChips }}</p>
                 </div>
               </div>
@@ -239,9 +258,10 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
             </div>
 
             <p class="text-sm text-muted">
-              Choose five cards to score, or select one to five cards to discard. The game scores the strongest qualifying hand automatically
+              Choose {{ rules.cardsPerPlay }} cards to score, or select up to {{ rules.maxCardsPerDiscard }} to discard.
+              The game scores the strongest qualifying hand automatically
               until the Manual Hand Selection perk is unlocked.
-              <strong data-testid="selected-count" class="text-highlighted">{{ selectedIndexes.length }} of {{ rules.cardsPerPlay }} selected</strong>
+              <strong data-testid="selected-count" class="text-highlighted">{{ selectedIndexes.length }} selected · {{ rules.cardsPerPlay }} to score</strong>
             </p>
 
             <div data-testid="card-hand" aria-label="Current eight-card hand" class="grid grid-cols-4 gap-2 sm:grid-cols-8 sm:gap-3">
@@ -252,7 +272,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
                 data-testid="playing-card"
                 :aria-label="`${selectedIndexes.includes(index) ? 'Deselect' : 'Select'} ${card.rank} of ${card.suit}`"
                 :aria-pressed="selectedIndexes.includes(index)"
-                :disabled="!inRound || (selectedIndexes.length === rules.cardsPerPlay && !selectedIndexes.includes(index))"
+                :disabled="!inRound || (selectedIndexes.length === Math.max(rules.cardsPerPlay, rules.maxCardsPerDiscard) && !selectedIndexes.includes(index))"
                 @click="toggleCard(index)"
                 class="relative flex aspect-[5/7] select-none flex-col justify-between rounded-xl border border-slate-200 bg-[#faf8f1] p-2 text-left shadow-lg shadow-black/30 transition-all hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 disabled:cursor-not-allowed disabled:opacity-60 sm:p-3"
                 :data-scoring-card="scoringCardIndexes.includes(index) ? 'true' : 'false'"
@@ -294,18 +314,19 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
                       Automatic chooses the highest-ranking formation, not necessarily the highest scoring after upgrades.
                     </p>
                   </div>
-                  <UButton data-testid="preview-unlock" size="sm" color="neutral" variant="outline" @click="toggleDemoPerk">
-                    {{ demoPerkUnlocked ? 'Re-lock perk preview' : 'Preview unlocked perk' }}
-                  </UButton>
+                  <UBadge :color="manualUnlocked ? 'success' : 'neutral'" variant="subtle" data-testid="manual-perk-status">
+                    {{ manualUnlocked ? 'Manual Selection purchased' : 'Manual Selection locked' }}
+                  </UBadge>
                 </div>
-                <p class="text-xs text-amber-300">
-                  Developer preview only: this is not a purchased or persistent perk.
+                <p class="text-xs text-muted">
+                  Purchase Manual Hand Selection from the post-round shop to enable the Manual mode.
+                  Automatic mode is always available.
                 </p>
                 <div role="group" aria-label="Hand selection mode" class="flex flex-wrap gap-2">
                   <UButton data-testid="automatic-mode" size="sm" :variant="selectionMode === 'automatic' ? 'solid' : 'outline'"
                     @click="setSelectionMode('automatic')">Automatic</UButton>
                   <UButton data-testid="manual-mode" size="sm" :variant="selectionMode === 'manual' ? 'solid' : 'outline'"
-                    :disabled="!demoPerkUnlocked" @click="setSelectionMode('manual')">Manual</UButton>
+                    :disabled="!manualUnlocked" @click="setSelectionMode('manual')">Manual</UButton>
                 </div>
                 <p v-if="selectionMode === 'automatic'" class="text-xs text-muted">
                   Automatic selection active. Scoring choices below are disabled.
@@ -317,10 +338,10 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
                   class="max-h-64 space-y-2 overflow-y-auto" role="radiogroup" aria-label="Qualifying scoring hands">
                   <label v-for="option in eligibleOptions" :key="option.id"
                     class="flex items-start gap-2 rounded-md border border-default p-2 text-sm"
-                    :class="!demoPerkUnlocked || selectionMode === 'automatic' ? 'opacity-55' : 'cursor-pointer'">
+                    :class="!manualUnlocked || selectionMode === 'automatic' ? 'opacity-55' : 'cursor-pointer'">
                     <input type="radio" name="scoring-option" class="mt-1 accent-amber-400"
                       :value="option.id" :checked="preview?.id === option.id"
-                      :disabled="!demoPerkUnlocked || selectionMode === 'automatic'"
+                      :disabled="!manualUnlocked || selectionMode === 'automatic'"
                       @change="chooseScoringOption(option.id)">
                     <span>{{ option.label }}:
                       <span class="text-muted">{{ option.scoringCardIndices.map(i =>
@@ -328,7 +349,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
                     </span>
                   </label>
                 </div>
-                <p v-else class="text-xs text-muted">Select five cards to see eligible formations.</p>
+                <p v-else class="text-xs text-muted">Choose {{ rules.cardsPerPlay }} cards to see eligible formations.</p>
               </div>
 
               <div class="flex flex-wrap items-center gap-3">
@@ -343,9 +364,9 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
                 Scored {{ scoredHand.label }}: +{{ scoredHand.score }} chips.
               </p>
               <p class="text-xs text-muted">
-                Only the highlighted cards contribute to scoring, but all five committed cards leave your hand.
+                Only highlighted cards contribute to scoring, but all {{ rules.cardsPerPlay }} committed cards leave your hand.
                 Cards discarded using the separate action are replaced without earning chips.
-                Chip values are provisional; paid perks, card-specific multipliers, and persistence come later.
+                Chip and perk prices are provisional. Permanent upgrades, card-specific multipliers, and transcendence come later.
               </p>
             </div>
 
@@ -362,7 +383,50 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
             </div>
             <p aria-live="polite" class="text-sm text-muted">{{ lastAction }}</p>
             <p class="text-xs text-muted">
-              If the draw pile empties, used cards are shuffled back in automatically. There is no deck-exhaustion loss.
+              Played and discarded cards are recycled when needed. Perks purchased between rounds modify the next round.
+            </p>
+          </div>
+        </UCard>
+      </section>
+
+      <section aria-labelledby="shop-heading" class="space-y-3">
+        <UCard>
+          <div class="space-y-4">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div class="space-y-1">
+                <p class="text-xs font-semibold uppercase tracking-widest text-amber-300">Milestone 5 · Run upgrades</p>
+                <h2 id="shop-heading" class="text-2xl font-bold">Between-round perk shop</h2>
+                <p class="text-sm text-muted">
+                  Complete rounds to earn upgrade chips. Purchases last for this run only
+                  and take effect from the following round. Scoring chips are not spent.
+                </p>
+              </div>
+              <div class="rounded-lg border border-default p-3">
+                <p class="text-xs text-muted">Upgrade chips available</p>
+                <p data-testid="upgrade-chip-balance" class="text-2xl font-bold">{{ progress.upgradeChips }}</p>
+              </div>
+            </div>
+            <p v-if="run.phase === 'round_won'" data-testid="shop-open" class="text-sm text-green-400">
+              Shop open! Buy an upgrade or continue to the next round.
+            </p>
+            <p v-else class="text-sm text-muted">
+              Shop closed. Reach the round's chip target to unlock purchases.
+            </p>
+            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div v-for="perk in perkCatalog" :key="perk.id" class="space-y-2 rounded-lg border border-default p-3">
+                <h3 class="font-semibold">{{ perk.label }}</h3>
+                <p class="text-xs text-muted">{{ perk.description }}</p>
+                <p class="text-xs text-muted">Level {{ progress.levels[perk.id] }} / {{ perk.maxLevel }}</p>
+                <UButton size="sm" :data-testid="`buy-${perk.id}`"
+                  :disabled="!canBuy(perk.id)" @click="buyPerk(perk.id)">
+                  {{ priceFor(perk.id) === null ? 'Max level' : `Buy for ${priceFor(perk.id)} upgrade chips` }}
+                </UButton>
+              </div>
+            </div>
+            <p class="text-xs text-muted">
+              Current limits: {{ rules.handSize }} held cards, {{ rules.cardsPerPlay }} cards per play,
+              {{ rules.maxCardsPerDiscard }} cards per discard, {{ rules.baseHandsPerRound }} base hands,
+              and {{ rules.baseDiscardsPerRound }} base discards. Upgrades reset on a new run.
             </p>
           </div>
         </UCard>
@@ -382,15 +446,15 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
             <UBadge color="success" variant="subtle">Implemented</UBadge>
           </div>
           <div class="rounded-lg border border-default p-4 space-y-2">
-            <p class="text-xs uppercase tracking-wide text-muted">Milestone 4</p>
-            <p class="font-semibold">Survival rounds</p>
+            <p class="text-xs uppercase tracking-wide text-muted">Milestone 5</p>
+            <p class="font-semibold">Run upgrades</p>
             <UBadge color="primary" variant="subtle">Current</UBadge>
           </div>
         </div>
         <p class="text-sm text-muted">
-          Milestone 3 delivered eligible-hand discovery and automatic scoring, with a temporary perk preview.
-          Milestone 4 adds playable rounds, score thresholds, hands and discards.
-          Up next: Milestone 5 — player upgrades and progression foundations.
+          Milestone 4 delivered endless rounds, thresholds and discards. Milestone 5 adds
+          spendable upgrade chips, a between-round shop, and unlockable Manual Selection.
+          Up next: Milestone 6 — persistent progression groundwork.
         </p>
       </section>
 
