@@ -8,3 +8,8 @@ export {
   startRun, playScoringHand, discardCards, advanceRound,
 } from './rounds.js';
 export type { RoundRules, RunState, RunPhase } from './rounds.js';
+export {
+  RUN_UPGRADES, createRunProgress, awardRoundUpgradeChips, upgradeCost,
+  purchaseRunUpgrade, applyRunUpgrades, manualSelectionUnlocked,
+} from './progression.js';
+export type { RunUpgradeId, RunUpgradeDefinition, RunProgress } from './progression.js';
