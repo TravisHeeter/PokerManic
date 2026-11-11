@@ -28,7 +28,7 @@ const canBuy = (id: RunUpgradeId) => {
                 <h2 id="shop-heading" class="text-2xl font-bold">Perk shop — always open</h2>
                 <p class="text-sm text-muted">
                   Clear rounds to earn upgrade chips, then shop any time during an active run.
-                  Cards per Play and Manual Selection apply immediately. Other rule upgrades apply next round. Scoring chips are never spent.
+                  Cards per Play (any count from 1 to the unlocked max) and Manual Selection apply immediately. Other rule upgrades apply next round. Scoring chips are never spent.
                 </p>
               </div>
               <div class="rounded-lg border border-default p-3">

@@ -45,7 +45,7 @@ const selectedIndexes = ref<number[]>([]);
 const selectedInputIndexes = computed(() => hand.value.flatMap((_, i) =>
   selectedIndexes.value.includes(i) ? [i] : []));
 const selectedCards = computed(() => selectedInputIndexes.value.map((i) => hand.value[i]!));
-const eligibleOptions = computed(() => selectedCards.value.length >= 5
+const eligibleOptions = computed(() => selectedCards.value.length >= 1
   && selectedCards.value.length <= rules.value.cardsPerPlay
   ? listEligiblePokerHands(selectedCards.value) : []);
 
@@ -148,7 +148,7 @@ function buyPerk(id: RunUpgradeId) {
   lastAction.value = id === 'manual_selection'
     ? 'Manual Hand Selection unlocked! Switch to Manual to choose your scoring cards.'
     : id === 'cards_per_play'
-      ? `You can now score 5 to ${rules.value.cardsPerPlay} cards per play, immediately.`
+      ? `You can now score 1 to ${rules.value.cardsPerPlay} cards per play, immediately.`
       : 'Perk purchased. Your upgraded limits take effect next round.';
 }
 
@@ -181,7 +181,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
                 </p>
                 <h2 id="hand-heading" class="text-3xl font-bold">Your hand</h2>
                 <p class="text-sm text-muted">
-                  Play 5 to {{ rules.cardsPerPlay }} cards to earn scoring chips, or discard up to {{ rules.maxCardsPerDiscard }}.
+                  Play 1 to {{ rules.cardsPerPlay }} cards to earn scoring chips, or discard up to {{ rules.maxCardsPerDiscard }}.
                   Beat the target, earn upgrade chips, and spend them whenever you like during your run.
                 </p>
               </div>

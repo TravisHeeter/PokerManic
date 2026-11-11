@@ -28,10 +28,10 @@ const SUIT_TEXT: Record<CardSuit, string> = {
 
 <template>
             <p class="text-sm text-muted">
-              Choose 5 to {{ cardsPerPlay }} cards to score, or select up to {{ maxCardsPerDiscard }} to discard.
+              Choose 1 to {{ cardsPerPlay }} cards to score, or select up to {{ maxCardsPerDiscard }} to discard.
               The game scores the strongest qualifying hand automatically
               until the Manual Hand Selection perk is unlocked.
-              <strong data-testid="selected-count" class="text-highlighted">{{ selectedIndexes.length }} selected · 5–{{ cardsPerPlay }} to score</strong>
+              <strong data-testid="selected-count" class="text-highlighted">{{ selectedIndexes.length }} selected · 1–{{ cardsPerPlay }} to score</strong>
             </p>
 
             <div role="group" aria-label="Sort cards" class="flex flex-wrap items-center gap-2">

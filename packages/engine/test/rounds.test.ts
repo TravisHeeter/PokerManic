@@ -125,9 +125,24 @@ describe('Milestone 4 round rules', () => {
   });
 
 
-  it('allows both five-card and six-card plays with a six-card maximum', () => {
+  it('allows any count from one to six with a six-card maximum', () => {
     const rules: RoundRules = { ...DEFAULT_ROUND_RULES, cardsPerPlay: 6, baseChipTarget: 9999 };
     const state = fixture();
+    const one = playScoringHand(state, [2], undefined, undefined, rules, () => 0.5);
+    expect(one.lastScored).toMatchObject({ category: 'high_card', scoringCardIndices: [0] });
+    expect(one.playedCards).toEqual([state.hand[2]]);
+    expect(one.hand).toHaveLength(8);
+    expect(one.drawPile).toHaveLength(43);
+    expect(one.handsRemaining).toBe(state.handsRemaining - 1);
+    const two = playScoringHand(state, [0,2], undefined, undefined, rules, () => 0.5);
+    expect(two.lastScored?.category).toBe('high_card');
+    expect(two.playedCards).toHaveLength(2);
+    const three = playScoringHand(state, [0,2,5], undefined, undefined, rules, () => 0.5);
+    expect(three.lastScored?.category).toBe('high_card');
+    expect(three.playedCards).toHaveLength(3);
+    const four = playScoringHand(state, [0,1,2,5], undefined, undefined, rules, () => 0.5);
+    expect(four.lastScored?.category).toBe('high_card');
+    expect(four.playedCards).toHaveLength(4);
     const five = playScoringHand(state, [0,1,2,3,4], undefined, undefined, rules, () => 0.5);
     expect(five.lastScored?.category).toBe('straight');
     expect(five.playedCards).toHaveLength(5);
@@ -137,8 +152,22 @@ describe('Milestone 4 round rules', () => {
     expect(six.hand).toHaveLength(8);
     expect(six.drawPile).toHaveLength(38);
     expect(six.handsRemaining).toBe(state.handsRemaining - 1);
-    expect(() => playScoringHand(state, [0,1,2,3], undefined, undefined, rules)).toThrow(RangeError);
+    expect(() => playScoringHand(state, [], undefined, undefined, rules)).toThrow(RangeError);
     expect(() => playScoringHand(state, [0,1,2,3,4,5,6], undefined, undefined, rules)).toThrow(RangeError);
+  });
+
+  it('supports manual choice of a lower High Card when playing fewer than five cards', () => {
+    const state = fixture();
+    const cards = [state.hand[0]!, state.hand[2]!]; // King and Jack
+    const jack = listEligiblePokerHands(cards).find(option =>
+      option.category === 'high_card' && option.scoringCardIndices[0] === 1);
+    expect(jack).toBeDefined();
+    const scored = playScoringHand(state, [0,2],
+      { manualSelectionUnlocked: true, selectionMode: 'manual' },
+      jack!.id, DEFAULT_ROUND_RULES, () => 0.5);
+    expect(scored.lastScored?.scoringCardIndices).toEqual([1]);
+    expect(scored.playedCards).toEqual(cards);
+    expect(scored.roundChips).toBe(5);
   });
 
   it('supports full six-card scoring patterns when all six contribute', () => {

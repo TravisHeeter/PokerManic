@@ -66,6 +66,7 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /Manual Selection locked/);
   assert.match(html, /Automatic selection active/);
   assert.match(html, /Score selected hand/);
+  assert.match(html, /1–5 to score|1.{0,25}5 to score/);
   assert.match(html, /Sort cards:/);
   assert.match(html, /Dealt order/);
   assert.match(html, />Rank</);
