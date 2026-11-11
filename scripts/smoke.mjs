@@ -53,15 +53,19 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   const html = await response.text();
   assert.match(html, /PokerManic/);
   assert.match(html, /API connected/);
-  assert.match(html, /Milestone 2A/);
-  assert.match(html, /Card engine/);
-  assert.match(html, /52 cards/);
-  assert.match(html, /No playable cards yet/);
   assert.match(html, /Milestone 2B/);
+  assert.match(html, /Visual card hand/);
+  assert.match(html, /Remaining in deck/);
+  assert.match(html, /Shuffle &amp; deal|Shuffle & deal/);
+  assert.match(html, /Deal next hand/);
+  assert.match(html, /Milestone 3/);
+  // The first hand is seeded: both server and browser hydrate the same eight cards.
+  assert.equal((html.match(/data-testid="playing-card"/g) ?? []).length, 8);
+  assert.match(html, /data-testid="deck-count"[^>]*>44</);
 });
 
 if (process.exitCode) {
   console.error('The current milestone is NOT verified. Fix failures before proceeding.');
 } else {
-  console.log('Milestone 2A smoke tests passed.');
+  console.log('Milestone 2B smoke tests passed.');
 }

@@ -20,3 +20,10 @@
 15. **Incremental gate:** Validate engine tests and all existing integration checks before designing the Vue card UI.
 
 16. **Visible milestone requirement:** Every milestone must advance the Nuxt homepage’s milestone label, implementation summary, and next-step text—even if no new gameplay UI exists. The SSR smoke test must assert the current label to guard against stale pages.
+
+## Milestone 2B decisions
+
+17. **Engine is the source of truth:** The Vue page calls the exported `createStandardDeck`, `shuffleDeck`, and `dealCards` functions from `@pokermanic/engine`; no duplicate dealing logic in the component.
+18. **SSR-safe opening hand:** A seeded opening shuffle runs identically on server and client; fresh random shuffles run only after user interaction.
+19. **Demo scope:** The page shows rank/suit cards and draw-pile counts. No selection, scoring, persistence, or round rules are implied.
+20. **Visible acceptance:** The smoke test confirms milestone text and exactly eight rendered playing-card elements on initial SSR.
