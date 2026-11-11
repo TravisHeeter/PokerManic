@@ -83,14 +83,14 @@ export function awardRoundUpgradeChips(
   return { ...progress, upgradeChips: progress.upgradeChips + reward, rewardedThroughRound: state.round };
 }
 
-/** Purchases can only happen between rounds after the reward was earned. */
+/** The shop is always available while a run is active, including during rounds. */
 export function purchaseRunUpgrade(
   state: Readonly<RunState>,
   progress: Readonly<RunProgress>,
   id: RunUpgradeId,
 ): RunProgress {
-  if (state.phase !== 'round_won' || progress.rewardedThroughRound !== state.round) {
-    throw new Error('Perks can only be purchased in the post-round shop.');
+  if (state.phase === 'game_over') {
+    throw new Error('Cannot buy run-only perks after the run has ended.');
   }
   const cost = upgradeCost(progress, id);
   if (cost === null) throw new Error('This perk is already at its maximum level.');

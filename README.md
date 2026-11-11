@@ -242,9 +242,9 @@ At http://localhost:3000 check the initial 60-chip target, 4 hands, 3 discards, 
 
 ## Milestone 5: Spendable upgrade chips and run-only perks
 
-The first functional perk economy is part of **Milestone 5**, with a separate in-run currency and a between-round shop. It is intentionally distinct from the scoring system, and this is **not** permanent/transcendent progression.
+The first functional perk economy is part of **Milestone 5**, with a separate in-run currency and an always-open shop during active runs. It is intentionally distinct from the scoring system, and this is **not** permanent/transcendent progression.
 
-**Game flow:** Beat a round's scoring-chip target. The game awards **upgrade chips** equal to `floor(roundChips / 10)` (minimum 1). Those chips accumulate in a separate wallet; the round's scoring chips are not deducted. A shop becomes available in the won-round phase. Purchase any affordable perk or click **Next round** without purchasing. The purchased run-only levels affect **the following round**, not the round just completed. The same shop cannot pay its reward twice.
+**Game flow:** Beat a round's scoring-chip target. The game awards **upgrade chips** equal to `floor(roundChips / 10)` (minimum 1). Those chips accumulate in a separate wallet; the round's scoring chips are not deducted. The shop stays available throughout an active run. Buy any affordable perk while playing or after winning a round, or save your chips for later. **Rule upgrades affect the next round**, without changing your current hand or remaining actions; **Manual Hand Selection unlocks immediately** so players can switch to Manual during the same round. The same shop cannot pay its reward twice.
 
 The provisional run perks:
 
@@ -259,7 +259,7 @@ The provisional run perks:
 
 Each upgrade's price increases with its current level (`baseCost × (level + 1)`). The caps reflect the current pure engine limit of **eight cards per scoring play**, rather than a permanent design restriction. The existing radio-button interface is now **genuinely unlocked by purchasing** the perk, not a developer-only preview. Automatic remains available and is the default for every new run. When Manual is unlocked, it can score an individually chosen High Card even when higher cards exist.
 
-Purchases are permitted only in the post-round phase, and the controls remain disabled otherwise. A new run resets the run-only wallet, perk levels, and scoring history. A later milestone will introduce separately persisted/meta-currency and transcendence; **no permanent privileges exist yet**.
+Purchases are permitted during active play and between rounds. Buttons are disabled only for insufficient currency, a maximum-level perk, or after a run ends. The shop remains visible after defeat, but run-only purchases are unavailable because there is no remaining run to benefit from them. A new run resets the run-only wallet, perk levels, and scoring history. A later milestone will introduce separately persisted/meta-currency and transcendence; **no permanent privileges exist yet**.
 
 The upgrade rules are defined and tested in `packages/engine/src/progression.ts`, independent of Vue/Nuxt. The Nuxt page visibly identifies Milestone 5 and displays the wallet and shop.
 
@@ -273,4 +273,4 @@ pnpm build
 pnpm dev
 ```
 
-In a separate terminal run `pnpm smoke`. At `http://localhost:3000`, confirm that the wallet starts at 0, shop buttons are unavailable while playing, and Manual mode is locked. Win a round; verify the wallet receives a reward and the shop opens. Buy a perk and check that the wallet decreases. Advance; verify the upgraded limit is reflected in gameplay. Purchase Manual Hand Selection in a future won-round shop to enable Manual mode, then choose a lower High Card and switch back to Automatic. Starting a new run should clear purchases and reset the wallet.
+In a separate terminal run `pnpm smoke`. At `http://localhost:3000`, confirm that the shop is visible from Round 1 with the wallet at 0, with buy buttons disabled only because you cannot yet afford a perk. Win a round; verify the wallet receives a reward. Advance without purchasing, then buy a perk **during Round 2**. Verify the wallet decreases but existing round limits remain unchanged. Advance again to verify the upgraded limit is reflected in gameplay. Purchase Manual Hand Selection mid-round whenever affordable: Manual mode should enable immediately, and selecting a lower High Card should work without advancing another round. Switch back to Automatic. Starting a new run should clear purchases and reset the wallet.

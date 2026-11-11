@@ -52,8 +52,34 @@ describe('Milestone 5 in-run upgrade economy', () => {
     expect(advanced.handsRemaining).toBe(5);
     expect(run.handsRemaining).toBe(4);
     expect(run.roundChips).toBe(120);
-    expect(() => purchaseRunUpgrade(advanced, purchased, 'extra_discard')).toThrow();
-    expect(() => purchaseRunUpgrade(run, createRunProgress(), 'extra_discard')).toThrow();
+    const duringRound = purchaseRunUpgrade(advanced, purchased, 'extra_discard');
+    expect(duringRound).toMatchObject({ upgradeChips: 3, levels: { extra_hand: 1, extra_discard: 1 } });
+    // The active round's already-established allowance is unaffected.
+    expect(advanced.handsRemaining).toBe(5);
+    expect(advanced.discardsRemaining).toBe(3);
+    expect(() => purchaseRunUpgrade(advanced, createRunProgress(), 'extra_discard'))
+      .toThrow('Not enough');
+  });
+
+  it('keeps the shop open while playing and immediately unlocks manual hand selection', () => {
+    const rewarded = awardRoundUpgradeChips(won(), createRunProgress());
+    const active = advanceRound(won(), DEFAULT_ROUND_RULES, () => 0.5);
+    const before = structuredClone(active);
+    const purchased = purchaseRunUpgrade(active, rewarded, 'manual_selection');
+    expect(manualSelectionUnlocked(purchased)).toBe(true);
+    expect(purchased.upgradeChips).toBe(2);
+    expect(active).toEqual(before);
+    // No need to wait for another cleared round to activate the Manual toggle.
+    expect(upgradeCost(purchased, 'manual_selection')).toBeNull();
+    expect(() => purchaseRunUpgrade(active, purchased, 'manual_selection')).toThrow('maximum');
+  });
+
+  it('rejects purchases after defeat without making the shop disappear', () => {
+    const active = advanceRound(won(), DEFAULT_ROUND_RULES, () => 0.5);
+    const progress = awardRoundUpgradeChips(won(), createRunProgress());
+    const lost = { ...active, phase: 'game_over' as const };
+    expect(() => purchaseRunUpgrade(lost, progress, 'extra_discard')).toThrow('run has ended');
+    expect(progress.upgradeChips).toBe(12);
   });
 
   it('locks manual hand choice until the perk is purchased', () => {

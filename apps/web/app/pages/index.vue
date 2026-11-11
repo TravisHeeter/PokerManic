@@ -21,16 +21,19 @@ import type { RunState, ScoringOption, RunUpgradeId, RunProgress } from '@pokerm
 
 useSeoMeta({
   title: 'PokerManic | Milestone 5 — Run upgrades',
-  description: 'Earn upgrade chips on round wins and purchase perks between survival rounds.',
+  description: 'Earn upgrade chips on round wins and purchase run upgrades at any time during a run.',
 });
 
 const progress = ref<RunProgress>(createRunProgress());
-const rules = computed(() => applyRunUpgrades(DEFAULT_ROUND_RULES, progress.value));
+// Snapshot the rules at the start of each round. Mid-round purchases must not
+// silently change the number of selected cards, existing hand size or allowances.
+const rules = ref({ ...DEFAULT_ROUND_RULES });
+const nextRoundRules = computed(() => applyRunUpgrades(DEFAULT_ROUND_RULES, progress.value));
 const perkCatalog = RUN_UPGRADES;
 const priceFor = (id: RunUpgradeId) => upgradeCost(progress.value, id);
 const canBuy = (id: RunUpgradeId) => {
   const cost = priceFor(id);
-  return run.value.phase === 'round_won' && cost !== null && progress.value.upgradeChips >= cost;
+  return run.value.phase !== 'game_over' && cost !== null && progress.value.upgradeChips >= cost;
 };
 const SUIT_SYMBOLS: Record<CardSuit, string> = {
   hearts: '♥',
@@ -76,7 +79,7 @@ const preview = computed(() => resolveScoringOption(eligibleOptions.value, {
 const scoringCardIndexes = computed(() => preview.value?.scoringCardIndices
   .map((i) => selectedInputIndexes.value[i]!) ?? []);
 const scoredHand = ref<ScoringOption | null>(null);
-const lastAction = ref('Run started. Earn upgrade chips by clearing rounds. Buy perks between rounds.');
+const lastAction = ref('Run started. Earn upgrade chips by clearing rounds. The perk shop is always open.');
 const canDiscardSelection = computed(() => inRound.value
   && run.value.discardsRemaining > 0
   && selectedIndexes.value.length >= 1
@@ -88,7 +91,7 @@ function clearSelection() {
   scoredHand.value = null;
 }
 
- function setSelectionMode(mode: 'automatic' | 'manual') {
+function setSelectionMode(mode: 'automatic' | 'manual') {
   if (mode === 'manual' && !manualUnlocked.value) return;
   selectionMode.value = mode;
   scoredHand.value = null;
@@ -139,6 +142,7 @@ function discardSelectedCards() {
 
 function nextRound() {
   if (run.value.phase !== 'round_won') return;
+  rules.value = nextRoundRules.value;
   run.value = advanceRound(run.value, rules.value);
   clearSelection();
   lastAction.value = `Round ${run.value.round} started. Reach ${run.value.roundTarget} chips to survive.`;
@@ -146,6 +150,7 @@ function nextRound() {
 
 function restartRun() {
   progress.value = createRunProgress();
+  rules.value = { ...DEFAULT_ROUND_RULES };
   run.value = startRun(rules.value);
   selectionMode.value = 'automatic';
   clearSelection();
@@ -155,8 +160,11 @@ function restartRun() {
 function buyPerk(id: RunUpgradeId) {
   if (!canBuy(id)) return;
   progress.value = purchaseRunUpgrade(run.value, progress.value, id);
-  clearSelection();
-  lastAction.value = 'Perk purchased. Its effect applies starting next round.';
+  // A purchase never interrupts the player's selected cards or current round.
+  // Manual selection is immediately usable; rule modifiers start next round.
+  lastAction.value = id === 'manual_selection'
+    ? 'Manual Hand Selection unlocked! Switch to Manual to choose your scoring cards.'
+    : 'Perk purchased. Your upgraded limits take effect next round.';
 }
 
 const { data: health, error, status, refresh } = await useFetch('/api/health');
@@ -189,7 +197,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
                 <h2 id="hand-heading" class="text-3xl font-bold">Your hand</h2>
                 <p class="text-sm text-muted">
                   Play {{ rules.cardsPerPlay }} cards to earn scoring chips, or discard up to {{ rules.maxCardsPerDiscard }}.
-                  Beat the target, earn upgrade chips, and buy perks between rounds.
+                  Beat the target, earn upgrade chips, and spend them whenever you like during your run.
                 </p>
               </div>
               <UBadge color="success" variant="subtle">Card engine connected</UBadge>
@@ -395,10 +403,10 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
             <div class="flex flex-wrap items-start justify-between gap-3">
               <div class="space-y-1">
                 <p class="text-xs font-semibold uppercase tracking-widest text-amber-300">Milestone 5 · Run upgrades</p>
-                <h2 id="shop-heading" class="text-2xl font-bold">Between-round perk shop</h2>
+                <h2 id="shop-heading" class="text-2xl font-bold">Perk shop — always open</h2>
                 <p class="text-sm text-muted">
-                  Complete rounds to earn upgrade chips. Purchases last for this run only
-                  and take effect from the following round. Scoring chips are not spent.
+                  Clear rounds to earn upgrade chips, then shop any time during an active run.
+                  Rule upgrades apply next round; Manual Selection unlocks immediately. Scoring chips are never spent.
                 </p>
               </div>
               <div class="rounded-lg border border-default p-3">
@@ -406,11 +414,12 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
                 <p data-testid="upgrade-chip-balance" class="text-2xl font-bold">{{ progress.upgradeChips }}</p>
               </div>
             </div>
-            <p v-if="run.phase === 'round_won'" data-testid="shop-open" class="text-sm text-green-400">
-              Shop open! Buy an upgrade or continue to the next round.
+            <p v-if="run.phase !== 'game_over'" data-testid="shop-open" class="text-sm text-green-400">
+              Shop open throughout your run. Purchase any affordable upgrade whenever you like.
             </p>
-            <p v-else class="text-sm text-muted">
-              Shop closed. Reach the round's chip target to unlock purchases.
+            <p v-else data-testid="shop-ended" class="text-sm text-muted">
+              This run has ended. The shop is still visible, but run-only perks cannot be purchased after defeat.
+              Start a new run to play again.
             </p>
             <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <div v-for="perk in perkCatalog" :key="perk.id" class="space-y-2 rounded-lg border border-default p-3">
@@ -424,9 +433,13 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
               </div>
             </div>
             <p class="text-xs text-muted">
-              Current limits: {{ rules.handSize }} held cards, {{ rules.cardsPerPlay }} cards per play,
+              Current round: {{ rules.handSize }} held cards, {{ rules.cardsPerPlay }} cards per play,
               {{ rules.maxCardsPerDiscard }} cards per discard, {{ rules.baseHandsPerRound }} base hands,
-              and {{ rules.baseDiscardsPerRound }} base discards. Upgrades reset on a new run.
+              and {{ rules.baseDiscardsPerRound }} base discards.
+              Next round: {{ nextRoundRules.handSize }} held cards, {{ nextRoundRules.cardsPerPlay }} cards per play,
+              {{ nextRoundRules.maxCardsPerDiscard }} cards per discard, {{ nextRoundRules.baseHandsPerRound }} base hands,
+              and {{ nextRoundRules.baseDiscardsPerRound }} base discards.
+              Run upgrades reset on a new run.
             </p>
           </div>
         </UCard>

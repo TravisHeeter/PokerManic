@@ -68,7 +68,9 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /Score selected hand/);
   assert.match(html, /Discard selected/);
   assert.match(html, /Start new run/);
-  assert.match(html, /Between-round perk shop/);
+  assert.match(html, /Perk shop — always open/);
+  assert.match(html, /Shop open throughout your run/);
+  assert.doesNotMatch(html, /Shop closed/);
   assert.match(html, /Upgrade chips available/);
   assert.match(html, /Manual hand selection/);
   assert.match(html, /Milestone 6/);
