@@ -13,7 +13,7 @@ const props = defineProps<{
   inRound: boolean;
 }>();
 const emit = defineEmits<{ 'toggle-card': [index: number] }>();
-const sortMode = ref<HandSortMode>('dealt');
+const sortMode = ref<HandSortMode>('rank');
 const displayedCards = computed(() => sortHandForDisplay(props.hand, sortMode.value));
 const SUIT_SYMBOLS: Record<CardSuit, string> = {
   hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠',

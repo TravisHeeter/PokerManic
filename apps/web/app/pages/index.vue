@@ -27,17 +27,9 @@ const progress = ref<RunProgress>(createRunProgress());
 const rules = ref({ ...DEFAULT_ROUND_RULES });
 const nextRoundRules = computed(() => applyRunUpgrades(DEFAULT_ROUND_RULES, progress.value));
 
-// The first shuffled deck is reproducible during SSR and browser hydration.
-// New rounds and player-triggered restarts use genuine random shuffles.
-function openingRandom(): () => number {
-  let state = 20261111;
-  return () => {
-    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
-    return state / 4294967296;
-  };
-}
-
-const run = ref<RunState>(startRun(DEFAULT_ROUND_RULES, openingRandom()));
+// Nuxt useState serializes the randomly dealt opening run into the SSR payload.
+// The browser hydrates that exact run instead of shuffling a second time.
+const run = useState<RunState>('pokermanic-opening-run', () => startRun(DEFAULT_ROUND_RULES));
 const hand = computed(() => run.value.hand);
 const remainingDeck = computed(() => run.value.drawPile);
 const inRound = computed(() => run.value.phase === 'playing');

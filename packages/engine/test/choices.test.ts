@@ -53,6 +53,60 @@ describe('manual choice foundation', () => {
     expect(eight.some((o) => o.category === 'straight_flush' && o.scoringCardIndices.length === 7)).toBe(true);
   });
 
+
+  it('awards more chips for longer straights, flushes and straight flushes', () => {
+    const cards = [
+      c('2','hearts'),c('3','hearts'),c('4','hearts'),c('5','hearts'),
+      c('6','hearts'),c('7','hearts'),c('8','hearts'),c('9','hearts'),
+    ];
+    for (const category of ['straight','flush','straight_flush'] as const) {
+      const expectedBase = category === 'straight' ? 30 : category === 'flush' ? 35 : 100;
+      const multiplier = category === 'straight_flush' ? 8 : 4;
+      const amounts = [5,6,7,8].map(count => {
+        const option = listEligiblePokerHands(cards.slice(0,count))
+          .find(o => o.category === category && o.scoringCardIndices.length === count);
+        expect(option).toBeDefined();
+        expect(option!.baseChips).toBe(Math.round(expectedBase * (1 + 0.25 * (count - 5))));
+        expect(option!.score).toBe(option!.baseChips * multiplier);
+        return option!.score;
+      });
+      expect(amounts[0]).toBeLessThan(amounts[1]!);
+      expect(amounts[1]).toBeLessThan(amounts[2]!);
+      expect(amounts[2]).toBeLessThan(amounts[3]!);
+    }
+  });
+
+  it('awards bigger full houses for six, seven, and eight scoring cards', () => {
+    const cards = [
+      c('A','spades'), c('A','hearts'),c('A','diamonds'),c('A','clubs'),
+      c('K','spades'),c('K','hearts'),c('K','diamonds'),c('K','clubs'),
+    ];
+    const combinations = [
+      [0,1,2,4,5],             // 3 + 2
+      [0,1,2,4,5,6],           // 3 + 3
+      [0,1,2,3,4,5,6],         // 4 + 3
+      [0,1,2,3,4,5,6,7],       // 4 + 4
+    ];
+    const expected = [40,50,60,70];
+    combinations.forEach((indices,i) => {
+      const option = listEligiblePokerHands(indices.map(n=>cards[n]!))
+        .find(o=>o.category==='full_house' && o.scoringCardIndices.length === indices.length);
+      expect(option?.baseChips).toBe(expected[i]);
+      expect(option?.score).toBe(expected[i]! * 4);
+    });
+  });
+
+  it('only rewards the qualifying scoring subset, not extra unscored committed cards', () => {
+    const cards = [
+      c('2','hearts'),c('3','diamonds'),c('4','spades'),c('5','clubs'),c('6','hearts'),c('K','clubs')
+    ];
+    const options = listEligiblePokerHands(cards);
+    const straight = options.find(o=>o.category==='straight' && o.scoringCardIndices.length===5);
+    expect(straight?.baseChips).toBe(30);
+    expect(straight?.score).toBe(120);
+    expect(options.some(o=>o.category==='straight' && o.scoringCardIndices.length===6)).toBe(false);
+  });
+
   it('allows straight, flush, straight flush and high card for royal flush cards', () => {
     const cards = [c('10','hearts'),c('J','hearts'),c('Q','hearts'),c('K','hearts'),c('A','hearts')];
     const categories = new Set(listEligiblePokerHands(cards).map((o) => o.category));

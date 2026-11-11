@@ -70,6 +70,7 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /Sort cards:/);
   assert.match(html, /Dealt order/);
   assert.match(html, />Rank</);
+  assert.match(html, /data-testid="sort-rank"[^>]*aria-pressed="true"|aria-pressed="true"[^>]*data-testid="sort-rank"/);
   assert.match(html, />Suit</);
   assert.match(html, /Discard selected/);
   assert.match(html, /Start new run/);
@@ -84,7 +85,7 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /Manual hand selection/);
   assert.match(html, /Milestone 6/);
   assert.match(html, /Remaining in deck/);
-  // The first hand is seeded: both server and browser hydrate the same eight cards.
+  // The first hand is random per server render and serialized for identical browser hydration.
   assert.equal((html.match(/data-testid="playing-card"/g) ?? []).length, 8);
   assert.match(html, /data-testid="deck-count"[^>]*>44</);
   assert.match(html, /data-testid="chip-target"[^>]*>60</);

@@ -23,6 +23,20 @@ export interface HandSelectionSettings {
   selectionMode: 'automatic' | 'manual';
 }
 
+/**
+ * Provisional size premium for expanded poker formations: each extra card
+ * adds 25% of the category's five-card base chips (6: 1.25x, 7: 1.5x, 8: 1.75x).
+ * Five-card hand values and multipliers remain unchanged.
+ */
+export const EXTRA_CARD_BASE_CHIP_RATE = 0.25;
+
+function expandedBaseChips(category: ScoringCategory, baseChips: number, count: number): number {
+  if (count <= 5 || !['straight','flush','full_house','straight_flush'].includes(category)) {
+    return baseChips;
+  }
+  return Math.round(baseChips * (1 + (count - 5) * EXTRA_CARD_BASE_CHIP_RATE));
+}
+
 const EXTRA_PAIR_VALUES = {
   three_pair: { label: 'Three pair', baseChips: 30, multiplier: 3 },
   four_pair: { label: 'Four pair', baseChips: 40, multiplier: 4 },
@@ -145,14 +159,15 @@ export function listEligiblePokerHands(cards: readonly Card[]): ScoringOption[] 
       const label = subset.length > 5 && ['straight', 'flush', 'full_house', 'straight_flush'].includes(category)
         ? `${subset.length}-card ${entry.label.toLowerCase()}`
         : entry.label;
+      const baseChips = expandedBaseChips(category, entry.baseChips, subset.length);
       options.push({
         id: `${category}:${scoringCardIndices.join('-')}`,
         category,
         label,
         scoringCardIndices,
-        baseChips: entry.baseChips,
+        baseChips,
         multiplier: entry.multiplier,
-        score: entry.baseChips * entry.multiplier,
+        score: baseChips * entry.multiplier,
       });
     }
   }
