@@ -47,16 +47,21 @@ await run('Swagger JSON documents both endpoints', async () => {
   assert.ok(document.paths['/api/health/echo'].post.requestBody);
 });
 
-await run('Nuxt SSR renders connected home page', async () => {
+await run('Nuxt SSR renders current milestone and connected home page', async () => {
   const response = await fetch(webUrl);
   assert.equal(response.status, 200);
   const html = await response.text();
   assert.match(html, /PokerManic/);
   assert.match(html, /API connected/);
+  assert.match(html, /Milestone 2A/);
+  assert.match(html, /Card engine/);
+  assert.match(html, /52 cards/);
+  assert.match(html, /No playable cards yet/);
+  assert.match(html, /Milestone 2B/);
 });
 
 if (process.exitCode) {
-  console.error('Milestone 1 is NOT complete. Fix failures before proceeding.');
+  console.error('The current milestone is NOT verified. Fix failures before proceeding.');
 } else {
-  console.log('Milestone 1 smoke tests passed.');
+  console.log('Milestone 2A smoke tests passed.');
 }

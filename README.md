@@ -1,6 +1,6 @@
-# PokerManic — Milestone 1: Foundation
+# PokerManic — Milestone 2A: Card engine
 
-Browser-based poker-inspired roguelike. This starter deliberately has **no gameplay yet**: the goal is to verify the stack works end to end before implementing the deck engine.
+Browser-based poker-inspired roguelike. Milestone 1 established the full stack; Milestone 2A adds a tested, framework-independent deck engine. Card rendering and gameplay are next.
 
 ## Prerequisites
 
@@ -89,3 +89,40 @@ docs/
 ## Verification disclosure
 
 The scaffold was generated in an environment without access to the npm registry. Only its offline structure could be checked here; its dependency resolution, builds, and runtime smoke tests **must be verified locally** before the milestone is considered complete.
+
+## Milestone 2A: Card engine (no UI yet)
+
+A framework-independent TypeScript package lives at `packages/engine`. It uses
+Zod-derived `Card` types from `packages/contracts` but does not depend on
+Vue, Nuxt, NestJS, browser globals, or a database.
+
+- `createStandardDeck()` returns a fresh ordered deck containing 52 unique rank/suit pairs.
+- `shuffleDeck(deck, random?)` performs a non-mutating Fisher–Yates shuffle.
+  An injectable random source makes shuffling deterministic in tests.
+- `dealCards(deck, count)` returns a hand and remaining deck without mutation.
+  Invalid counts throw `RangeError`.
+
+From the repository root, after `pnpm install`, run:
+
+```bash
+pnpm --filter @pokermanic/contracts build
+pnpm --filter @pokermanic/engine test
+pnpm typecheck
+pnpm test
+pnpm build
+```
+
+The home page now displays the **Milestone 2A — Card engine** summary, the implemented features,
+current API status, and the next milestone. It intentionally does not render a playable hand.
+The smoke test asserts these milestone labels are present in the server-rendered HTML.
+We will render cards only after these engine and regression checks pass. Card instance IDs, scoring, and modifiers are
+future steps and are not part of this initial standard-deck model.
+
+## Milestone page requirement (every milestone)
+
+Each milestone, including backend-only or engine-only work, **must update** the
+summary on `apps/web/app/pages/index.vue`. Include the current milestone label,
+features completed, honest UI limitations, and next step. Update the SSR assertions
+in `scripts/smoke.mjs` to cover the newly displayed milestone and include them
+in the existing CI gate before merging. This is a required acceptance criterion,
+not an optional UI enhancement.
