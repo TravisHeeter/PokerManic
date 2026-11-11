@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import type { Card, CardSuit } from '@pokermanic/contracts';
-import { createStandardDeck, dealCards, evaluatePokerHand, shuffleDeck } from '@pokermanic/engine';
-import type { PokerHandResult } from '@pokermanic/engine';
+import { createStandardDeck, dealCards, listEligiblePokerHands, resolveScoringOption, shuffleDeck } from '@pokermanic/engine';
+import type { ScoringOption } from '@pokermanic/engine';
 
 useSeoMeta({
   title: 'PokerManic | Milestone 3 — Hand evaluation and scoring',
-  description: 'Select five playing cards and evaluate a poker hand with PokerManic scoring.',
+  description: 'Find eligible poker hands and preview the future manual selection perk.',
 });
 
 const HAND_SIZE = 8;
@@ -44,13 +44,45 @@ const handsDealt = ref(1);
 const lastAction = ref('Eight cards dealt from the demo deck.');
 const canDealNext = computed(() => remainingDeck.value.length >= HAND_SIZE);
 const selectedIndexes = ref<number[]>([]);
-const selectedCards = computed(() => hand.value.filter((_, index) => selectedIndexes.value.includes(index)));
-const preview = computed(() => selectedCards.value.length === 5
-  ? evaluatePokerHand(selectedCards.value) : null);
-const scoredHand = ref<PokerHandResult | null>(null);
+const selectedInputIndexes = computed(() => hand.value.flatMap((_, i) =>
+  selectedIndexes.value.includes(i) ? [i] : []));
+const selectedCards = computed(() => selectedInputIndexes.value.map((i) => hand.value[i]!));
+const eligibleOptions = computed(() => selectedCards.value.length === 5
+  ? listEligiblePokerHands(selectedCards.value) : []);
+// Temporary test fixture. Actual unlocking/persistence belongs to the progression system.
+const demoPerkUnlocked = ref(false);
+const selectionMode = ref<'automatic' | 'manual'>('automatic');
+const manualOptionId = ref<string>();
+const preview = computed(() => resolveScoringOption(eligibleOptions.value, {
+  manualSelectionUnlocked: demoPerkUnlocked.value,
+  selectionMode: selectionMode.value,
+}, manualOptionId.value));
+const scoringCardIndexes = computed(() => preview.value?.scoringCardIndices
+  .map((i) => selectedInputIndexes.value[i]!) ?? []);
+const scoredHand = ref<ScoringOption | null>(null);
 
 function clearSelection() {
   selectedIndexes.value = [];
+  manualOptionId.value = undefined;
+  scoredHand.value = null;
+}
+
+function toggleDemoPerk() {
+  demoPerkUnlocked.value = !demoPerkUnlocked.value;
+  if (!demoPerkUnlocked.value) selectionMode.value = 'automatic';
+  manualOptionId.value = undefined;
+  scoredHand.value = null;
+}
+
+function setSelectionMode(mode: 'automatic' | 'manual') {
+  if (mode === 'manual' && !demoPerkUnlocked.value) return;
+  selectionMode.value = mode;
+  scoredHand.value = null;
+}
+
+function chooseScoringOption(optionId: string) {
+  if (!demoPerkUnlocked.value || selectionMode.value !== 'manual') return;
+  manualOptionId.value = optionId;
   scoredHand.value = null;
 }
 
@@ -60,6 +92,7 @@ function toggleCard(index: number) {
   } else if (selectedIndexes.value.length < 5) {
     selectedIndexes.value = [...selectedIndexes.value, index];
   }
+  manualOptionId.value = undefined;
   scoredHand.value = null;
 }
 
@@ -104,7 +137,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
         <div class="space-y-2">
           <h1 class="text-5xl font-bold tracking-tight md:text-6xl">PokerManic</h1>
           <p class="text-lg text-muted">
-            A poker-inspired roguelike, built and tested one milestone at a time.
+            A poker-based survival roguelite in development, built and tested one milestone at a time.
           </p>
         </div>
       </header>
@@ -141,7 +174,8 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
             </div>
 
             <p class="text-sm text-muted">
-              Select five cards to evaluate a poker hand.
+              Choose five cards to play. The game scores the strongest qualifying hand automatically
+              until the Manual Hand Selection perk is unlocked.
               <strong data-testid="selected-count" class="text-highlighted">{{ selectedIndexes.length }} of 5 selected</strong>
             </p>
 
@@ -156,7 +190,12 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
                 :disabled="selectedIndexes.length === 5 && !selectedIndexes.includes(index)"
                 @click="toggleCard(index)"
                 class="relative flex aspect-[5/7] select-none flex-col justify-between rounded-xl border border-slate-200 bg-[#faf8f1] p-2 text-left shadow-lg shadow-black/30 transition-all hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 disabled:cursor-not-allowed disabled:opacity-60 sm:p-3"
-                :class="[SUIT_TEXT[card.suit], selectedIndexes.includes(index) ? '-translate-y-2 ring-4 ring-amber-300' : '']"
+                :data-scoring-card="scoringCardIndexes.includes(index) ? 'true' : 'false'"
+                :class="[
+                  SUIT_TEXT[card.suit],
+                  scoringCardIndexes.includes(index) ? '-translate-y-2 ring-4 ring-amber-300' :
+                    selectedIndexes.includes(index) ? '-translate-y-1 ring-2 ring-sky-500' : '',
+                ]"
               >
                 <div class="flex flex-col items-start leading-none">
                   <span class="text-lg font-bold sm:text-2xl">{{ card.rank }}</span>
@@ -182,6 +221,51 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
                 </div>
                 <UBadge color="neutral" variant="subtle">Base values only</UBadge>
               </div>
+              <div class="space-y-3 rounded-lg border border-default p-3">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <div class="space-y-1">
+                    <h4 class="font-semibold">Hand selection</h4>
+                    <p class="text-xs text-muted">
+                      Automatic chooses the highest-ranking formation, not necessarily the highest scoring after upgrades.
+                    </p>
+                  </div>
+                  <UButton data-testid="preview-unlock" size="sm" color="neutral" variant="outline" @click="toggleDemoPerk">
+                    {{ demoPerkUnlocked ? 'Re-lock perk preview' : 'Preview unlocked perk' }}
+                  </UButton>
+                </div>
+                <p class="text-xs text-amber-300">
+                  Developer preview only: this is not a purchased or persistent perk.
+                </p>
+                <div role="group" aria-label="Hand selection mode" class="flex flex-wrap gap-2">
+                  <UButton data-testid="automatic-mode" size="sm" :variant="selectionMode === 'automatic' ? 'solid' : 'outline'"
+                    @click="setSelectionMode('automatic')">Automatic</UButton>
+                  <UButton data-testid="manual-mode" size="sm" :variant="selectionMode === 'manual' ? 'solid' : 'outline'"
+                    :disabled="!demoPerkUnlocked" @click="setSelectionMode('manual')">Manual</UButton>
+                </div>
+                <p v-if="selectionMode === 'automatic'" class="text-xs text-muted">
+                  Automatic selection active. Scoring choices below are disabled.
+                </p>
+                <p v-else class="text-xs text-muted">
+                  Select a formation below. Highlighted cards are the ones that contribute to scoring.
+                </p>
+                <div v-if="eligibleOptions.length" data-testid="scoring-options"
+                  class="max-h-64 space-y-2 overflow-y-auto" role="radiogroup" aria-label="Qualifying scoring hands">
+                  <label v-for="option in eligibleOptions" :key="option.id"
+                    class="flex items-start gap-2 rounded-md border border-default p-2 text-sm"
+                    :class="!demoPerkUnlocked || selectionMode === 'automatic' ? 'opacity-55' : 'cursor-pointer'">
+                    <input type="radio" name="scoring-option" class="mt-1 accent-amber-400"
+                      :value="option.id" :checked="preview?.id === option.id"
+                      :disabled="!demoPerkUnlocked || selectionMode === 'automatic'"
+                      @change="chooseScoringOption(option.id)">
+                    <span>{{ option.label }}:
+                      <span class="text-muted">{{ option.scoringCardIndices.map(i =>
+                        selectedCards[i]!.rank + ' of ' + selectedCards[i]!.suit).join(', ') }}</span>
+                    </span>
+                  </label>
+                </div>
+                <p v-else class="text-xs text-muted">Select five cards to see eligible formations.</p>
+              </div>
+
               <div class="flex flex-wrap items-center gap-3">
                 <UButton data-testid="score-hand" :disabled="!preview" @click="scoreSelectedHand">
                   Score selected hand
@@ -194,7 +278,8 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
                 Scored {{ scoredHand.label }}: {{ scoredHand.score }} points.
               </p>
               <p class="text-xs text-muted">
-                Scores use initial PokerManic base chips × multiplier. Card-rank bonuses, jokers, and rounds are not implemented.
+                Only the highlighted scoring cards count toward the selected formation. Base chips × multiplier
+                are provisional; card-specific multipliers, discarding, chip thresholds, rounds, perks, and persistence come later.
               </p>
             </div>
 
@@ -244,7 +329,8 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
           </div>
         </div>
         <p class="text-sm text-muted">
-          Milestone 2 created the deck engine and card interface. Milestone 3 adds five-card evaluation and scoring. Up next: Milestone 4 — Game rounds.
+          Milestone 2 created the deck and card interface. Milestone 3 adds eligible-hand discovery,
+          automatic scoring and a temporary manual-perk preview. Up next: Milestone 4 — escalating survival rounds.
         </p>
       </section>
 

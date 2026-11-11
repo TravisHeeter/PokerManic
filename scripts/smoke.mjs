@@ -56,7 +56,11 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /API connected/);
   assert.match(html, /Milestone 3/);
   assert.match(html, /Poker hand scoring/);
-  assert.match(html, /Select five cards to evaluate a poker hand/);
+  assert.match(html, /Choose five cards to play/);
+  assert.match(html, /Hand selection/);
+  assert.match(html, /Preview unlocked perk/);
+  assert.match(html, /Automatic selection active/);
+  assert.match(html, /Manual/);
   assert.match(html, /Score selected hand/);
   assert.match(html, /Clear selection/);
   assert.match(html, /Milestone 4/);

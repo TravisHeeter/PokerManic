@@ -1,6 +1,6 @@
 # PokerManic — Milestone 3: Poker hand evaluation and scoring
 
-Browser-based poker-inspired roguelike. Milestone 1 established the stack; Milestone 2 added the deck and visual cards. Milestone 3 adds five-card poker hand recognition and provisional scoring.
+Browser-based poker survival roguelite in development. Milestone 1 established the stack; Milestone 2 added the deck and visual cards. Milestone 3 adds five-card poker hand recognition and provisional scoring.
 
 ## Prerequisites
 
@@ -182,3 +182,13 @@ Run `pnpm dev` and in a second terminal `pnpm smoke`. Test selecting five cards,
 The PokerManic tab icon is the approved red, hand-painted **M** on a white circle, inspired by the expressionist lettering associated with Fritz Lang's 1931 film `M`. The optimized SVG is at `apps/web/public/favicon.svg`, and Nuxt exposes it via the `app.head.link` configuration. The icon renders at any resolution, with transparent corners outside the circular white background.
 
 The SSR smoke test verifies that the icon is referenced from the page and that its asset is served successfully. If the browser still displays a previous favicon, hard-refresh or clear the site's cached favicon.
+
+## Milestone 3 design expansion: player-controlled scoring (prototype only)
+
+**Automatic is the default.** It scores the highest poker-ranking formation; future card and hand upgrades do not change automatic hand category selection. **Manual Hand Selection is an unlockable perk**, not free at game start. Once earned, players can switch between Automatic and Manual. Returning to Automatic disables all formation radio buttons. The preferred mode can later be saved between rounds.
+
+The engine enumerates **all eligible scoring subsets**, not just the highest ranking. Each option includes the exact contributing-card positions. High Card is always available **for each played card**, including a Jack when higher cards are present. A player may also choose between multiple distinct same-category options, such as four aces versus four kings. The eight-card prototype recognizes three/four pair, extended straights, flushes and straight flushes, and expanded full houses (3+3, 4+2, 4+3, 4+4), without deciding final scores for extended patterns. A selected scoring subset is distinct from the full set of cards committed to a play; deciding which cards are consumed happens when rounds are implemented.
+
+**Testing in Milestone 3:** The homepage remains a five-card scoring demonstration. It starts in **Automatic** with Manual disabled; its **Preview unlocked perk** button is a temporary, clearly labeled development switch, not an earned unlock, purchase, or persistent account setting. In Manual, radio choices show all qualifying formations; the chosen set of scoring cards is highlighted. Automatic disables radio inputs again. No rank-specific bonuses are live yet.
+
+**Planned roguelite systems, not implemented yet:** Endless escalating chip-target rounds with possible longer rounds; purchasable and persistent upgrades; configurable hand size, cards playable per hand, cards discarded at once (eventually up to eight), hands per round, and discards per round; transcendence resets a run but retains separately modeled permanent advantages. Build game state with separate run and permanent progression, and distinguish score from spendable chip currency. Cards will gain unique instance IDs when per-card modifiers arrive. Perk purchases, score multipliers attached to individual cards, progression and persistence remain future milestones. No milestone letter subdivisions.
