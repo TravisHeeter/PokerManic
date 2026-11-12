@@ -54,7 +54,7 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /PokerManic/);
   assert.match(html, /favicon\.svg\?v=1/);
   assert.match(html, /API connected/);
-  assert.match(html, /Milestone 8/);
+  assert.match(html, /Milestone 9/);
   assert.match(html, /Transcendence/);
   assert.match(html, /data-testid="round-number"[^>]*>\s*Round 1 - 60 Chips\s*</);
   assert.match(html, /Chip count/);
@@ -96,13 +96,16 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /Card modifier shop/);
   assert.match(html, /data-testid="buy-card-modifier-bonus"/);
   assert.match(html, /data-testid="buy-card-modifier-multiplier"/);
+  for (const id of ['gold','echo','growing','wild_suit','wild_rank','wild_full']) {
+    assert.match(html, new RegExp(`data-testid="buy-card-modifier-${id}"`));
+  }
   assert.match(html, /data-testid="transcend-action"/);
-  assert.match(html, /8 milestones implemented/);
-  for (let milestone = 1; milestone <= 8; milestone++) {
+  assert.match(html, /9 milestones implemented/);
+  for (let milestone = 1; milestone <= 9; milestone++) {
     assert.match(html, new RegExp(`data-testid="milestone-${milestone}"`));
   }
   assert.match(html, /data-testid="milestone-next"/);
-  assert.match(html, /Milestone 8/);
+  assert.match(html, /Milestone 9/);
   assert.match(html, /Transcendence/);
   assert.doesNotMatch(html, /Milestone 2[^]*?Current/);
   assert.match(html, /Local saves &amp; modding|Local saves & modding/);
