@@ -114,7 +114,7 @@ describe('in-run shop with prestige unlock gates', () => {
   });
 
   it('creates a clean progression state at the next run instead of retaining run-only perks', () => {
-    const earned = awardRoundUpgradeChips(won(), createRunProgress());
+    const earned = { ...awardRoundUpgradeChips(won(), createRunProgress()), upgradeChips: 40 };
     const purchased = purchaseRunUpgrade(won(), earned, 'extra_discard', fullUnlocks);
     expect(purchased.levels.extra_discard).toBe(1);
     const fresh = createRunProgress();
