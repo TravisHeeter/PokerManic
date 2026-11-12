@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import type { Card, CardSuit } from '@pokermanic/contracts';
-import { sortHandForDisplay, cardIdentity, type HandSortMode, type CardModifierMap } from '@pokermanic/engine';
+import { sortHandForDisplay, cardIdentity, type HandSortMode, type CardModifierMap, type CardModifier } from '@pokermanic/engine';
 const props = defineProps<{
   hand: Card[];
   cardModifiers: CardModifierMap;
@@ -19,6 +19,10 @@ const emit = defineEmits<{
   'update:sortMode': [mode: HandSortMode];
 }>();
 const displayedCards = computed(() => sortHandForDisplay(props.hand, props.sortMode));
+const modifierBadges: Record<CardModifier, string> = {
+  bonus: '+10', multiplier: '×1.5', gold: 'GOLD', echo: 'ECHO', growing: 'GROW',
+  wild_suit: 'W-S', wild_rank: 'W-R', wild_full: 'W-★',
+};
 const SUIT_SYMBOLS: Record<CardSuit, string> = {
   hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠',
 };
@@ -90,8 +94,9 @@ watch(cardStyle, value => {
               >
                 <span v-if="cardModifiers[cardIdentity(entry.card)]" aria-hidden="true"
                   data-testid="card-modifier-badge"
-                  class="pm-card-modifier-badge absolute bottom-2 left-1 z-20 rounded px-1 py-0.5 text-[10px] font-bold leading-none text-white shadow-sm sm:left-2">
-                  {{ cardModifiers[cardIdentity(entry.card)] === 'bonus' ? '+10' : '×1.5' }}
+                  class="pm-card-modifier-badge absolute bottom-2 left-1 z-20 rounded px-1 py-0.5 text-[10px] font-bold leading-none text-white shadow-sm sm:left-2"
+                  :title="cardModifiers[cardIdentity(entry.card)]?.replaceAll('_', ' ')">
+                  {{ modifierBadges[cardModifiers[cardIdentity(entry.card)]!] }}
                 </span>
                 <span v-if="selectedIndexes.includes(entry.originalIndex)"
                   aria-hidden="true" data-testid="selected-card-check"
