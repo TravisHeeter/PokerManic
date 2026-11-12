@@ -54,8 +54,8 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /PokerManic/);
   assert.match(html, /favicon\.svg\?v=1/);
   assert.match(html, /API connected/);
-  assert.match(html, /Milestone 6/);
-  assert.match(html, /Browser saves/);
+  assert.match(html, /Milestone 8/);
+  assert.match(html, /Transcendence/);
   assert.match(html, /Round 1/);
   assert.match(html, /Chip target/);
   assert.match(html, /Hands remaining/);
@@ -86,8 +86,11 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   // These sections are rendered by separate Nuxt auto-imported components.
   assert.match(html, /Poker hand evaluation/);
   assert.match(html, /Development progress/);
-  assert.match(html, /6 milestones implemented/);
-  for (let milestone = 1; milestone <= 6; milestone++) {
+  assert.match(html, /Permanent upgrades/);
+  assert.match(html, /Prestige chips/);
+  assert.match(html, /data-testid="transcend-action"/);
+  assert.match(html, /7 milestones implemented/);
+  for (let milestone = 1; milestone <= 7; milestone++) {
     assert.match(html, new RegExp(`data-testid="milestone-${milestone}"`));
   }
   assert.match(html, /data-testid="milestone-next"/);
@@ -110,7 +113,7 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /Show upgrades/);
   assert.match(html, /Upgrade chips/);
   assert.match(html, /Manual hand selection/);
-  assert.match(html, /Milestone 6/);
+  assert.match(html, /Milestone 7/);
   assert.match(html, /Remaining in deck/);
   // The first hand is random per server render and serialized for identical browser hydration.
   assert.equal((html.match(/data-testid="playing-card"/g) ?? []).length, 8);
@@ -133,5 +136,5 @@ await run('Custom PokerManic favicon is served', async () => {
 if (process.exitCode) {
   console.error('The current milestone is NOT verified. Fix failures before proceeding.');
 } else {
-  console.log('Milestone 6 smoke tests passed.');
+  console.log('Milestone 7 smoke tests passed.');
 }

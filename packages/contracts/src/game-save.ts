@@ -80,6 +80,13 @@ export const savedProgressSchema = z.strictObject({
 export const savedProfileSchema = z.strictObject({
   lifetimeRunsStarted: positiveInt,
   bestRound: positiveInt,
+  prestigeChips: safeInt.default(0),
+  transcends: safeInt.default(0),
+  permanentLevels: z.strictObject({
+    starting_hand: safeInt.max(3),
+    starting_discard: safeInt.max(3),
+    starting_chips: safeInt.max(3),
+  }).default({ starting_hand: 0, starting_discard: 0, starting_chips: 0 }),
 });
 
 export const gameSaveV1Schema = z.strictObject({
@@ -129,6 +136,6 @@ export const GAME_SAVE_STORAGE_KEY = 'pokermanic.save.v1';
 export function parseGameSave(json: string): GameSaveV1 {
   return gameSaveV1Schema.parse(JSON.parse(json));
 }
-export function formatGameSave(save: GameSaveV1): string {
+export function formatGameSave(save: z.input<typeof gameSaveV1Schema>): string {
   return JSON.stringify(gameSaveV1Schema.parse(save), null, 2);
 }

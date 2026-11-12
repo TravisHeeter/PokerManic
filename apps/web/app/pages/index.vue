@@ -16,16 +16,19 @@ import {
   resolveScoringOption,
   startRun,
   manualSelectionUnlocked,
+  createPermanentProgress, applyPermanentUpgrades, startingUpgradeChips,
+  transcendReward, transcendRun, PERMANENT_UPGRADES,
+  permanentUpgradeCost, buyPermanentUpgrade,
 } from '@pokermanic/engine';
-import type { RunState, ScoringOption, RunUpgradeId, RunProgress, HandSortMode } from '@pokermanic/engine';
+import type { RunState, ScoringOption, RunUpgradeId, RunProgress, HandSortMode, PermanentUpgradeId } from '@pokermanic/engine';
 
 useSeoMeta({
-  title: 'PokerManic | Milestone 6 — Local saves',
-  description: 'Save, export and customize your local PokerManic progress with readable JSON.',
+  title: 'PokerManic | Milestone 7 — Transcendence',
+  description: 'Earn permanent prestige perks that survive every run.',
 });
 
 const progress = ref<RunProgress>(createRunProgress());
-const profile = ref<SavedProfile>({ lifetimeRunsStarted: 1, bestRound: 1 });
+const profile = ref<SavedProfile>({ lifetimeRunsStarted: 1, bestRound: 1, ...createPermanentProgress() });
 const sortMode = ref<HandSortMode>('rank');
 const hydrated = ref(false);
 const savingBlocked = ref(false);
@@ -39,7 +42,7 @@ function updateSaveJson(value: string) {
 // Effective rules update as perks are purchased, without resetting the round.
 
 const rules = ref({ ...DEFAULT_ROUND_RULES });
-const nextRoundRules = computed(() => applyRunUpgrades(DEFAULT_ROUND_RULES, progress.value));
+const nextRoundRules = computed(() => applyRunUpgrades(applyPermanentUpgrades(DEFAULT_ROUND_RULES, profile.value), progress.value));
 
 // Nuxt useState serializes the randomly dealt opening run into the SSR payload.
 // The browser hydrates that exact run instead of shuffling a second time.
@@ -134,8 +137,7 @@ function nextRound() {
   lastAction.value = `Round ${run.value.round} started. Reach ${run.value.roundTarget} chips to survive.`;
 }
 
-function restartRun() {
-  if (import.meta.client && !window.confirm('Start a new run? Your active run and its purchased perks will be reset. Permanent profile stats stay.')) return;
+function resetToFreshRun() {
   profile.value = {
     ...profile.value,
     lifetimeRunsStarted: profile.value.lifetimeRunsStarted + 1,
@@ -143,14 +145,32 @@ function restartRun() {
   };
   savingBlocked.value = false;
   saveJsonDirty.value = false;
-  progress.value = createRunProgress();
-  rules.value = { ...DEFAULT_ROUND_RULES };
+  progress.value = { ...createRunProgress(), upgradeChips: startingUpgradeChips(profile.value) };
+  rules.value = applyPermanentUpgrades(DEFAULT_ROUND_RULES, profile.value);
   run.value = startRun(rules.value);
   selectionMode.value = 'automatic';
   sortMode.value = 'rank';
   clearSelection();
   saveStatus.value = 'New run created. Autosaving in this browser.';
-  lastAction.value = 'New run started. Run-only perks, upgrade chips and prior scores were reset.';
+}
+function restartRun() {
+  if (import.meta.client && !window.confirm('Start a new run? Temporary progress resets; permanent upgrades remain.')) return;
+  resetToFreshRun();
+  lastAction.value = 'New run started with your permanent perks.';
+}
+const earnedPrestige = computed(() => transcendReward(run.value));
+function transcend() {
+  const reward = earnedPrestige.value;
+  if (!reward) return;
+  if (import.meta.client && !window.confirm(`Transcend for ${reward} prestige chips and reset this run?`)) return;
+  const permanent = transcendRun(run.value, profile.value);
+  profile.value = { ...profile.value, ...permanent };
+  resetToFreshRun();
+  lastAction.value = `Transcended! Earned ${reward} prestige chips.`;
+}
+function purchasePermanent(id: PermanentUpgradeId) {
+  profile.value = { ...profile.value, ...buyPermanentUpgrade(profile.value, id) };
+  lastAction.value = 'Permanent perk bought. It activates on your next run.';
 }
 
 function buyPerk(id: RunUpgradeId) {
@@ -285,7 +305,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
     <div class="mx-auto max-w-6xl space-y-9">
       <header class="space-y-4">
         <div class="flex flex-wrap items-center gap-3">
-          <p class="uppercase tracking-[0.25em] text-sm text-amber-300">Milestone 6 / Browser saves</p>
+          <p class="uppercase tracking-[0.25em] text-sm text-amber-300">Milestone 7 / Transcendence</p>
           <UBadge color="primary" variant="subtle">Current milestone</UBadge>
         </div>
         <div class="space-y-2">
@@ -302,7 +322,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
             <div class="flex flex-wrap items-start justify-between gap-4">
               <div class="space-y-1">
                 <p class="text-xs font-semibold uppercase tracking-widest text-amber-300">
-                  Milestone 6 · Local save demo
+                  Milestone 7 · Prestige progression
                 </p>
                 <h2 id="hand-heading" class="text-3xl font-bold">Your hand</h2>
                 <p class="text-sm text-muted">
@@ -346,6 +366,11 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
           </div>
         </UCard>
       </section>
+
+      <TranscendencePanel :profile="profile" :earned-prestige="earnedPrestige"
+        :perks="PERMANENT_UPGRADES"
+        :prices="Object.fromEntries(PERMANENT_UPGRADES.map(perk => [perk.id, permanentUpgradeCost(profile, perk.id)]))"
+        @transcend="transcend" @purchase="purchasePermanent" />
 
       <SaveManager :json="saveJson" @update:json="updateSaveJson" :status="saveStatus" :blocked="savingBlocked"
         @export="exportSave" @import="importSave" @new-run="restartRun" />
