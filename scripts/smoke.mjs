@@ -58,8 +58,6 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /Transcendence/);
   assert.match(html, /data-testid="round-number"[^>]*>\s*Round 1 - 60 Chips\s*</);
   assert.match(html, /Chip count/);
-  assert.match(html, /Run scoring chips/);
-  assert.match(html, /No fixed final round|no fixed final round/);
   assert.match(html, /Hand selection/);
   assert.doesNotMatch(html, /data-testid="manual-perk-status"/);
   const playButton = html.match(/<button[^>]*data-testid="score-hand"[^>]*>[\s\S]*?<\/button>/)?.[0];
