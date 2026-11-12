@@ -86,6 +86,14 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   // These sections are rendered by separate Nuxt auto-imported components.
   assert.match(html, /Poker hand evaluation/);
   assert.match(html, /Development progress/);
+  assert.match(html, /6 milestones implemented/);
+  for (let milestone = 1; milestone <= 6; milestone++) {
+    assert.match(html, new RegExp(`data-testid="milestone-${milestone}"`));
+  }
+  assert.match(html, /data-testid="milestone-next"/);
+  assert.match(html, /Milestone 7/);
+  assert.match(html, /Transcendence/);
+  assert.doesNotMatch(html, /Milestone 2[^]*?Current/);
   assert.match(html, /Local saves &amp; modding|Local saves & modding/);
   assert.match(html, /Show save tools and JSON editor/);
   assert.match(html, /System status/);

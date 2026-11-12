@@ -331,3 +331,7 @@ The complete game state auto-saves to **localStorage**, using a human-readable, 
 The Local Saves & Modding section contains an **Export JSON** download, editable JSON textarea, **Import edited JSON** button, and an explicit new-run reset with browser confirmation. Since the game is single-player, editing a valid JSON save is a supported feature, not cheating. There are no signatures, encrypted values or server-side verification. Malformed saves, invalid card instances, and unsupported versions are rejected by a Zod v1 schema; existing invalid data is not silently overwritten, and players can recover by importing a valid save or starting anew. Every save uses an explicit version number to allow future migrations.
 
 **Test manually:** play/discard/purchase then reload; verify exact run/hand/wallet persists. Sort cards and reload; verify order mode persists. Export JSON, edit the upgrade-chip balance, import, then reload and verify it persists. Try corrupt JSON and confirm it is rejected without losing active state. Start a new run after confirming; permanent profile stays while run perks reset.
+
+## Milestone progress display
+
+The development progress UI lists all six merged milestones (1–6) as Implemented, with neutral borders; the single highlighted border is reserved for the **next** planned milestone, 7 (Transcendence). Data is maintained in one typed array rather than scattered static cards. SSR smoke tests assert the complete 1–6 sequence, upcoming card, and completed count. When Milestone 7 ships, update the array and next milestone together.
