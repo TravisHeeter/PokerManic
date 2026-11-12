@@ -96,13 +96,16 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /Development progress/);
   assert.match(html, /Permanent upgrades/);
   assert.match(html, /Prestige chips/);
+  assert.match(html, /Card modifier shop/);
+  assert.match(html, /data-testid="buy-card-modifier-bonus"/);
+  assert.match(html, /data-testid="buy-card-modifier-multiplier"/);
   assert.match(html, /data-testid="transcend-action"/);
-  assert.match(html, /7 milestones implemented/);
-  for (let milestone = 1; milestone <= 7; milestone++) {
+  assert.match(html, /8 milestones implemented/);
+  for (let milestone = 1; milestone <= 8; milestone++) {
     assert.match(html, new RegExp(`data-testid="milestone-${milestone}"`));
   }
   assert.match(html, /data-testid="milestone-next"/);
-  assert.match(html, /Milestone 7/);
+  assert.match(html, /Milestone 8/);
   assert.match(html, /Transcendence/);
   assert.doesNotMatch(html, /Milestone 2[^]*?Current/);
   assert.match(html, /Local saves &amp; modding|Local saves & modding/);
@@ -121,7 +124,7 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /Show upgrades/);
   assert.match(html, /Upgrade chips/);
   assert.match(html, /Manual hand selection/);
-  assert.match(html, /Milestone 7/);
+  assert.match(html, /Milestone 8/);
   assert.match(html, /Remaining in deck/);
   // The first hand is random per server render and serialized for identical browser hydration.
   assert.equal((html.match(/data-testid="playing-card"/g) ?? []).length, 8);
@@ -148,5 +151,5 @@ await run('Custom PokerManic favicon is served', async () => {
 if (process.exitCode) {
   console.error('The current milestone is NOT verified. Fix failures before proceeding.');
 } else {
-  console.log('Milestone 7 smoke tests passed.');
+  console.log('Milestone 8 smoke tests passed.');
 }

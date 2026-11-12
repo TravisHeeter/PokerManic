@@ -7,11 +7,12 @@ const completedMilestones = [
   { number: 5, title: 'Run upgrades', description: 'Always-open perk shop and combined hand scoring.' },
   { number: 6, title: 'Browser saves and modding', description: 'Automatic local saves, editable JSON, and import/export.' },
   { number: 7, title: 'Transcendence', description: 'Prestige rewards, reset, and permanent perks.' },
+  { number: 8, title: 'Card modifiers', description: 'Bonus and multiplier cards with a run-long modifier shop.' },
 ] as const;
 const nextMilestone = {
-  number: 8,
-  title: 'Card modifiers',
-  description: 'Planned individual card bonuses and modifiers.',
+  number: 9,
+  title: 'Additional card effects',
+  description: 'More modifier types, rarities, and visual polish.',
 };
 </script>
 
@@ -40,7 +41,7 @@ const nextMilestone = {
       </div>
     </div>
     <p class="text-sm text-muted">
-      Milestones 1–7 are implemented. Milestone 8 — Card Modifiers — is planned next.
+      Milestones 1–8 are implemented. Milestone 9 — Additional Card Effects — is planned next.
       The highlighted border marks the upcoming milestone, not an incomplete older one.
     </p>
   </section>

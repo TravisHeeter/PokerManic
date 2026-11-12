@@ -31,6 +31,8 @@ const scoreSchema = z.strictObject({
   baseChips: safeInt,
   multiplier: safeInt,
   score: safeInt,
+  modifierBonusChips: safeInt.optional(),
+  modifierMultiplier: z.number().finite().positive().optional(),
   components: z.tuple([scoreComponentSchema, scoreComponentSchema]).optional(),
   combinationType: z.enum(['separate', 'overlapping']).optional(),
 });
@@ -62,6 +64,7 @@ export const savedRunSchema = z.strictObject({
   playedCards: z.array(cardSchema),
   discardedCards: z.array(cardSchema),
   lastScored: scoreSchema.nullable(),
+  cardModifiers: z.record(z.string(), z.enum(['bonus', 'multiplier'])).optional(),
 });
 
 export const savedProgressSchema = z.strictObject({
@@ -111,6 +114,7 @@ export const gameSaveV1Schema = z.strictObject({
   }),
 }).superRefine((save, ctx) => {
   const error = (message: string) => ctx.addIssue({ code: 'custom', message });
+  if (Object.keys(save.run.cardModifiers ?? {}).some(key => !/^(hearts|diamonds|clubs|spades):(2|3|4|5|6|7|8|9|10|J|Q|K|A)$/.test(key))) error('Invalid card modifier identity');
   if (save.run.hand.length !== save.rules.handSize) error('Held hand size does not match saved rules');
   const cards = [
     ...save.run.hand, ...save.run.drawPile,
