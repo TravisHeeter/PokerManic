@@ -98,7 +98,7 @@ describe('evaluatePokerHand', () => {
   });
 
   it('defines an exact integer score and multiplier for each category', () => {
-    expect(Object.keys(POKER_HAND_VALUES)).toHaveLength(10);
+    expect(Object.keys(POKER_HAND_VALUES)).toHaveLength(11);
     for (const rule of Object.values(POKER_HAND_VALUES)) {
       expect(Number.isSafeInteger(rule.baseChips)).toBe(true);
       expect(Number.isSafeInteger(rule.multiplier)).toBe(true);
