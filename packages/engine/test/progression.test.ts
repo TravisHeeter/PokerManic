@@ -52,9 +52,9 @@ describe('in-run shop with prestige unlock gates', () => {
 
   it('buys perks with separate currency and applies changes only to future round rules', () => {
     const run = won();
-    const reward = awardRoundUpgradeChips(run, createRunProgress());
+    const reward = { ...awardRoundUpgradeChips(run, createRunProgress()), upgradeChips: 17 };
     const purchased = purchaseRunUpgrade(run, reward, 'extra_hand', fullUnlocks);
-    expect(purchased).toMatchObject({upgradeChips:2, levels:{extra_hand:1}});
+    expect(purchased).toMatchObject({upgradeChips:7, levels:{extra_hand:1}});
     expect(upgradeCost(purchased, 'extra_hand')).toBe(20);
     expect(applyRunUpgrades(DEFAULT_ROUND_RULES, purchased).baseHandsPerRound).toBe(5);
     const advanced = advanceRound(run, applyRunUpgrades(DEFAULT_ROUND_RULES, purchased), () => 0.3);
