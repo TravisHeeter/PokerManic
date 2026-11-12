@@ -323,3 +323,11 @@ The main game actions now sit side by side directly below the Poker Hand Evaluat
 ## Milestone 5 review — icon-only primary actions
 
 The Play and Discard buttons are intentionally icon-only in the compact two-column layout, with a separate full-width Clear Selection action. Accessible aria-label and tooltip titles identify both icon actions as Play selected cards and Discard selected cards. The Perk Shop heading is simplified, but the persistent in-round shop availability and behavior remain unchanged. SSR smoke tests validate the accessibility names and updated heading rather than expecting removed visible button text.
+
+## Milestone 6 — Browser-local persistence and modding
+
+The complete game state auto-saves to **localStorage**, using a human-readable, unencrypted, editable JSON document under \`pokermanic.save.v1\`. The data is **local to the current browser profile and origin**, not synchronized across devices and not uploaded to the NestJS API. It includes the active run, deck and all piles, spent actions, wallet and purchased perks, the current rules, card selection, sort preference, and a small independent permanent profile (runs started and best round). Game state is restored after hydration to avoid Nuxt SSR mismatches.
+
+The Local Saves & Modding section contains an **Export JSON** download, editable JSON textarea, **Import edited JSON** button, and an explicit new-run reset with browser confirmation. Since the game is single-player, editing a valid JSON save is a supported feature, not cheating. There are no signatures, encrypted values or server-side verification. Malformed saves, invalid card instances, and unsupported versions are rejected by a Zod v1 schema; existing invalid data is not silently overwritten, and players can recover by importing a valid save or starting anew. Every save uses an explicit version number to allow future migrations.
+
+**Test manually:** play/discard/purchase then reload; verify exact run/hand/wallet persists. Sort cards and reload; verify order mode persists. Export JSON, edit the upgrade-chip balance, import, then reload and verify it persists. Try corrupt JSON and confirm it is rejected without losing active state. Start a new run after confirming; permanent profile stays while run perks reset.

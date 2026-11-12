@@ -54,8 +54,8 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /PokerManic/);
   assert.match(html, /favicon\.svg\?v=1/);
   assert.match(html, /API connected/);
-  assert.match(html, /Milestone 5/);
-  assert.match(html, /Run upgrades/);
+  assert.match(html, /Milestone 6/);
+  assert.match(html, /Browser saves/);
   assert.match(html, /Round 1/);
   assert.match(html, /Chip target/);
   assert.match(html, /Hands remaining/);
@@ -86,6 +86,8 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   // These sections are rendered by separate Nuxt auto-imported components.
   assert.match(html, /Poker hand evaluation/);
   assert.match(html, /Development progress/);
+  assert.match(html, /Local saves &amp; modding|Local saves & modding/);
+  assert.match(html, /Show save tools and JSON editor/);
   assert.match(html, /System status/);
   assert.match(html, /Shop open throughout your run/);
   assert.doesNotMatch(html, /Shop closed/);
@@ -114,5 +116,5 @@ await run('Custom PokerManic favicon is served', async () => {
 if (process.exitCode) {
   console.error('The current milestone is NOT verified. Fix failures before proceeding.');
 } else {
-  console.log('Milestone 5 smoke tests passed.');
+  console.log('Milestone 6 smoke tests passed.');
 }

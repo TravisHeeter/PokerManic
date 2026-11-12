@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import type { Card, CardSuit } from '@pokermanic/contracts';
 import { sortHandForDisplay, type HandSortMode } from '@pokermanic/engine';
 const props = defineProps<{
@@ -11,10 +11,13 @@ const props = defineProps<{
   round: number;
   handsPlayed: number;
   inRound: boolean;
+  sortMode: HandSortMode;
 }>();
-const emit = defineEmits<{ 'toggle-card': [index: number] }>();
-const sortMode = ref<HandSortMode>('rank');
-const displayedCards = computed(() => sortHandForDisplay(props.hand, sortMode.value));
+const emit = defineEmits<{
+  'toggle-card': [index: number];
+  'update:sortMode': [mode: HandSortMode];
+}>();
+const displayedCards = computed(() => sortHandForDisplay(props.hand, props.sortMode));
 const SUIT_SYMBOLS: Record<CardSuit, string> = {
   hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠',
 };
@@ -37,14 +40,14 @@ const SUIT_TEXT: Record<CardSuit, string> = {
             <div role="group" aria-label="Sort cards" class="flex flex-wrap items-center gap-2">
               <span class="text-sm text-muted">Sort cards:</span>
               <UButton data-testid="sort-dealt" size="sm" color="neutral"
-                :variant="sortMode === 'dealt' ? 'solid' : 'outline'"
-                :aria-pressed="sortMode === 'dealt'" @click="sortMode = 'dealt'">Dealt order</UButton>
+                :variant="props.sortMode === 'dealt' ? 'solid' : 'outline'"
+                :aria-pressed="props.sortMode === 'dealt'" @click="emit('update:sortMode', 'dealt')">Dealt order</UButton>
               <UButton data-testid="sort-rank" size="sm" color="neutral"
-                :variant="sortMode === 'rank' ? 'solid' : 'outline'"
-                :aria-pressed="sortMode === 'rank'" @click="sortMode = 'rank'">Rank</UButton>
+                :variant="props.sortMode === 'rank' ? 'solid' : 'outline'"
+                :aria-pressed="props.sortMode === 'rank'" @click="emit('update:sortMode', 'rank')">Rank</UButton>
               <UButton data-testid="sort-suit" size="sm" color="neutral"
-                :variant="sortMode === 'suit' ? 'solid' : 'outline'"
-                :aria-pressed="sortMode === 'suit'" @click="sortMode = 'suit'">Suit</UButton>
+                :variant="props.sortMode === 'suit' ? 'solid' : 'outline'"
+                :aria-pressed="props.sortMode === 'suit'" @click="emit('update:sortMode', 'suit')">Suit</UButton>
               <span class="text-xs text-muted">Highest first · suits ♠ ♥ ♦ ♣</span>
             </div>
 
