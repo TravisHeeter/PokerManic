@@ -298,3 +298,30 @@ describe('Milestone 5 immediate purchase effects', () => {
       {...DEFAULT_ROUND_RULES,handSize:9},()=>0.5).hand).toHaveLength(9);
   });
 });
+
+describe('combined formation scoring through the run engine', () => {
+  it('awards overlapping Flush + Pair 270 chips while consuming six physical cards once', () => {
+    const played = [
+      c('10','clubs'),c('8','clubs'),c('4','clubs'),c('3','clubs'),c('2','clubs'),
+      c('4','hearts'),
+    ];
+    const playedKeys = new Set(played.map(card => `${card.rank}:${card.suit}`));
+    const deck = createStandardDeck().filter(card => !playedKeys.has(`${card.rank}:${card.suit}`));
+    const state = {
+      ...fixture(), hand:[...played, ...deck.slice(0,2)],
+      drawPile:deck.slice(2),
+      roundTarget:9999,
+    };
+    const rules = {...DEFAULT_ROUND_RULES,cardsPerPlay:6};
+    const next = playScoringHand(state,[0,1,2,3,4,5],undefined,undefined,rules,()=>0.5);
+    expect(next.lastScored?.category).toBe('combination');
+    expect(next.lastScored?.combinationType).toBe('overlapping');
+    expect(next.lastScored?.score).toBe(270);
+    expect(next.roundChips).toBe(270);
+    expect(next.playedCards).toHaveLength(6);
+    expect(next.hand).toHaveLength(8);
+    expect(new Set([...next.hand,...next.drawPile,...next.playedCards]
+      .map(card=>`${card.rank}:${card.suit}`)).size).toBe(52);
+  });
+});
+
