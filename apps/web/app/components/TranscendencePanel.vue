@@ -34,10 +34,10 @@ const emit = defineEmits<{ transcend: []; purchase: [id: PermanentUpgradeId] }>(
               <h4 class="font-semibold">{{ perk.label }}</h4>
               <p class="text-xs text-muted">{{ perk.description }}</p>
               <p class="text-xs text-muted">Level {{ profile.permanentLevels[perk.id] }} / {{ perk.maxLevel }}</p>
-              <UButton size="sm" :data-testid="\`permanent-\${perk.id}\`"
+              <UButton size="sm" :data-testid="`permanent-${perk.id}`"
                 :disabled="prices[perk.id] === null || profile.prestigeChips < (prices[perk.id] ?? Infinity)"
                 @click="emit('purchase', perk.id)">
-                {{ prices[perk.id] === null ? 'Max level' : \`Buy for \${prices[perk.id]} prestige\` }}
+                {{ prices[perk.id] === null ? 'Max level' : `Buy for ${prices[perk.id]} prestige` }}
               </UButton>
             </div>
           </div>
