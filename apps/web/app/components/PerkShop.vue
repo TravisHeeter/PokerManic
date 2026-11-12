@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import type { RunPhase, RunProgress, RoundRules, RunUpgradeId } from '@pokermanic/engine';
 import { RUN_UPGRADES, upgradeCost, isRunUpgradeUnlocked } from '@pokermanic/engine';
 import type { SavedProfile } from '@pokermanic/contracts';
@@ -10,12 +10,22 @@ const props = defineProps<{
   profile: SavedProfile;
   rules: RoundRules;
   nextRoundRules: RoundRules;
+  manualSelectionAvailable: boolean;
 }>();
 const emit = defineEmits<{ 'buy-perk': [id: RunUpgradeId] }>();
 const perkCatalog = RUN_UPGRADES;
 const expanded = ref(false);
-const activeTab = ref<'perks' | 'hand'>('perks');
-function selectTab(tab: 'perks' | 'hand') {
+type DockTab = 'perks' | 'modifiers' | 'hand';
+const activeTab = ref<DockTab>('perks');
+const handTabAvailable = computed(() => props.manualSelectionAvailable);
+watch(handTabAvailable, available => {
+  if (!available && activeTab.value === 'hand') {
+    activeTab.value = 'perks';
+    expanded.value = false;
+  }
+});
+function selectTab(tab: DockTab) {
+  if (tab === 'hand' && !handTabAvailable.value) return;
   if (expanded.value && activeTab.value === tab) {
     expanded.value = false;
   } else {
@@ -47,13 +57,22 @@ const canBuy = (id: RunUpgradeId) => {
             <span id="shop-heading">Perk shop</span>
             <span class="ml-1 text-xs font-normal">{{ expanded && activeTab === 'perks' ? '▼ Hide' : '▲ Show' }} upgrades</span>
           </button>
-          <button type="button" id="hand-shop-toggle" role="tab" data-testid="hand-shop-toggle"
+          <button type="button" id="modifier-shop-toggle" role="tab" data-testid="modifier-shop-toggle"
+            :aria-selected="activeTab === 'modifiers'"
+            :aria-expanded="expanded && activeTab === 'modifiers'" aria-controls="modifier-shop-content"
+            class="rounded-lg px-3 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-amber-300"
+            :class="activeTab === 'modifiers' ? 'bg-elevated text-highlighted' : 'text-muted hover:bg-elevated'"
+            @click="selectTab('modifiers')">
+            Card modifiers
+            <span class="ml-1 text-xs font-normal">{{ expanded && activeTab === 'modifiers' ? '▼ Hide' : '▲ Show' }}</span>
+          </button>
+          <button v-if="handTabAvailable" type="button" id="hand-shop-toggle" role="tab" data-testid="hand-shop-toggle"
             :aria-selected="activeTab === 'hand'"
             :aria-expanded="expanded && activeTab === 'hand'" aria-controls="hand-shop-content"
             class="rounded-lg px-3 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-amber-300"
             :class="activeTab === 'hand' ? 'bg-elevated text-highlighted' : 'text-muted hover:bg-elevated'"
             @click="selectTab('hand')">
-            Hand selection &amp; card modifiers
+            Hand selection
             <span class="ml-1 text-xs font-normal">{{ expanded && activeTab === 'hand' ? '▼ Hide' : '▲ Show' }}</span>
           </button>
         </div>
@@ -93,7 +112,14 @@ const canBuy = (id: RunUpgradeId) => {
           </p>
         </div>
       </div>
-      <div id="hand-shop-content" role="tabpanel" aria-labelledby="hand-shop-toggle"
+      <div id="modifier-shop-content" role="tabpanel" aria-labelledby="modifier-shop-toggle"
+        v-show="expanded && activeTab === 'modifiers'" data-testid="modifier-shop-content"
+        class="max-h-[min(70dvh,38rem)] overflow-y-auto overscroll-contain border-t border-default px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-6">
+        <div class="space-y-4">
+          <slot name="modifiers" />
+        </div>
+      </div>
+      <div v-if="handTabAvailable" id="hand-shop-content" role="tabpanel" aria-labelledby="hand-shop-toggle"
         v-show="expanded && activeTab === 'hand'" data-testid="hand-shop-content"
         class="max-h-[min(70dvh,38rem)] overflow-y-auto overscroll-contain border-t border-default px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-6">
         <div class="space-y-4">

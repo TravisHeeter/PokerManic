@@ -63,8 +63,7 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /Run scoring chips/);
   assert.match(html, /No fixed final round|no fixed final round/);
   assert.match(html, /Hand selection/);
-  assert.match(html, /Manual Selection locked/);
-  assert.match(html, /Automatic selection active/);
+  assert.doesNotMatch(html, /data-testid="manual-perk-status"/);
   const playButton = html.match(/<button[^>]*data-testid="score-hand"[^>]*>[\s\S]*?<\/button>/)?.[0];
   const discardButton = html.match(/<button[^>]*data-testid="discard-selected"[^>]*>[\s\S]*?<\/button>/)?.[0];
   assert.ok(playButton, 'Play button should render');
@@ -94,7 +93,7 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /Start new run/);
   assert.match(html, /id="shop-heading"[^>]*>Perk shop<\/span>/);
   // These sections are rendered by separate Nuxt auto-imported components.
-  assert.match(html, /Poker hand evaluation/);
+  assert.doesNotMatch(html, /Poker hand evaluation/);
   assert.match(html, /Development progress/);
   assert.match(html, /Permanent upgrades/);
   assert.match(html, /Prestige chips/);
@@ -120,9 +119,11 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.doesNotMatch(html, /Shop closed/);
   assert.match(html, /data-testid="perk-shop-dock"/);
   assert.match(html, /data-testid="perk-shop-toggle"/);
-  assert.match(html, /data-testid="hand-shop-toggle"/);
-  assert.match(html, /aria-controls="hand-shop-content"/);
-  assert.match(html, /data-testid="hand-shop-content"/);
+  assert.match(html, /data-testid="modifier-shop-toggle"/);
+  assert.match(html, /aria-controls="modifier-shop-content"/);
+  assert.match(html, /data-testid="modifier-shop-content"/);
+  assert.doesNotMatch(html, /data-testid="hand-shop-toggle"/);
+  assert.doesNotMatch(html, /data-testid="hand-shop-content"/);
   assert.match(html, /role="tablist"/);
   assert.match(html, /aria-expanded="false"/);
   assert.match(html, /aria-controls="perk-shop-content"/);

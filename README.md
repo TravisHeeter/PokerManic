@@ -383,3 +383,7 @@ The fixed bottom dock now has two adjacent tabs: **Perk shop** and **Hand select
 ## Direct card actions below the hand
 
 Play, Discard and Clear Selection have moved out of the docked Hand Selection panel into a compact action group directly under the displayed playing cards. The fixed bottom dock continues to hold hand evaluation and manual formation selection alongside the Card Modifier Shop, while the play/discard/clear controls remain visible without opening a tab. The actions use the existing game-state callbacks and disabled rules; no scoring or card-modifier behavior changes.
+
+## Prestige-gated hand-selection dock tab
+
+The dock exposes **Perk shop** and **Card modifiers** independently at the start of every run. A third **Hand selection** tab is rendered only after the player has both permanently unlocked Manual Hand Selection in the prestige shop and bought its temporary level in the Perk Shop for the current run. The tab contains the scoring preview and manual formation controls. Buying the perk reveals the tab immediately; starting a fresh run hides it again until the temporary level is repurchased. If the tab is open when the perk becomes unavailable, it closes safely. Play, Discard and Clear remain directly below the cards.

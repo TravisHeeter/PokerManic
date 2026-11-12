@@ -18,7 +18,7 @@ import {
   manualSelectionUnlocked,
   createPermanentProgress, startingUpgradeChips,
   transcendReward, transcendRun, PERMANENT_UPGRADES,
-  permanentUpgradeCost, buyPermanentUpgrade,
+  permanentUpgradeCost, buyPermanentUpgrade, isRunUpgradeUnlocked,
   CARD_MODIFIERS, purchaseCardModifier, applyCardModifiers,
 } from '@pokermanic/engine';
 import type { RunState, ScoringOption, RunUpgradeId, RunProgress, HandSortMode, PermanentUpgradeId, CardModifier } from '@pokermanic/engine';
@@ -71,7 +71,8 @@ const eligibleOptions = computed(() => selectedCards.value.length >= 1
   && selectedCards.value.length <= rules.value.cardsPerPlay
   ? listEligiblePokerHands(selectedCards.value) : []);
 
-const manualUnlocked = computed(() => manualSelectionUnlocked(progress.value));
+const manualUnlocked = computed(() =>
+  isRunUpgradeUnlocked(profile.value, 'manual_selection') && manualSelectionUnlocked(progress.value));
 const selectionMode = ref<'automatic' | 'manual'>('automatic');
 const manualOptionId = ref<string>();
 const preview = computed(() => {
@@ -409,17 +410,18 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
 
   <!-- The viewport dock must not inherit the centered page container's layout. -->
   <PerkShop :phase="run.phase" :progress="progress" :profile="profile" :rules="rules"
-    :next-round-rules="nextRoundRules" @buy-perk="buyPerk">
-    <template #hand>
+    :next-round-rules="nextRoundRules" :manual-selection-available="manualUnlocked" @buy-perk="buyPerk">
+    <template #modifiers>
       <CardModifierShop :modifiers="CARD_MODIFIERS" :selected-cards="selectedCards"
-      :selected-count="selectedIndexes.length" :card-modifiers="run.cardModifiers ?? {}"
-      :upgrade-chips="progress.upgradeChips" :phase="run.phase" @purchase="buyCardModifier" />
-      
+        :selected-count="selectedIndexes.length" :card-modifiers="run.cardModifiers ?? {}"
+        :upgrade-chips="progress.upgradeChips" :phase="run.phase" @purchase="buyCardModifier" />
+    </template>
+    <template #hand>
       <ScoringPanel :preview="preview" :scored-hand="scoredHand"
-      :eligible-options="eligibleOptions" :selected-cards="selectedCards"
-      :manual-unlocked="manualUnlocked"
-      :selection-mode="selectionMode" :cards-per-play="rules.cardsPerPlay"
-      @set-selection-mode="setSelectionMode" @choose-scoring-option="chooseScoringOption" />
+        :eligible-options="eligibleOptions" :selected-cards="selectedCards"
+        :manual-unlocked="manualUnlocked"
+        :selection-mode="selectionMode" :cards-per-play="rules.cardsPerPlay"
+        @set-selection-mode="setSelectionMode" @choose-scoring-option="chooseScoringOption" />
     </template>
   </PerkShop>
 </template>
