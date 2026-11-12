@@ -343,3 +343,7 @@ The JSON editor now automatically populates with the active browser save after m
 ## Collapsible bottom perk shop
 
 The perk shop is now docked to the bottom of the browser viewport as a fixed-position panel. A persistent, keyboard-accessible tab toggles the shop open and closed and always displays the current upgrade-chip balance. It begins collapsed to avoid obscuring the cards. When expanded, the list of six perks scrolls within a viewport-constrained panel (up to 70dvh or 38rem), with safe-area padding for mobile and extra page-bottom space to prevent content hiding beneath the tab. Shopping rules, costs and immediate upgrades are unchanged.
+
+### Viewport dock positioning correction
+
+Render PerkShop as a sibling of the main `UContainer` rather than inside its centered, padded content tree. This isolates the fixed shop from page-level layouts and permits `bottom: 0` to align with the viewport boundary while the UContainer retains padding for unobstructed content. The shop tab and accordion functionality remain the same.

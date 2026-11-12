@@ -347,9 +347,6 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
         </UCard>
       </section>
 
-      <PerkShop :phase="run.phase" :progress="progress" :rules="rules"
-        :next-round-rules="nextRoundRules" @buy-perk="buyPerk" />
-
       <SaveManager :json="saveJson" @update:json="updateSaveJson" :status="saveStatus" :blocked="savingBlocked"
         @export="exportSave" @import="importSave" @new-run="restartRun" />
 
@@ -358,4 +355,8 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
       <SystemStatus :health="health" :error="error" :status="status" @refresh="refresh" />
     </div>
   </UContainer>
+
+  <!-- The viewport dock must not inherit the centered page container's layout. -->
+  <PerkShop :phase="run.phase" :progress="progress" :rules="rules"
+    :next-round-rules="nextRoundRules" @buy-perk="buyPerk" />
 </template>
