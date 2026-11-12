@@ -56,10 +56,8 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /API connected/);
   assert.match(html, /Milestone 8/);
   assert.match(html, /Transcendence/);
-  assert.match(html, /Round 1/);
-  assert.match(html, /Chip target/);
-  assert.match(html, /Hands remaining/);
-  assert.match(html, /Discards remaining/);
+  assert.match(html, /data-testid="round-number"[^>]*>\s*Round 1 - 60 Chips\s*</);
+  assert.match(html, /Chip count/);
   assert.match(html, /Run scoring chips/);
   assert.match(html, /No fixed final round|no fixed final round/);
   assert.match(html, /Hand selection/);
@@ -70,13 +68,15 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.ok(discardButton, 'Discard button should render');
   assert.match(playButton, /aria-label="Play selected cards"/);
   assert.match(discardButton, /aria-label="Discard selected cards"/);
+  // Remaining action counts are now shown inside the play/discard buttons.
+  assert.match(playButton, /\(x\s*4\)/);
+  assert.match(discardButton, /\(x\s*3\)/);
   assert.equal((html.match(/data-testid="score-hand"/g) ?? []).length, 1);
   assert.equal((html.match(/data-testid="discard-selected"/g) ?? []).length, 1);
   assert.match(html, /data-testid="hand-actions"/);
   assert.equal((html.match(/data-testid="hand-actions"/g) ?? []).length, 1);
   assert.equal((html.match(/data-testid="clear-selection"/g) ?? []).length, 1);
-  assert.match(html, /1–5 to score|1.{0,25}5 to score/);
-  assert.match(html, /Sort cards:/);
+  assert.match(html, /aria-label="Sort cards"/);
   assert.match(html, /Card style:/);
   assert.match(html, /data-card-style="classic"/);
   for (const style of [
@@ -86,9 +86,9 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
     assert.match(html, new RegExp(`data-testid="card-style-${style}"`));
   }
   assert.match(html, /Dealt order/);
-  assert.match(html, />Rank</);
+  assert.match(html, /data-testid="sort-rank"/);
   assert.match(html, /data-testid="sort-rank"[^>]*aria-pressed="true"|aria-pressed="true"[^>]*data-testid="sort-rank"/);
-  assert.match(html, />Suit</);
+  assert.match(html, /data-testid="sort-suit"/);
 
   assert.match(html, /Start new run/);
   assert.match(html, /id="shop-heading"[^>]*>Perk shop<\/span>/);
@@ -138,9 +138,7 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.doesNotMatch(html, /data-testid="card-center-rank"/);
   assert.equal((html.match(/data-testid="card-center-suit"/g) ?? []).length, 8);
   assert.match(html, /data-testid="deck-count"[^>]*>44</);
-  assert.match(html, /data-testid="chip-target"[^>]*>60</);
-  assert.match(html, /data-testid="hands-remaining"[^>]*>4</);
-  assert.match(html, /data-testid="discards-remaining"[^>]*>3</);
+  assert.match(html, /data-testid="round-score"[^>]*>0 \/ 60</);
   assert.match(html, /data-testid="upgrade-chip-balance"[^>]*>0</);
 });
 
