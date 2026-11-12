@@ -54,7 +54,7 @@ const emit = defineEmits<{
               <div  role="group" 
                     aria-label="Play or discard selected cards"
                     class="grid grid-cols-2 gap-1 rounded-lg border border-default bg-elevated/50 p-3">
-                <UButton  data-testid="score-hand" 
+                <UButton  data-testid="score-hand" aria-label="Play selected cards" title="Play selected cards" 
                           color="success" 
                           variant="solid" 
                           size="xl"
@@ -63,7 +63,7 @@ const emit = defineEmits<{
                           :disabled="!preview || !inRound || handsRemaining === 0" 
                           @click="emit('score-hand')">
                 </UButton>
-                <UButton  data-testid="discard-selected" 
+                <UButton  data-testid="discard-selected" aria-label="Discard selected cards" title="Discard selected cards" 
                           color="warning" 
                           variant="solid" 
                           size="xl"
@@ -74,7 +74,7 @@ const emit = defineEmits<{
                 </UButton>
               </div>
               <div  role="group" 
-                    aria-label="Play or discard selected cards"
+                    aria-label="Clear selected cards"
                     class="grid grid-cols-1 gap-1 rounded-lg border border-default bg-elevated/50 p-3">
                 <UButton  data-testid="clear-selection" 
                           class="justify-center px-6 font-bold shadow-md"          

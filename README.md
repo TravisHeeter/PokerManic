@@ -319,3 +319,7 @@ Up to two **independent qualifying formations** can score together within a sing
 ## Milestone 5 — Primary play/discard actions
 
 The main game actions now sit side by side directly below the Poker Hand Evaluation summary, before the detailed hand-selection panel. **Play** uses a large solid green success button, while **Discard** uses a large solid yellow warning button. Both retain their existing disable conditions, and the parent page still owns the scoring/discard transactions through typed events. Clear Selection remains nearby as a neutral secondary action. The original footer Discard button was removed to prevent duplication. SSR smoke verifies both buttons render only once and precede the hand-selection panel.
+
+## Milestone 5 review — icon-only primary actions
+
+The Play and Discard buttons are intentionally icon-only in the compact two-column layout, with a separate full-width Clear Selection action. Accessible aria-label and tooltip titles identify both icon actions as Play selected cards and Discard selected cards. The Perk Shop heading is simplified, but the persistent in-round shop availability and behavior remain unchanged. SSR smoke tests validate the accessibility names and updated heading rather than expecting removed visible button text.

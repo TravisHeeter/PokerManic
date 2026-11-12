@@ -69,8 +69,8 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   const discardButton = html.match(/<button[^>]*data-testid="discard-selected"[^>]*>[\s\S]*?<\/button>/)?.[0];
   assert.ok(playButton, 'Play button should render');
   assert.ok(discardButton, 'Discard button should render');
-  assert.match(playButton, /\bPlay\b/);
-  assert.match(discardButton, /\bDiscard\b/);
+  assert.match(playButton, /aria-label="Play selected cards"/);
+  assert.match(discardButton, /aria-label="Discard selected cards"/);
   assert.equal((html.match(/data-testid="score-hand"/g) ?? []).length, 1);
   assert.equal((html.match(/data-testid="discard-selected"/g) ?? []).length, 1);
   assert.ok(html.indexOf('data-testid="score-hand"') < html.indexOf('Hand selection'));
@@ -82,7 +82,7 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, />Suit</);
 
   assert.match(html, /Start new run/);
-  assert.match(html, /Perk shop — always open/);
+  assert.match(html, /id="shop-heading"[^>]*>Perk shop<\/h2>/);
   // These sections are rendered by separate Nuxt auto-imported components.
   assert.match(html, /Poker hand evaluation/);
   assert.match(html, /Development progress/);
