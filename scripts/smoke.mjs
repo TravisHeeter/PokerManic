@@ -89,7 +89,7 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /data-testid="sort-suit"/);
 
   assert.match(html, /Start new run/);
-  assert.match(html, /id="shop-heading"[^>]*>Perk shop<\/span>/);
+  assert.match(html, /Perk shop/);
   // These sections are rendered by separate Nuxt auto-imported components.
   assert.match(html, /Development progress/);
   assert.match(html, /Prestige chips/);
@@ -117,17 +117,15 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /Shop open throughout your run/);
   assert.doesNotMatch(html, /Shop closed/);
   assert.match(html, /data-testid="perk-shop-dock"/);
-  assert.match(html, /data-testid="perk-shop-toggle"/);
-  assert.match(html, /data-testid="modifier-shop-toggle"/);
-  assert.match(html, /aria-controls="modifier-shop-content"/);
+  assert.match(html, /i-lucide-shopping-bag/);
+  assert.match(html, /i-lucide-sparkles/);
+  assert.match(html, /Card modifiers/);
   assert.match(html, /data-testid="modifier-shop-content"/);
-  assert.doesNotMatch(html, /data-testid="hand-shop-toggle"/);
+  assert.doesNotMatch(html, /i-lucide-layers-3/);
   assert.doesNotMatch(html, /data-testid="hand-shop-content"/);
   assert.match(html, /role="tablist"/);
-  assert.match(html, /aria-expanded="false"/);
-  assert.match(html, /aria-controls="perk-shop-content"/);
+  assert.doesNotMatch(html, /Show upgrades|▲ Show|▼ Hide/);
   assert.match(html, /data-testid="perk-shop-content"/);
-  assert.match(html, /Show upgrades/);
   assert.match(html, /Upgrade chips/);
   assert.match(html, /Manual hand selection/);
   assert.match(html, /Milestone 8/);
