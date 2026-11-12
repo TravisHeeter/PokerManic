@@ -65,14 +65,18 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /Hand selection/);
   assert.match(html, /Manual Selection locked/);
   assert.match(html, /Automatic selection active/);
-  assert.match(html, /Score selected hand/);
+  assert.match(html, /data-testid="score-hand"[^>]*>[^]*?Play<\/button>/);
+  assert.match(html, /data-testid="discard-selected"[^>]*>[^]*?Discard<\/button>/);
+  assert.equal((html.match(/data-testid="score-hand"/g) ?? []).length, 1);
+  assert.equal((html.match(/data-testid="discard-selected"/g) ?? []).length, 1);
+  assert.ok(html.indexOf('data-testid="score-hand"') < html.indexOf('Hand selection'));
   assert.match(html, /1–5 to score|1.{0,25}5 to score/);
   assert.match(html, /Sort cards:/);
   assert.match(html, /Dealt order/);
   assert.match(html, />Rank</);
   assert.match(html, /data-testid="sort-rank"[^>]*aria-pressed="true"|aria-pressed="true"[^>]*data-testid="sort-rank"/);
   assert.match(html, />Suit</);
-  assert.match(html, /Discard selected/);
+
   assert.match(html, /Start new run/);
   assert.match(html, /Perk shop — always open/);
   // These sections are rendered by separate Nuxt auto-imported components.

@@ -205,15 +205,12 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
               :selected-count="selectedIndexes.length" :manual-unlocked="manualUnlocked"
               :selection-mode="selectionMode" :cards-per-play="rules.cardsPerPlay"
               :in-round="inRound" :hands-remaining="run.handsRemaining"
+              :can-discard-selection="canDiscardSelection"
               @set-selection-mode="setSelectionMode" @choose-scoring-option="chooseScoringOption"
-              @score-hand="scoreSelectedHand" @clear-selection="clearSelection" />
+              @score-hand="scoreSelectedHand" @discard-selected="discardSelectedCards"
+              @clear-selection="clearSelection" />
 
             <div class="flex flex-wrap gap-3">
-              <UButton data-testid="discard-selected" icon="i-lucide-trash-2"
-                color="neutral" variant="outline" :disabled="!canDiscardSelection"
-                @click="discardSelectedCards">
-                Discard selected ({{ selectedIndexes.length }})
-              </UButton>
               <UButton data-testid="new-run" icon="i-lucide-rotate-ccw"
                 color="neutral" variant="ghost" @click="restartRun">
                 Start new run
