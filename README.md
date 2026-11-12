@@ -367,3 +367,7 @@ Prestige unlock prices are now **10 / 20 / 30 / 40 / 50 / 60 prestige chips**, f
 ## Card appearance experiments
 
 The hand now offers four live-switchable designs: **Classic** (original colors), **Victorian** (aged parchment, Palatino), **Art Deco** (cream/gold with geometric sans serif), and **Cyber** (dark teal with bright suit colors and monospace ranks). The choice saves independently to `localStorage['pokermanic.card-style.v1']`; it does not alter gameplay state or the editable game-save format. Selecting a style immediately restyles the existing cards, including suit colors, rank typography, border and paper. No downloaded font files or external runtime font dependencies are required.
+
+## Expanded card appearance selector
+
+The selectable card styles now include **Bold Victorian**, **Vivid Gothic**, **Art Nouveau**, **Cosmic Horror**, and **Medieval Illuminated**, alongside Classic, Victorian, Art Deco, and Cyber. Art Nouveau uses warm ivory, ornamental double borders, and elegant serif ranks; Cosmic Horror uses deep indigo, luminous purple/red/green/gold suits, and subtle celestial glow; Medieval Illuminated uses parchment, squared gold borders, strong red/green/gold suits, and heavy book-style serif ranks. Fonts use installed browser fallbacks without external dependencies. The browser remembers the selected style using the existing card-style localStorage key, independent of gameplay save files.

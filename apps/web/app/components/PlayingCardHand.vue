@@ -21,7 +21,9 @@ const displayedCards = computed(() => sortHandForDisplay(props.hand, props.sortM
 const SUIT_SYMBOLS: Record<CardSuit, string> = {
   hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠',
 };
-type CardStyle = 'classic' | 'victorian' | 'deco' | 'cyber';
+type CardStyle = 'classic' | 'victorian' | 'deco' | 'cyber'
+  | 'bold-victorian' | 'vivid-gothic' | 'art-nouveau'
+  | 'cosmic-horror' | 'medieval-illuminated';
 const STYLE_STORAGE_KEY = 'pokermanic.card-style.v1';
 const cardStyle = ref<CardStyle>('classic');
 const styles: { id: CardStyle; label: string }[] = [
@@ -29,6 +31,11 @@ const styles: { id: CardStyle; label: string }[] = [
   { id: 'victorian', label: 'Victorian' },
   { id: 'deco', label: 'Art Deco' },
   { id: 'cyber', label: 'Cyber' },
+  { id: 'bold-victorian', label: 'Bold Victorian' },
+  { id: 'vivid-gothic', label: 'Vivid Gothic' },
+  { id: 'art-nouveau', label: 'Art Nouveau' },
+  { id: 'cosmic-horror', label: 'Cosmic Horror' },
+  { id: 'medieval-illuminated', label: 'Medieval Illuminated' },
 ];
 onMounted(() => {
   try {

@@ -78,7 +78,10 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /Sort cards:/);
   assert.match(html, /Card style:/);
   assert.match(html, /data-card-style="classic"/);
-  for (const style of ['classic', 'victorian', 'deco', 'cyber']) {
+  for (const style of [
+    'classic', 'victorian', 'deco', 'cyber', 'bold-victorian',
+    'vivid-gothic', 'art-nouveau', 'cosmic-horror', 'medieval-illuminated',
+  ]) {
     assert.match(html, new RegExp(`data-testid="card-style-${style}"`));
   }
   assert.match(html, /Dealt order/);
