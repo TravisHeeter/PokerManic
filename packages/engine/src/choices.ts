@@ -16,6 +16,9 @@ export interface ScoringOption {
   baseChips: number;
   multiplier: number;
   score: number;
+  /** Optional run-long card modifier totals applied to the chosen formation. */
+  modifierBonusChips?: number;
+  modifierMultiplier?: number;
   /** Present only for a two-formation scoring combination. */
   components?: [ScoringComponent, ScoringComponent];
   combinationType?: 'separate' | 'overlapping';

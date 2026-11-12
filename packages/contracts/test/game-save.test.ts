@@ -60,6 +60,14 @@ describe('editable game save v1', () => {
       ...updated, permanentLevels: { ...updated.permanentLevels, cards_per_play: 4 },
     } }).success).toBe(false);
   });
+  it('loads old saves without modifiers and preserves valid edited modifier maps', () => {
+    expect(gameSaveV1Schema.parse(base).run.cardModifiers).toBeUndefined();
+    const card = base.run.hand[0]!;
+    const key = card.suit + ':' + card.rank;
+    const modded = { ...base, run: { ...base.run, cardModifiers: { [key]: 'bonus' } } };
+    expect(parseGameSave(formatGameSave(modded)).run.cardModifiers?.[key]).toBe('bonus');
+    expect(gameSaveV1Schema.safeParse({ ...base, run: { ...base.run, cardModifiers: { 'invalid:key': 'bonus' } } }).success).toBe(false);
+  });
   it('allows intentional player modifications to valid chip counts', () => {
     const custom = structuredClone(base);
     custom.progress.upgradeChips = 9999;
