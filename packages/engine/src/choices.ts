@@ -134,7 +134,7 @@ function matchingCategories(cards: readonly Card[]): Exclude<ScoringCategory, 'c
 
 function numericRankKey(option: ScoringOption, cards: readonly Card[]): number[] {
   const rankValues = option.scoringCardIndices
-    .map((index) => RANK_VALUE[cards[index]!.rank])
+    .map((index) => RANK_VALUE[option.wildAssignments?.find(w => w.index === index)?.rank ?? cards[index]!.rank])
     .sort((a, b) => b - a);
 
   // Auto selection among straight options should favor the high straight.
