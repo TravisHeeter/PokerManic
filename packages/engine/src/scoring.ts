@@ -9,6 +9,7 @@ export type PokerHandCategory =
   | 'flush'
   | 'full_house'
   | 'four_of_a_kind'
+  | 'five_of_a_kind'
   | 'straight_flush'
   | 'royal_flush';
 
@@ -33,6 +34,7 @@ export const POKER_HAND_VALUES = {
   flush:           { label: 'Flush',           baseChips: 35,  multiplier: 4 },
   full_house:      { label: 'Full house',      baseChips: 40,  multiplier: 4 },
   four_of_a_kind:  { label: 'Four of a kind',  baseChips: 60,  multiplier: 7 },
+  five_of_a_kind:  { label: 'Five of a kind', baseChips: 150, multiplier: 12 },
   straight_flush:  { label: 'Straight flush',  baseChips: 100, multiplier: 8 },
   royal_flush:     { label: 'Royal flush',     baseChips: 125, multiplier: 10 },
 } as const satisfies Record<PokerHandCategory, {
