@@ -6,11 +6,24 @@ import { POKER_HAND_VALUES, type PokerHandCategory } from './scoring.js';
  * Indices are positional within the passed cards until unique card-instance IDs
  * are introduced with the player inventory and card-modifier system.
  */
-export type ScoringCategory = PokerHandCategory | 'three_pair' | 'four_pair';
+export type ScoringCategory = PokerHandCategory | 'three_pair' | 'four_pair' | 'combination';
 
 export interface ScoringOption {
   id: string;
   category: ScoringCategory;
+  label: string;
+  scoringCardIndices: number[];
+  baseChips: number;
+  multiplier: number;
+  score: number;
+  /** Present only for a two-formation scoring combination. */
+  components?: [ScoringComponent, ScoringComponent];
+  combinationType?: 'separate' | 'overlapping';
+}
+
+export interface ScoringComponent {
+  id: string;
+  category: Exclude<ScoringCategory, 'combination'>;
   label: string;
   scoringCardIndices: number[];
   baseChips: number;
@@ -23,6 +36,20 @@ export interface HandSelectionSettings {
   selectionMode: 'automatic' | 'manual';
 }
 
+/**
+ * Provisional size premium for expanded poker formations: each extra card
+ * adds 25% of the category's five-card base chips (6: 1.25x, 7: 1.5x, 8: 1.75x).
+ * Five-card hand values and multipliers remain unchanged.
+ */
+export const EXTRA_CARD_BASE_CHIP_RATE = 0.25;
+
+function expandedBaseChips(category: ScoringCategory, baseChips: number, count: number): number {
+  if (count <= 5 || !['straight','flush','full_house','straight_flush'].includes(category)) {
+    return baseChips;
+  }
+  return Math.round(baseChips * (1 + (count - 5) * EXTRA_CARD_BASE_CHIP_RATE));
+}
+
 const EXTRA_PAIR_VALUES = {
   three_pair: { label: 'Three pair', baseChips: 30, multiplier: 3 },
   four_pair: { label: 'Four pair', baseChips: 40, multiplier: 4 },
@@ -31,6 +58,7 @@ const EXTRA_PAIR_VALUES = {
 // Strongest *poker-ranking* formation wins in automatic mode, not
 // necessarily the formation with the highest score after upgrades.
 const CATEGORY_STRENGTH: Record<ScoringCategory, number> = {
+  combination: 0,
   high_card: 1,
   pair: 2,
   two_pair: 3,
@@ -58,14 +86,14 @@ function isStraight(values: readonly number[]): boolean {
   return ascending.every((value, i) => value === ascending[0]! + i);
 }
 
-function matchingCategories(cards: readonly Card[]): ScoringCategory[] {
+function matchingCategories(cards: readonly Card[]): Exclude<ScoringCategory, 'combination'>[] {
   const size = cards.length;
   if (size === 1) return ['high_card'];
   const ranks = cards.map((card) => RANK_VALUE[card.rank]);
   const counts = new Map<number, number>();
   for (const rank of ranks) counts.set(rank, (counts.get(rank) ?? 0) + 1);
   const frequencies = [...counts.values()].sort((a, b) => b - a);
-  const result: ScoringCategory[] = [];
+  const result: Exclude<ScoringCategory, 'combination'>[] = [];
 
   if (size === 2 && frequencies[0] === 2) result.push('pair');
   if (size === 3 && frequencies[0] === 3) result.push('three_of_a_kind');
@@ -118,6 +146,58 @@ function compareRanks(a: readonly number[], b: readonly number[]): number {
   return 0;
 }
 
+
+function categoryStrength(option: ScoringOption): number {
+  return option.components
+    ? Math.max(...option.components.map((component) => CATEGORY_STRENGTH[component.category]))
+    : CATEGORY_STRENGTH[option.category];
+}
+
+function isContained(a: readonly number[], b: readonly number[]): boolean {
+  const bSet = new Set(b);
+  return a.every((index) => bSet.has(index));
+}
+
+/**
+ * Combine exactly two independent qualifying formations.
+ * - Disjoint cards: add both calculated scores.
+ * - Shared card(s): add base chips and multipliers, then multiply.
+ * A formation wholly contained in another does not count as an extra hand.
+ * Avoid High Card add-ons and composite-of-composite scoring.
+ */
+function combinedOptions(options: readonly ScoringOption[]): ScoringOption[] {
+  const candidates = options.filter((option) => option.category !== 'high_card'
+    && option.category !== 'combination');
+  const result: ScoringOption[] = [];
+  for (let i = 0; i < candidates.length; i++) {
+    const a = candidates[i]!;
+    for (let j = i + 1; j < candidates.length; j++) {
+      const b = candidates[j]!;
+      if (isContained(a.scoringCardIndices, b.scoringCardIndices)
+        || isContained(b.scoringCardIndices, a.scoringCardIndices)) continue;
+      const union = [...new Set([...a.scoringCardIndices, ...b.scoringCardIndices])]
+        .sort((x, y) => x - y);
+      const overlap = union.length < a.scoringCardIndices.length + b.scoringCardIndices.length;
+      const baseChips = a.baseChips + b.baseChips;
+      const multiplier = overlap ? a.multiplier + b.multiplier : 0;
+      const score = overlap ? baseChips * multiplier : a.score + b.score;
+      if (!Number.isSafeInteger(score)) throw new RangeError('Combined score exceeds safe integer precision.');
+      result.push({
+        id: `combination:${a.id}|${b.id}`,
+        category: 'combination',
+        label: `${a.label} + ${b.label}`,
+        scoringCardIndices: union,
+        baseChips,
+        multiplier,
+        score,
+        components: [a as ScoringComponent, b as ScoringComponent],
+        combinationType: overlap ? 'overlapping' : 'separate',
+      });
+    }
+  }
+  return result;
+}
+
 /**
  * List EVERY qualifying scoring subset of the committed cards, including
  * each individual high-card choice even when a better hand is also present.
@@ -145,20 +225,23 @@ export function listEligiblePokerHands(cards: readonly Card[]): ScoringOption[] 
       const label = subset.length > 5 && ['straight', 'flush', 'full_house', 'straight_flush'].includes(category)
         ? `${subset.length}-card ${entry.label.toLowerCase()}`
         : entry.label;
+      const baseChips = expandedBaseChips(category, entry.baseChips, subset.length);
       options.push({
         id: `${category}:${scoringCardIndices.join('-')}`,
         category,
         label,
         scoringCardIndices,
-        baseChips: entry.baseChips,
+        baseChips,
         multiplier: entry.multiplier,
-        score: entry.baseChips * entry.multiplier,
+        score: baseChips * entry.multiplier,
       });
     }
   }
 
+  options.push(...combinedOptions(options));
   options.sort((a, b) =>
-    CATEGORY_STRENGTH[b.category] - CATEGORY_STRENGTH[a.category]
+    categoryStrength(b) - categoryStrength(a)
+    || Number(Boolean(b.components)) - Number(Boolean(a.components))
     || b.scoringCardIndices.length - a.scoringCardIndices.length
     || compareRanks(numericRankKey(a, validCards), numericRankKey(b, validCards))
     || a.id.localeCompare(b.id),

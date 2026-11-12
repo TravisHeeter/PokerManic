@@ -54,28 +54,52 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /PokerManic/);
   assert.match(html, /favicon\.svg\?v=1/);
   assert.match(html, /API connected/);
-  assert.match(html, /Milestone 4/);
-  assert.match(html, /Survival rounds/);
+  assert.match(html, /Milestone 5/);
+  assert.match(html, /Run upgrades/);
   assert.match(html, /Round 1/);
   assert.match(html, /Chip target/);
   assert.match(html, /Hands remaining/);
   assert.match(html, /Discards remaining/);
-  assert.match(html, /Run total chips/);
+  assert.match(html, /Run scoring chips/);
   assert.match(html, /No fixed final round|no fixed final round/);
   assert.match(html, /Hand selection/);
-  assert.match(html, /Preview unlocked perk/);
+  assert.match(html, /Manual Selection locked/);
   assert.match(html, /Automatic selection active/);
-  assert.match(html, /Score selected hand/);
-  assert.match(html, /Discard selected/);
+  const playButton = html.match(/<button[^>]*data-testid="score-hand"[^>]*>[\s\S]*?<\/button>/)?.[0];
+  const discardButton = html.match(/<button[^>]*data-testid="discard-selected"[^>]*>[\s\S]*?<\/button>/)?.[0];
+  assert.ok(playButton, 'Play button should render');
+  assert.ok(discardButton, 'Discard button should render');
+  assert.match(playButton, /aria-label="Play selected cards"/);
+  assert.match(discardButton, /aria-label="Discard selected cards"/);
+  assert.equal((html.match(/data-testid="score-hand"/g) ?? []).length, 1);
+  assert.equal((html.match(/data-testid="discard-selected"/g) ?? []).length, 1);
+  assert.ok(html.indexOf('data-testid="score-hand"') < html.indexOf('Hand selection'));
+  assert.match(html, /1–5 to score|1.{0,25}5 to score/);
+  assert.match(html, /Sort cards:/);
+  assert.match(html, /Dealt order/);
+  assert.match(html, />Rank</);
+  assert.match(html, /data-testid="sort-rank"[^>]*aria-pressed="true"|aria-pressed="true"[^>]*data-testid="sort-rank"/);
+  assert.match(html, />Suit</);
+
   assert.match(html, /Start new run/);
-  assert.match(html, /Milestone 5/);
+  assert.match(html, /id="shop-heading"[^>]*>Perk shop<\/h2>/);
+  // These sections are rendered by separate Nuxt auto-imported components.
+  assert.match(html, /Poker hand evaluation/);
+  assert.match(html, /Development progress/);
+  assert.match(html, /System status/);
+  assert.match(html, /Shop open throughout your run/);
+  assert.doesNotMatch(html, /Shop closed/);
+  assert.match(html, /Upgrade chips available/);
+  assert.match(html, /Manual hand selection/);
+  assert.match(html, /Milestone 6/);
   assert.match(html, /Remaining in deck/);
-  // The first hand is seeded: both server and browser hydrate the same eight cards.
+  // The first hand is random per server render and serialized for identical browser hydration.
   assert.equal((html.match(/data-testid="playing-card"/g) ?? []).length, 8);
   assert.match(html, /data-testid="deck-count"[^>]*>44</);
   assert.match(html, /data-testid="chip-target"[^>]*>60</);
   assert.match(html, /data-testid="hands-remaining"[^>]*>4</);
   assert.match(html, /data-testid="discards-remaining"[^>]*>3</);
+  assert.match(html, /data-testid="upgrade-chip-balance"[^>]*>0</);
 });
 
 await run('Custom PokerManic favicon is served', async () => {
@@ -90,5 +114,5 @@ await run('Custom PokerManic favicon is served', async () => {
 if (process.exitCode) {
   console.error('The current milestone is NOT verified. Fix failures before proceeding.');
 } else {
-  console.log('Milestone 4 smoke tests passed.');
+  console.log('Milestone 5 smoke tests passed.');
 }

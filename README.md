@@ -1,4 +1,4 @@
-# PokerManic — Milestone 4: Endless survival rounds
+# PokerManic — Milestone 5: Run upgrades and perk shop
 
 Browser-based poker survival roguelite in development. Milestone 1 established the stack; Milestone 2 added the deck and visual cards. Milestone 3 added player-directed scoring foundations. Milestone 4 makes the game playable with escalating round thresholds, limited scoring hands, discards, and round progression.
 
@@ -239,3 +239,87 @@ pnpm smoke
 At http://localhost:3000 check the initial 60-chip target, 4 hands, 3 discards, 8 held cards and 44 in the draw pile. Score a hand and see chips and hands remaining change. Discard 1–5 cards and verify that only the discard count decreases. Try the temporary Manual perk preview, including High Card choices. Reach a target and advance to Round 2. Lose a run by exhausting scoring hands below the target and restart it. Confirm the red M favicon still appears.
 
 **Up next: Milestone 5** — configurable progression and player-upgrade foundations. Permanent perks, transcendence, purchasing currencies and persistence will be added in subsequent milestones, not implied by the current demonstration.
+
+## Milestone 5: Spendable upgrade chips and run-only perks
+
+The first functional perk economy is part of **Milestone 5**, with a separate in-run currency and an always-open shop during active runs. It is intentionally distinct from the scoring system, and this is **not** permanent/transcendent progression.
+
+**Game flow:** Beat a round's scoring-chip target. The game awards **upgrade chips** equal to `floor(roundChips / 10)` (minimum 1). Those chips accumulate in a separate wallet; the round's scoring chips are not deducted. The shop stays available throughout an active run. Buy any affordable perk while playing or after winning a round, or save your chips for later. **Rule upgrades affect the next round**, without changing your current hand or remaining actions; **Manual Hand Selection unlocks immediately** so players can switch to Manual during the same round. The same shop cannot pay its reward twice.
+
+The provisional run perks:
+
+| Perk | Initial cost | Maximum upgrades | Effect |
+|---|---:|---:|---|
+| Extra scoring hand | 5 | 4 | +1 scoring attempt per round |
+| Extra discard action | 4 | 4 | +1 discard per round |
+| Hand size | 8 | 4 | +1 held card (8 → 12) |
+| Cards per play | 12 | 3 | +1 card committed for scoring (5 → 8) |
+| Cards per discard | 7 | 3 | +1 card discarded per action (5 → 8) |
+| Manual Hand Selection | 10 | 1 | Enables Manual mode and choosing specific contributing scoring cards |
+
+Each upgrade's price increases with its current level (`baseCost × (level + 1)`). The caps reflect the current pure engine limit of **eight cards per scoring play**, rather than a permanent design restriction. The existing radio-button interface is now **genuinely unlocked by purchasing** the perk, not a developer-only preview. Automatic remains available and is the default for every new run. When Manual is unlocked, it can score an individually chosen High Card even when higher cards exist.
+
+Purchases are permitted during active play and between rounds. Buttons are disabled only for insufficient currency, a maximum-level perk, or after a run ends. The shop remains visible after defeat, but run-only purchases are unavailable because there is no remaining run to benefit from them. A new run resets the run-only wallet, perk levels, and scoring history. A later milestone will introduce separately persisted/meta-currency and transcendence; **no permanent privileges exist yet**.
+
+The upgrade rules are defined and tested in `packages/engine/src/progression.ts`, independent of Vue/Nuxt. The Nuxt page visibly identifies Milestone 5 and displays the wallet and shop.
+
+### Run upgrade acceptance tests
+
+```bash
+pnpm install
+pnpm typecheck
+pnpm test
+pnpm build
+pnpm dev
+```
+
+In a separate terminal run `pnpm smoke`. At `http://localhost:3000`, confirm that the shop is visible from Round 1 with the wallet at 0, with buy buttons disabled only because you cannot yet afford a perk. Win a round; verify the wallet receives a reward. Advance without purchasing, then buy a perk **during Round 2**. Verify the wallet decreases but existing round limits remain unchanged. Advance again to verify the upgraded limit is reflected in gameplay. Purchase Manual Hand Selection mid-round whenever affordable: Manual mode should enable immediately, and selecting a lower High Card should work without advancing another round. Switch back to Automatic. Starting a new run should clear purchases and reset the wallet.
+
+## Milestone 5 UI component refactor
+
+The initial single-file Nuxt game page has been separated into components under `apps/web/app/components/`:
+
+- `RoundStatus.vue` — chip thresholds, counters, win/loss actions.
+- `PlayingCardHand.vue` — selectable visual cards, suit palette, selection highlights.
+- `ScoringPanel.vue` — eligible hand radio buttons, Manual/Automatic mode, scoring actions.
+- `PerkShop.vue` — always-open shop, upgrade chips, perk prices, levels and purchase actions.
+- `DevelopmentProgress.vue` — milestone overview.
+- `SystemStatus.vue` — backend status and retry controls.
+
+`apps/web/app/pages/index.vue` remains the **single stateful page orchestrator**: it calls the pure `@pokermanic/engine`, owns run/progression state, and passes data into child components through typed props. Components send typed events back to the page for game actions. The gameplay rules and public UI behaviors are unchanged. These components are auto-imported by Nuxt; no manual registration or global stores are necessary.
+
+Run `pnpm typecheck`, `pnpm test`, `pnpm build`, `pnpm smoke` and manually verify card selection, auto/manual modes, shop purchases during a round, scoring, discards, next-round progression, and restarting a run. This is a refactor within **Milestone 5**, not a new milestone.
+
+## Milestone 5 — Sort cards by rank or suit
+
+The `PlayingCardHand.vue` component now has **Dealt order** (default), **Rank** (Ace to Two, with suit tiebreaks), and **Suit** (♠, ♥, ♦, ♣, highest ranks first within each suit) buttons. Sorting changes only the visual order and never mutates `RunState.hand` or changes the game's draw order. All card actions and highlights use preserved original indices, so sorting does not change selected cards or their scoring or discard behavior. Sort preferences remain active across hands during a page session. Unit tests cover both orderings and selection identity. This remains Milestone 5.
+
+## Milestone 5 — Cards per Play fixes
+
+**Cards per Play is a maximum, not an exact requirement.** Without upgrades, choose five cards; after purchasing +1 Cards per Play, choose **five or six**. Further levels allow five through seven, then five through eight. The purchase **takes effect immediately**, including during an active round: the UI preview and scoring engine both use the new cap. A six-card Three Pair or expanded hand is recognized when it qualifies; a non-combination six-card selection still has High Card options. All cards committed to a scoring action are consumed even if only some contribute chips. New engine tests cover five/six plays under the same upgraded rule set, six-card Three Pair scoring, replacement draws and invalid counts. Other numeric perks affecting hand size, hands or discards remain deferred to the next round, and Manual Selection remains immediate.
+
+## Milestone 5 — Play any number of cards up to the maximum
+
+A scoring play now commits **any number from one to the current Cards per Play cap** (initially five, upgraded to six/seven/eight). A one-card selection is a valid High Card. Pairs, straights, flushes, and expanded hands become options only when the chosen subset qualifies. Scoring one card consumes one scoring-hand action and removes/replaces just that card; scoring three consumes three cards, and so on. The selected scoring formation can still contribute fewer cards than the total committed to a play. Manual Selection remains a separate perk and preserves the ability to choose a specific lower card. Purchases of +1 Cards per Play continue to apply immediately. Engine tests verify one through six cards, default one-card scoring, invalid zero/above-maximum selections, and manually scoring a Jack over a King.
+
+## Milestone 5: Random opening hands, rank-first display, and expanded scoring
+
+The opening run now uses a random Fisher–Yates shuffle, just like later rounds. Its state is initialized using Nuxt `useState` on the server, which serializes the resulting eight cards for identical browser hydration; no hardcoded seed or same opening hand for every fresh page load. The component's default sort is **Rank**, highest first, and players can switch to Suit or Dealt order at any point.
+
+Extended **Straight**, **Flush**, **Full House**, and **Straight Flush** formations earn **25% extra base chips per qualifying card beyond five** (6 cards = 1.25× base chips, 7 = 1.5×, 8 = 1.75×; base chips rounded to whole numbers). The category multiplier remains the same, and only **cards participating in the selected scoring pattern** determine its size premium. E.g., 5-card Full House 40×4=160; 6-card 50×4=200; 7-card 60×4=240; 8-card 70×4=280. The established larger pair formations (Three Pair and Four Pair) retain their own provisional scoring tables. All amounts are early balancing defaults, subject to tuning.
+
+## Milestone 5 — All shop upgrades now apply to the active round
+
+Every run-only perk purchase now updates active gameplay **immediately**. Buying **+1 held card** draws an additional card from the draw pile into the currently displayed hand (8 → 9, then 10, etc.) without replacing or clearing existing cards or selections. Buying **+1 scoring hand** or **+1 discard** increases the corresponding remaining action counter immediately, preserving how many actions the player already spent. Increased maximum cards per play or discard and Manual Hand Selection are also available immediately. The engine handles the purchase's state transition immutably via `applyPurchasedRuleUpgrade` and replenishes the extra card from recycled spent cards if the draw pile is exhausted. All round values and chip targets remain unchanged; new rounds use the same purchased limits. The shop remains visible throughout the run; completed runs cannot purchase run-only perks. New unit tests cover immediate hand growth, duplicate-free deck conservation, spending action deltas, selected-index preservation, repeated purchases, recycled piles and invalid transitions.
+
+## Milestone 5 — Combined poker formations
+
+Up to two **independent qualifying formations** can score together within a single 1–8-card play. Two disjoint formations add their scores: Flush + Pair = (35 × 4) + (10 × 2) = **160 chips**. When the formations share a physical card, add their base chips and multipliers, then multiply: a five-club Flush containing 4♣ together with 4♥ as a Pair = (35 + 10) × (4 + 2) = **270 chips**. A physical standard card can appear only once, so two 8♣ cards are never valid. Each option identifies exactly which cards contribute, and players with Manual Selection unlocked can choose between separate/overlapping combinations. The automatic scorer prefers a combined formation over a single formation of the same strongest category. A formation completely contained inside another is not treated as an independent extra component (e.g. a Straight Flush is not also counted as a separate Flush). High Card add-ons and recursive combinations are excluded to avoid inflated scoring. These rules are provisional and covered by pure-engine unit tests.
+
+## Milestone 5 — Primary play/discard actions
+
+The main game actions now sit side by side directly below the Poker Hand Evaluation summary, before the detailed hand-selection panel. **Play** uses a large solid green success button, while **Discard** uses a large solid yellow warning button. Both retain their existing disable conditions, and the parent page still owns the scoring/discard transactions through typed events. Clear Selection remains nearby as a neutral secondary action. The original footer Discard button was removed to prevent duplication. SSR smoke verifies both buttons render only once and precede the hand-selection panel.
+
+## Milestone 5 review — icon-only primary actions
+
+The Play and Discard buttons are intentionally icon-only in the compact two-column layout, with a separate full-width Clear Selection action. Accessible aria-label and tooltip titles identify both icon actions as Play selected cards and Discard selected cards. The Perk Shop heading is simplified, but the persistent in-round shop availability and behavior remain unchanged. SSR smoke tests validate the accessibility names and updated heading rather than expecting removed visible button text.

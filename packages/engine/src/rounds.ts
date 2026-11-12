@@ -193,7 +193,77 @@ function replaceCards(
   };
 }
 
-/** Commit all five selected cards; only the chosen qualifying subset contributes chips. */
+/**
+ * Apply a purchased upgrade immediately without restarting the round or
+ * changing selected-card indices. Run scoring chips, phase and earned target
+ * stay untouched. Only increased allowances are added; spent actions are not
+ * replenished.
+ */
+export function applyPurchasedRuleUpgrade(
+  state: Readonly<RunState>,
+  previous: Readonly<RoundRules>,
+  upgraded: Readonly<RoundRules>,
+  random: () => number = Math.random,
+): RunState {
+  validateRoundRules(previous);
+  validateRoundRules(upgraded);
+  if (state.phase === 'game_over') {
+    throw new Error('No run upgrades are available after defeat.');
+  }
+  if (state.hand.length !== previous.handSize) {
+    throw new Error('The current hand does not match its active size limit.');
+  }
+  const modified = ['handSize', 'cardsPerPlay', 'maxCardsPerDiscard',
+    'baseHandsPerRound', 'baseDiscardsPerRound'] as const;
+  for (const key of modified) {
+    if (upgraded[key] < previous[key]) {
+      throw new RangeError('Purchasing perks cannot reduce a gameplay limit.');
+    }
+  }
+  const fixed = ['baseChipTarget', 'chipTargetStep', 'chipTargetAcceleration',
+    'extraHandEveryRounds', 'extraDiscardEveryRounds'] as const;
+  if (fixed.some((key) => upgraded[key] !== previous[key])) {
+    throw new RangeError('Purchasing perks cannot modify the target formula or round cadence.');
+  }
+
+  const added = upgraded.handSize - previous.handSize;
+  let drawPile = [...state.drawPile];
+  let playedCards = [...state.playedCards];
+  let discardedCards = [...state.discardedCards];
+  const extraCards: Card[] = [];
+
+  while (extraCards.length < added) {
+    if (drawPile.length === 0) {
+      // Recycle only previously used cards; held and drawn cards stay unique.
+      const recycled = [...playedCards, ...discardedCards];
+      if (!recycled.length) throw new Error('No cards available for the extra held-card slot.');
+      drawPile = shuffleDeck(recycled, random);
+      playedCards = [];
+      discardedCards = [];
+    }
+    const draw = dealCards(drawPile, Math.min(added - extraCards.length, drawPile.length));
+    extraCards.push(...draw.hand);
+    drawPile = draw.remainingDeck;
+  }
+
+  const handsRemaining = state.handsRemaining + upgraded.baseHandsPerRound - previous.baseHandsPerRound;
+  const discardsRemaining = state.discardsRemaining + upgraded.baseDiscardsPerRound - previous.baseDiscardsPerRound;
+  if (!Number.isSafeInteger(handsRemaining) || !Number.isSafeInteger(discardsRemaining)) {
+    throw new RangeError('The action allowance exceeded safe integer precision.');
+  }
+
+  return {
+    ...state,
+    hand: [...state.hand, ...extraCards],
+    drawPile,
+    playedCards,
+    discardedCards,
+    handsRemaining,
+    discardsRemaining,
+  };
+}
+
+/** Commit 1..maxCardsPerPlay selected cards; only the chosen scoring subset contributes chips. */
 export function playScoringHand(
   state: Readonly<RunState>,
   indices: readonly number[],
@@ -205,7 +275,7 @@ export function playScoringHand(
   validateRoundRules(rules);
   activeRound(state);
   if (state.handsRemaining <= 0) throw new Error('No scoring hands remain.');
-  const chosen = selectedIndices(indices, state.hand.length, rules.cardsPerPlay, rules.cardsPerPlay);
+  const chosen = selectedIndices(indices, state.hand.length, 1, rules.cardsPerPlay);
   const cards = chosen.map((index) => state.hand[index]!);
   const options = listEligiblePokerHands(cards);
   const manual = settings.manualSelectionUnlocked && settings.selectionMode === 'manual';

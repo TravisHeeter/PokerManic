@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Card, CardRank, CardSuit } from '@pokermanic/contracts';
 import {
-  DEFAULT_ROUND_RULES, advanceRound, createStandardDeck, discardCards, getRoundDiscards,
+  DEFAULT_ROUND_RULES, advanceRound, applyPurchasedRuleUpgrade, createStandardDeck, discardCards, getRoundDiscards,
   getRoundHands, getRoundTarget, listEligiblePokerHands, playScoringHand, startRun,
   type RoundRules, type RunState,
 } from '../src/index';
@@ -124,6 +124,68 @@ describe('Milestone 4 round rules', () => {
     expect(() => advanceRound(lost)).toThrow();
   });
 
+
+  it('allows any count from one to six with a six-card maximum', () => {
+    const rules: RoundRules = { ...DEFAULT_ROUND_RULES, cardsPerPlay: 6, baseChipTarget: 9999 };
+    const state = fixture();
+    const one = playScoringHand(state, [2], undefined, undefined, rules, () => 0.5);
+    expect(one.lastScored).toMatchObject({ category: 'high_card', scoringCardIndices: [0] });
+    expect(one.playedCards).toEqual([state.hand[2]]);
+    expect(one.hand).toHaveLength(8);
+    expect(one.drawPile).toHaveLength(43);
+    expect(one.handsRemaining).toBe(state.handsRemaining - 1);
+    const two = playScoringHand(state, [0,2], undefined, undefined, rules, () => 0.5);
+    expect(two.lastScored?.category).toBe('high_card');
+    expect(two.playedCards).toHaveLength(2);
+    const three = playScoringHand(state, [0,2,5], undefined, undefined, rules, () => 0.5);
+    expect(three.lastScored?.category).toBe('high_card');
+    expect(three.playedCards).toHaveLength(3);
+    const four = playScoringHand(state, [0,1,2,5], undefined, undefined, rules, () => 0.5);
+    expect(four.lastScored?.category).toBe('high_card');
+    expect(four.playedCards).toHaveLength(4);
+    const five = playScoringHand(state, [0,1,2,3,4], undefined, undefined, rules, () => 0.5);
+    expect(five.lastScored?.category).toBe('straight');
+    expect(five.playedCards).toHaveLength(5);
+    const six = playScoringHand(state, [0,1,2,3,4,5], undefined, undefined, rules, () => 0.5);
+    expect(six.lastScored?.category).toBe('straight');
+    expect(six.playedCards).toHaveLength(6);
+    expect(six.hand).toHaveLength(8);
+    expect(six.drawPile).toHaveLength(38);
+    expect(six.handsRemaining).toBe(state.handsRemaining - 1);
+    expect(() => playScoringHand(state, [], undefined, undefined, rules)).toThrow(RangeError);
+    expect(() => playScoringHand(state, [0,1,2,3,4,5,6], undefined, undefined, rules)).toThrow(RangeError);
+  });
+
+  it('supports manual choice of a lower High Card when playing fewer than five cards', () => {
+    const state = fixture();
+    const cards = [state.hand[0]!, state.hand[2]!]; // King and Jack
+    const jack = listEligiblePokerHands(cards).find(option =>
+      option.category === 'high_card' && option.scoringCardIndices[0] === 1);
+    expect(jack).toBeDefined();
+    const scored = playScoringHand(state, [0,2],
+      { manualSelectionUnlocked: true, selectionMode: 'manual' },
+      jack!.id, DEFAULT_ROUND_RULES, () => 0.5);
+    expect(scored.lastScored?.scoringCardIndices).toEqual([1]);
+    expect(scored.playedCards).toEqual(cards);
+    expect(scored.roundChips).toBe(5);
+  });
+
+  it('supports full six-card scoring patterns when all six contribute', () => {
+    const rules: RoundRules = { ...DEFAULT_ROUND_RULES, cardsPerPlay: 6, baseChipTarget: 9999 };
+    const state = fixture();
+    const sixCards = [
+      c('A','hearts'), c('A','clubs'), c('K','hearts'), c('K','clubs'),
+      c('Q','diamonds'), c('Q','spades'),
+    ];
+    const ids = new Set(sixCards.map(card => `${card.rank}:${card.suit}`));
+    const all = [...sixCards, ...createStandardDeck().filter(card => !ids.has(`${card.rank}:${card.suit}`))];
+    const prepared = { ...state, hand: all.slice(0,8), drawPile: all.slice(8) };
+    const six = playScoringHand(prepared, [0,1,2,3,4,5], undefined, undefined, rules, () => 0.5);
+    expect(six.lastScored?.category).toBe('three_pair');
+    expect(six.lastScored?.scoringCardIndices).toHaveLength(6);
+    expect(six.playedCards).toHaveLength(6);
+  });
+
   it('accepts future hand/discard upgrades through rules without changing the engine', () => {
     const rules: RoundRules = {
       ...DEFAULT_ROUND_RULES, handSize: 10, cardsPerPlay: 6, maxCardsPerDiscard: 8,
@@ -160,3 +222,106 @@ describe('draw pile recycling', () => {
     expect(state.roundChips).toBeGreaterThan(0);
   });
 });
+
+
+describe('Milestone 5 immediate purchase effects', () => {
+  it('draws one extra card immediately, preserves selections and all cards exactly once', () => {
+    const original = fixture();
+    const nextRules = { ...DEFAULT_ROUND_RULES, handSize: 9 };
+    const before = structuredClone(original);
+    const updated = applyPurchasedRuleUpgrade(original, DEFAULT_ROUND_RULES, nextRules, () => 0.5);
+    expect(updated.hand).toHaveLength(9);
+    expect(updated.hand.slice(0,8)).toEqual(original.hand);
+    expect(updated.hand[8]).toEqual(original.drawPile[0]);
+    expect(updated.drawPile).toHaveLength(43);
+    expect(updated.handsRemaining).toBe(original.handsRemaining);
+    expect(updated.discardsRemaining).toBe(original.discardsRemaining);
+    expect(updated.roundChips).toBe(original.roundChips);
+    expect(updated.roundTarget).toBe(original.roundTarget);
+    expect(original).toEqual(before);
+    const ids = [...updated.hand,...updated.drawPile,...updated.playedCards,...updated.discardedCards]
+      .map(card => `${card.rank}:${card.suit}`);
+    expect(ids).toHaveLength(52);
+    expect(new Set(ids).size).toBe(52);
+    // The extra held card is usable in the same round.
+    const selectedExtra = playScoringHand(updated, [8], undefined, undefined, nextRules, () => 0.5);
+    expect(selectedExtra.playedCards).toHaveLength(1);
+    expect(selectedExtra.hand).toHaveLength(9);
+  });
+
+  it('immediately increases scoring hands and discard actions, without resetting spent actions', () => {
+    const original = { ...fixture(), handsRemaining: 1, discardsRemaining: 0, roundChips: 35 };
+    const upgradedRules = {
+      ...DEFAULT_ROUND_RULES, baseHandsPerRound: 5, baseDiscardsPerRound: 4,
+      cardsPerPlay: 6, maxCardsPerDiscard: 6,
+    };
+    const updated = applyPurchasedRuleUpgrade(original, DEFAULT_ROUND_RULES, upgradedRules);
+    expect(updated.handsRemaining).toBe(2);
+    expect(updated.discardsRemaining).toBe(1);
+    expect(updated.roundChips).toBe(35);
+    expect(updated.hand).toEqual(original.hand);
+    expect(discardCards(updated,[0,1,2,3,4,5],upgradedRules).discardsRemaining).toBe(0);
+    expect(playScoringHand(updated,[0,1,2,3,4,5],undefined,undefined,upgradedRules).handsRemaining).toBe(1);
+  });
+
+  it('supports repeated held-card purchases and recycling when the draw pile is empty', () => {
+    const original = fixture();
+    const firstRules = {...DEFAULT_ROUND_RULES, handSize:9 };
+    const secondRules = {...DEFAULT_ROUND_RULES, handSize:10 };
+    const first = applyPurchasedRuleUpgrade(original, DEFAULT_ROUND_RULES, firstRules, () => 0.5);
+    const second = applyPurchasedRuleUpgrade(first, firstRules, secondRules, () => 0.5);
+    expect(second.hand).toHaveLength(10);
+    expect(second.drawPile).toHaveLength(42);
+    expect(second.hand.slice(0,8)).toEqual(original.hand);
+    const exhausted = {
+      ...original,
+      drawPile: [],
+      playedCards: [original.drawPile[0]!, original.drawPile[1]!],
+      discardedCards: [],
+    };
+    const recycled = applyPurchasedRuleUpgrade(exhausted,DEFAULT_ROUND_RULES,firstRules,()=>0.5);
+    expect(recycled.hand).toHaveLength(9);
+    expect(recycled.playedCards).toHaveLength(0);
+    expect(recycled.drawPile).toHaveLength(1);
+    expect(recycled.hand[8]).toEqual(exhausted.playedCards[0]);
+  });
+
+  it('rejects purchases after defeat and invalid rule changes', () => {
+    const state = fixture();
+    expect(() => applyPurchasedRuleUpgrade({...state,phase:'game_over'},
+      DEFAULT_ROUND_RULES,{...DEFAULT_ROUND_RULES,handSize:9})).toThrow();
+    expect(() => applyPurchasedRuleUpgrade(state,DEFAULT_ROUND_RULES,
+      {...DEFAULT_ROUND_RULES,handSize:7})).toThrow(RangeError);
+    expect(() => applyPurchasedRuleUpgrade(state,DEFAULT_ROUND_RULES,
+      {...DEFAULT_ROUND_RULES,baseChipTarget:100})).toThrow(RangeError);
+    expect(applyPurchasedRuleUpgrade(state,DEFAULT_ROUND_RULES,
+      {...DEFAULT_ROUND_RULES,handSize:9},()=>0.5).hand).toHaveLength(9);
+  });
+});
+
+describe('combined formation scoring through the run engine', () => {
+  it('awards overlapping Flush + Pair 270 chips while consuming six physical cards once', () => {
+    const played = [
+      c('10','clubs'),c('8','clubs'),c('4','clubs'),c('3','clubs'),c('2','clubs'),
+      c('4','hearts'),
+    ];
+    const playedKeys = new Set(played.map(card => `${card.rank}:${card.suit}`));
+    const deck = createStandardDeck().filter(card => !playedKeys.has(`${card.rank}:${card.suit}`));
+    const state = {
+      ...fixture(), hand:[...played, ...deck.slice(0,2)],
+      drawPile:deck.slice(2),
+      roundTarget:9999,
+    };
+    const rules = {...DEFAULT_ROUND_RULES,cardsPerPlay:6};
+    const next = playScoringHand(state,[0,1,2,3,4,5],undefined,undefined,rules,()=>0.5);
+    expect(next.lastScored?.category).toBe('combination');
+    expect(next.lastScored?.combinationType).toBe('overlapping');
+    expect(next.lastScored?.score).toBe(270);
+    expect(next.roundChips).toBe(270);
+    expect(next.playedCards).toHaveLength(6);
+    expect(next.hand).toHaveLength(8);
+    expect(new Set([...next.hand,...next.drawPile,...next.playedCards]
+      .map(card=>`${card.rank}:${card.suit}`)).size).toBe(52);
+  });
+});
+
