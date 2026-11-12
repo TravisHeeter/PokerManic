@@ -31,6 +31,11 @@ const hydrated = ref(false);
 const savingBlocked = ref(false);
 const saveStatus = ref('Loading browser save…');
 const saveJson = ref('');
+const saveJsonDirty = ref(false);
+function updateSaveJson(value: string) {
+  saveJson.value = value;
+  saveJsonDirty.value = true;
+}
 // Effective rules update as perks are purchased, without resetting the round.
 
 const rules = ref({ ...DEFAULT_ROUND_RULES });
@@ -137,6 +142,7 @@ function restartRun() {
     bestRound: Math.max(profile.value.bestRound, run.value.round),
   };
   savingBlocked.value = false;
+  saveJsonDirty.value = false;
   progress.value = createRunProgress();
   rules.value = { ...DEFAULT_ROUND_RULES };
   run.value = startRun(rules.value);
@@ -204,7 +210,9 @@ function installSave(save: GameSaveV1) {
 function persistSave() {
   if (!hydrated.value || savingBlocked.value || !import.meta.client) return;
   try {
-    localStorage.setItem(GAME_SAVE_STORAGE_KEY, formatGameSave(snapshot()));
+    const json = formatGameSave(snapshot());
+    localStorage.setItem(GAME_SAVE_STORAGE_KEY, json);
+    if (!saveJsonDirty.value) saveJson.value = json;
     saveStatus.value = 'Autosaved locally in this browser.';
   } catch (error) {
     savingBlocked.value = true;
@@ -223,7 +231,10 @@ onMounted(() => {
   } catch (error) {
     savingBlocked.value = true;
     saveStatus.value = 'Save not loaded: ' + (error instanceof Error ? error.message : 'invalid JSON');
-    try { saveJson.value = localStorage.getItem(GAME_SAVE_STORAGE_KEY) ?? ''; } catch { /* storage denied */ }
+    try {
+      saveJson.value = localStorage.getItem(GAME_SAVE_STORAGE_KEY) ?? '';
+      saveJsonDirty.value = true;
+    } catch { /* storage denied */ }
   } finally {
     hydrated.value = true;
     persistSave();
@@ -239,6 +250,7 @@ function exportSave() {
   try {
     const json = formatGameSave(snapshot());
     saveJson.value = json;
+    saveJsonDirty.value = false;
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -256,6 +268,7 @@ function importSave() {
     const parsed = parseGameSave(saveJson.value);
     installSave(parsed);
     savingBlocked.value = false;
+    saveJsonDirty.value = false;
     persistSave();
     saveStatus.value = 'Edited JSON imported successfully and saved locally.';
   } catch (error) {
@@ -268,7 +281,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
 </script>
 
 <template>
-  <UContainer class="min-h-screen py-10 md:py-16">
+  <UContainer class="min-h-screen pt-10 pb-28 md:pt-16 md:pb-28">
     <div class="mx-auto max-w-6xl space-y-9">
       <header class="space-y-4">
         <div class="flex flex-wrap items-center gap-3">
@@ -334,10 +347,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
         </UCard>
       </section>
 
-      <PerkShop :phase="run.phase" :progress="progress" :rules="rules"
-        :next-round-rules="nextRoundRules" @buy-perk="buyPerk" />
-
-      <SaveManager v-model:json="saveJson" :status="saveStatus" :blocked="savingBlocked"
+      <SaveManager :json="saveJson" @update:json="updateSaveJson" :status="saveStatus" :blocked="savingBlocked"
         @export="exportSave" @import="importSave" @new-run="restartRun" />
 
       <DevelopmentProgress />
@@ -345,4 +355,8 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
       <SystemStatus :health="health" :error="error" :status="status" @refresh="refresh" />
     </div>
   </UContainer>
+
+  <!-- The viewport dock must not inherit the centered page container's layout. -->
+  <PerkShop :phase="run.phase" :progress="progress" :rules="rules"
+    :next-round-rules="nextRoundRules" @buy-perk="buyPerk" />
 </template>

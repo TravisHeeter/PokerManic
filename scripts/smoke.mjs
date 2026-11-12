@@ -82,16 +82,33 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, />Suit</);
 
   assert.match(html, /Start new run/);
-  assert.match(html, /id="shop-heading"[^>]*>Perk shop<\/h2>/);
+  assert.match(html, /id="shop-heading"[^>]*>Perk shop<\/span>/);
   // These sections are rendered by separate Nuxt auto-imported components.
   assert.match(html, /Poker hand evaluation/);
   assert.match(html, /Development progress/);
+  assert.match(html, /6 milestones implemented/);
+  for (let milestone = 1; milestone <= 6; milestone++) {
+    assert.match(html, new RegExp(`data-testid="milestone-${milestone}"`));
+  }
+  assert.match(html, /data-testid="milestone-next"/);
+  assert.match(html, /Milestone 7/);
+  assert.match(html, /Transcendence/);
+  assert.doesNotMatch(html, /Milestone 2[^]*?Current/);
   assert.match(html, /Local saves &amp; modding|Local saves & modding/);
   assert.match(html, /Show save tools and JSON editor/);
+  assert.match(html, /data-testid="draft-upgrade-chips"/);
+  assert.match(html, /progress\.upgradeChips/);
+  assert.match(html, /Import edited JSON/);
   assert.match(html, /System status/);
   assert.match(html, /Shop open throughout your run/);
   assert.doesNotMatch(html, /Shop closed/);
-  assert.match(html, /Upgrade chips available/);
+  assert.match(html, /data-testid="perk-shop-dock"/);
+  assert.match(html, /data-testid="perk-shop-toggle"/);
+  assert.match(html, /aria-expanded="false"/);
+  assert.match(html, /aria-controls="perk-shop-content"/);
+  assert.match(html, /data-testid="perk-shop-content"/);
+  assert.match(html, /Show upgrades/);
+  assert.match(html, /Upgrade chips/);
   assert.match(html, /Manual hand selection/);
   assert.match(html, /Milestone 6/);
   assert.match(html, /Remaining in deck/);
