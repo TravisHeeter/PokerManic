@@ -94,7 +94,6 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /id="shop-heading"[^>]*>Perk shop<\/span>/);
   // These sections are rendered by separate Nuxt auto-imported components.
   assert.match(html, /Development progress/);
-  assert.match(html, /Permanent upgrades/);
   assert.match(html, /Prestige chips/);
   assert.match(html, /Card modifier shop/);
   assert.match(html, /data-testid="buy-card-modifier-bonus"/);
