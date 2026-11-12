@@ -96,6 +96,9 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.doesNotMatch(html, /Milestone 2[^]*?Current/);
   assert.match(html, /Local saves &amp; modding|Local saves & modding/);
   assert.match(html, /Show save tools and JSON editor/);
+  assert.match(html, /data-testid="draft-upgrade-chips"/);
+  assert.match(html, /progress\.upgradeChips/);
+  assert.match(html, /Import edited JSON/);
   assert.match(html, /System status/);
   assert.match(html, /Shop open throughout your run/);
   assert.doesNotMatch(html, /Shop closed/);

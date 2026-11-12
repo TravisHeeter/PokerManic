@@ -335,3 +335,7 @@ The Local Saves & Modding section contains an **Export JSON** download, editable
 ## Milestone progress display
 
 The development progress UI lists all six merged milestones (1–6) as Implemented, with neutral borders; the single highlighted border is reserved for the **next** planned milestone, 7 (Transcendence). Data is maintained in one typed array rather than scattered static cards. SSR smoke tests assert the complete 1–6 sequence, upcoming card, and completed count. When Milestone 7 ships, update the array and next milestone together.
+
+## Editable upgrade chips in the browser
+
+The JSON editor now automatically populates with the active browser save after mount and updates with subsequent autosaves until the player starts editing. Editing creates a separate draft that autosaving never overwrites. The visible **Upgrade chips** numeric field maps directly to `progress.upgradeChips` in the draft JSON (it does not bypass or change the save schema). Clicking **Import edited JSON** validates and applies the modified draft to the active game and persists it. Export JSON replaces the draft with the newest live save and downloads a backup. Invalid imports do not mutate live state.
