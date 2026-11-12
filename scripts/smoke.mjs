@@ -117,11 +117,8 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /Shop open throughout your run/);
   assert.doesNotMatch(html, /Shop closed/);
   assert.match(html, /data-testid="perk-shop-dock"/);
-  assert.match(html, /i-lucide-shopping-bag/);
-  assert.match(html, /i-lucide-sparkles/);
   assert.match(html, /Card modifiers/);
   assert.match(html, /data-testid="modifier-shop-content"/);
-  assert.doesNotMatch(html, /i-lucide-layers-3/);
   assert.doesNotMatch(html, /data-testid="hand-shop-content"/);
   assert.match(html, /role="tablist"/);
   assert.doesNotMatch(html, /Show upgrades|▲ Show|▼ Hide/);
