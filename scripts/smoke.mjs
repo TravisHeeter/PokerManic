@@ -65,8 +65,12 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /Hand selection/);
   assert.match(html, /Manual Selection locked/);
   assert.match(html, /Automatic selection active/);
-  assert.match(html, /data-testid="score-hand"[^>]*>[^]*?Play<\/button>/);
-  assert.match(html, /data-testid="discard-selected"[^>]*>[^]*?Discard<\/button>/);
+  const playButton = html.match(/<button[^>]*data-testid="score-hand"[^>]*>[\s\S]*?<\/button>/)?.[0];
+  const discardButton = html.match(/<button[^>]*data-testid="discard-selected"[^>]*>[\s\S]*?<\/button>/)?.[0];
+  assert.ok(playButton, 'Play button should render');
+  assert.ok(discardButton, 'Discard button should render');
+  assert.match(playButton, /\bPlay\b/);
+  assert.match(discardButton, /\bDiscard\b/);
   assert.equal((html.match(/data-testid="score-hand"/g) ?? []).length, 1);
   assert.equal((html.match(/data-testid="discard-selected"/g) ?? []).length, 1);
   assert.ok(html.indexOf('data-testid="score-hand"') < html.indexOf('Hand selection'));
