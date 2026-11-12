@@ -179,3 +179,7 @@ body {
 }
 
 .pm-card-modifier-badge { background: #166534; color: white; font-family: ui-sans-serif, system-ui, sans-serif; }
+.pm-card-modifier-badge[data-card-modifier="gold"] { background: #a16207; }
+.pm-card-modifier-badge[data-card-modifier="echo"] { background: #1d4ed8; }
+.pm-card-modifier-badge[data-card-modifier="growing"] { background: #047857; }
+.pm-card-modifier-badge[data-card-modifier^="wild_"] { background: #6d28d9; }
