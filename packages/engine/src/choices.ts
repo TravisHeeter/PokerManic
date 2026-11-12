@@ -86,14 +86,14 @@ function isStraight(values: readonly number[]): boolean {
   return ascending.every((value, i) => value === ascending[0]! + i);
 }
 
-function matchingCategories(cards: readonly Card[]): ScoringCategory[] {
+function matchingCategories(cards: readonly Card[]): Exclude<ScoringCategory, 'combination'>[] {
   const size = cards.length;
   if (size === 1) return ['high_card'];
   const ranks = cards.map((card) => RANK_VALUE[card.rank]);
   const counts = new Map<number, number>();
   for (const rank of ranks) counts.set(rank, (counts.get(rank) ?? 0) + 1);
   const frequencies = [...counts.values()].sort((a, b) => b - a);
-  const result: ScoringCategory[] = [];
+  const result: Exclude<ScoringCategory, 'combination'>[] = [];
 
   if (size === 2 && frequencies[0] === 2) result.push('pair');
   if (size === 3 && frequencies[0] === 3) result.push('three_of_a_kind');
