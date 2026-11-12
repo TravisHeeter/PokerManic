@@ -54,6 +54,7 @@ watch(cardStyle, value => {
               The game scores the strongest qualifying hand automatically
               until the Manual Hand Selection perk is unlocked.
               <strong data-testid="selected-count" class="text-highlighted">{{ selectedIndexes.length }} selected · 1–{{ cardsPerPlay }} to score</strong>
+              <span class="text-xs text-muted">Selected cards rise with a bright blue border and a checkmark.</span>
             </p>
 
             <div role="group" aria-label="Sort cards" class="flex flex-wrap items-center gap-2">
@@ -92,12 +93,14 @@ watch(cardStyle, value => {
                 @click="emit('toggle-card', entry.originalIndex)"
                 class="pm-card relative flex aspect-[5/7] select-none flex-col justify-between rounded-xl border p-2 text-left shadow-lg shadow-black/30 transition-all hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 disabled:cursor-not-allowed disabled:opacity-60 sm:p-3"
                 :data-suit="entry.card.suit"
+                :data-selected="selectedIndexes.includes(entry.originalIndex) ? 'true' : 'false'"
                 :data-scoring-card="scoringCardIndexes.includes(entry.originalIndex) ? 'true' : 'false'"
-                :class="[
-                  scoringCardIndexes.includes(entry.originalIndex) ? '-translate-y-2 ring-4 ring-amber-300' :
-                    selectedIndexes.includes(entry.originalIndex) ? '-translate-y-1 ring-2 ring-sky-500' : '',
-                ]"
               >
+                <span v-if="selectedIndexes.includes(entry.originalIndex)"
+                  aria-hidden="true" data-testid="selected-card-check"
+                  class="pm-card-selected-check absolute right-1 top-1 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-sky-500 text-lg font-black leading-none text-slate-950 shadow-md shadow-black/50 sm:right-2 sm:top-2 sm:h-8 sm:w-8">✓</span>
+                <span v-if="scoringCardIndexes.includes(entry.originalIndex)"
+                  aria-hidden="true" class="pm-card-scoring-marker absolute bottom-2 right-2 z-20 rounded bg-amber-300 px-1.5 py-0.5 text-[10px] font-black uppercase leading-tight text-slate-950">Scores</span>
                 <div class="relative z-10 flex flex-col items-start leading-none">
                   <span class="pm-card-rank text-lg font-bold sm:text-2xl">{{ entry.card.rank }}</span>
                   <span class="mt-1 text-lg sm:text-xl">{{ SUIT_SYMBOLS[entry.card.suit] }}</span>

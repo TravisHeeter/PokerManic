@@ -155,3 +155,27 @@ body {
 }
 .pm-card-center-rank { font-weight: 800; }
 .pm-card-center-suit { line-height: 1; }
+
+/* Selection is intentionally theme-independent: cyan outline, elevation, and a check.
+   A separate amber "Scores" marker identifies which selected cards contribute. */
+.pm-card[data-selected="true"] {
+  z-index: 10;
+  transform: translateY(-10px);
+  outline: 4px solid #38bdf8;
+  outline-offset: 2px;
+  filter: drop-shadow(0 7px 10px #0284cbaa);
+}
+.pm-card[data-selected="true"]:hover {
+  transform: translateY(-12px);
+}
+.pm-card[data-selected="true"]:focus-visible {
+  outline: 4px solid #fcd34d;
+  outline-offset: 3px;
+}
+.pm-card-selected-check {
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  text-shadow: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pm-card { transition: none; }
+}
