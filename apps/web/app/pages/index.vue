@@ -372,20 +372,6 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
               :round="run.round" :hands-played="run.handsPlayed" :in-round="inRound"
               v-model:sort-mode="sortMode" @toggle-card="toggleCard" />
 
-            <CardModifierShop :modifiers="CARD_MODIFIERS" :selected-cards="selectedCards"
-              :selected-count="selectedIndexes.length" :card-modifiers="run.cardModifiers ?? {}"
-              :upgrade-chips="progress.upgradeChips" :phase="run.phase" @purchase="buyCardModifier" />
-
-            <ScoringPanel :preview="preview" :scored-hand="scoredHand"
-              :eligible-options="eligibleOptions" :selected-cards="selectedCards"
-              :selected-count="selectedIndexes.length" :manual-unlocked="manualUnlocked"
-              :selection-mode="selectionMode" :cards-per-play="rules.cardsPerPlay"
-              :in-round="inRound" :hands-remaining="run.handsRemaining"
-              :can-discard-selection="canDiscardSelection"
-              @set-selection-mode="setSelectionMode" @choose-scoring-option="chooseScoringOption"
-              @score-hand="scoreSelectedHand" @discard-selected="discardSelectedCards"
-              @clear-selection="clearSelection" />
-
             <div class="flex flex-wrap gap-3">
               <UButton data-testid="new-run" icon="i-lucide-rotate-ccw"
                 color="neutral" variant="ghost" @click="restartRun">
@@ -416,5 +402,21 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
 
   <!-- The viewport dock must not inherit the centered page container's layout. -->
   <PerkShop :phase="run.phase" :progress="progress" :profile="profile" :rules="rules"
-    :next-round-rules="nextRoundRules" @buy-perk="buyPerk" />
+    :next-round-rules="nextRoundRules" @buy-perk="buyPerk">
+    <template #hand>
+      <CardModifierShop :modifiers="CARD_MODIFIERS" :selected-cards="selectedCards"
+      :selected-count="selectedIndexes.length" :card-modifiers="run.cardModifiers ?? {}"
+      :upgrade-chips="progress.upgradeChips" :phase="run.phase" @purchase="buyCardModifier" />
+      
+      <ScoringPanel :preview="preview" :scored-hand="scoredHand"
+      :eligible-options="eligibleOptions" :selected-cards="selectedCards"
+      :selected-count="selectedIndexes.length" :manual-unlocked="manualUnlocked"
+      :selection-mode="selectionMode" :cards-per-play="rules.cardsPerPlay"
+      :in-round="inRound" :hands-remaining="run.handsRemaining"
+      :can-discard-selection="canDiscardSelection"
+      @set-selection-mode="setSelectionMode" @choose-scoring-option="chooseScoringOption"
+      @score-hand="scoreSelectedHand" @discard-selected="discardSelectedCards"
+      @clear-selection="clearSelection" />
+    </template>
+  </PerkShop>
 </template>

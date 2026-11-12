@@ -118,6 +118,12 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.doesNotMatch(html, /Shop closed/);
   assert.match(html, /data-testid="perk-shop-dock"/);
   assert.match(html, /data-testid="perk-shop-toggle"/);
+  assert.match(html, /data-testid="hand-shop-toggle"/);
+  assert.match(html, /aria-controls="hand-shop-content"/);
+  assert.match(html, /data-testid="hand-shop-content"/);
+  assert.match(html, /role="tablist"/);
+  assert.ok(html.indexOf('data-testid="perk-shop-dock"') < html.indexOf('Card modifier shop'));
+  assert.ok(html.indexOf('data-testid="perk-shop-dock"') < html.indexOf('Poker hand evaluation'));
   assert.match(html, /aria-expanded="false"/);
   assert.match(html, /aria-controls="perk-shop-content"/);
   assert.match(html, /data-testid="perk-shop-content"/);
