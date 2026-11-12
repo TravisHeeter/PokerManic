@@ -82,7 +82,7 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, />Suit</);
 
   assert.match(html, /Start new run/);
-  assert.match(html, /id="shop-heading"[^>]*>Perk shop<\/h2>/);
+  assert.match(html, /id="shop-heading"[^>]*>Perk shop<\/span>/);
   // These sections are rendered by separate Nuxt auto-imported components.
   assert.match(html, /Poker hand evaluation/);
   assert.match(html, /Development progress/);
