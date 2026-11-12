@@ -50,7 +50,7 @@ describe('editable game save v1', () => {
       permanentLevels: { starting_hand: 1, starting_discard: 0, starting_chips: 1 } };
     const parsed = gameSaveV1Schema.parse({ ...base, profile });
     expect(parsed.profile.permanentLevels).toMatchObject({
-      ...profile.permanentLevels, held_card: 0, cards_per_play: 0, discard_batch: 0,
+      ...profile.permanentLevels, held_card: 0, cards_per_play: 0, discard_batch: 0, manual_selection: 0,
     });
     const updated = { ...profile, permanentLevels: {
       ...profile.permanentLevels, held_card: 4, cards_per_play: 3, discard_batch: 3,

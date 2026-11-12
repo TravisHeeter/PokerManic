@@ -1,53 +1,50 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_ROUND_RULES, startRun } from '../src/rounds.js';
 import {
-  createPermanentProgress, applyPermanentUpgrades, transcendReward,
-  transcendRun, buyPermanentUpgrade, permanentUpgradeCost, startingUpgradeChips,
+  createPermanentProgress, isRunUpgradeUnlocked, transcendReward, transcendRun,
+  buyPermanentUpgrade, permanentUpgradeCost, startingUpgradeChips,
 } from '../src/permanent.js';
 
-describe('transcendence and permanent progression', () => {
-  it('does not allow farming a prestige reward from the opening round', () => {
+describe('prestige unlocks', () => {
+  it('requires completed rounds for prestige currency', () => {
     const opening = startRun();
     expect(transcendReward(opening)).toBe(0);
     expect(() => transcendRun(opening, createPermanentProgress())).toThrow();
-  });
-  it('awards prestige based on cleared rounds, not temporary wallet balance', () => {
-    const run = { ...startRun(), phase: 'round_won' as const, round: 6, totalChips: 900 };
-    expect(transcendReward(run)).toBe(3);
-    const earned = transcendRun(run, createPermanentProgress());
+    const won = { ...opening, phase: 'round_won' as const, round: 6 };
+    const earned = transcendRun(won, createPermanentProgress());
     expect(earned.prestigeChips).toBe(3);
     expect(earned.transcends).toBe(1);
-    expect(transcendRun({ ...run, phase: 'game_over' }, earned).prestigeChips).toBe(5);
   });
-  it('makes held, played, and discarded card capacity permanent within evaluator caps', () => {
-    let profile = { ...createPermanentProgress(), prestigeChips: 100 };
-    for (let i = 0; i < 4; i++) profile = buyPermanentUpgrade(profile, 'held_card');
-    for (let i = 0; i < 3; i++) {
-      profile = buyPermanentUpgrade(profile, 'cards_per_play');
-      profile = buyPermanentUpgrade(profile, 'discard_batch');
-    }
-    const rules = applyPermanentUpgrades(DEFAULT_ROUND_RULES, profile);
-    expect(rules.handSize).toBe(12);
-    expect(rules.cardsPerPlay).toBe(8);
-    expect(rules.maxCardsPerDiscard).toBe(8);
-    expect(startRun(rules, () => 0.5).hand).toHaveLength(12);
-    expect(permanentUpgradeCost(profile, 'held_card')).toBeNull();
-    expect(permanentUpgradeCost(profile, 'cards_per_play')).toBeNull();
-    expect(permanentUpgradeCost(profile, 'discard_batch')).toBeNull();
-    expect(() => buyPermanentUpgrade(profile, 'held_card')).toThrow('maximum');
-  });
-  it('permanent upgrades spend only prestige, are capped and improve fresh-run rules', () => {
+  it('unlocks each perk exactly once without changing any run rules', () => {
     let profile = { ...createPermanentProgress(), prestigeChips: 30 };
-    profile = buyPermanentUpgrade(profile, 'starting_hand');
-    profile = buyPermanentUpgrade(profile, 'starting_discard');
-    profile = buyPermanentUpgrade(profile, 'starting_chips');
-    expect(applyPermanentUpgrades(DEFAULT_ROUND_RULES, profile).baseHandsPerRound).toBe(5);
-    expect(applyPermanentUpgrades(DEFAULT_ROUND_RULES, profile).baseDiscardsPerRound).toBe(4);
-    expect(startingUpgradeChips(profile)).toBe(2);
-    expect(permanentUpgradeCost(profile, 'starting_hand')).toBe(2);
-    profile = buyPermanentUpgrade(profile, 'starting_hand');
-    profile = buyPermanentUpgrade(profile, 'starting_hand');
-    expect(permanentUpgradeCost(profile, 'starting_hand')).toBeNull();
-    expect(() => buyPermanentUpgrade(profile, 'starting_hand')).toThrow();
+    const pairs = [
+      ['starting_discard', 'extra_discard', 1],
+      ['held_card', 'hand_size', 2],
+      ['discard_batch', 'discard_batch', 3],
+      ['starting_hand', 'extra_hand', 4],
+      ['cards_per_play', 'cards_per_play', 5],
+      ['manual_selection', 'manual_selection', 6],
+    ] as const;
+    for (const [unlock, perk, price] of pairs) {
+      expect(isRunUpgradeUnlocked(profile, perk)).toBe(false);
+      expect(permanentUpgradeCost(profile, unlock)).toBe(price);
+      profile = buyPermanentUpgrade(profile, unlock);
+      expect(isRunUpgradeUnlocked(profile, perk)).toBe(true);
+      expect(permanentUpgradeCost(profile, unlock)).toBeNull();
+      expect(() => buyPermanentUpgrade(profile, unlock)).toThrow('already unlocked');
+    }
+    expect(profile.prestigeChips).toBe(9);
+    expect(DEFAULT_ROUND_RULES.handSize).toBe(8);
+    expect(startRun(DEFAULT_ROUND_RULES, () => 0.5).hand).toHaveLength(8);
+  });
+  it('recognizes old permanent hand/discard level purchases as unlocks', () => {
+    const profile = {
+      ...createPermanentProgress(),
+      permanentLevels: { ...createPermanentProgress().permanentLevels,
+        starting_hand: 3, starting_discard: 2, starting_chips: 2 },
+    };
+    expect(isRunUpgradeUnlocked(profile, 'extra_hand')).toBe(true);
+    expect(isRunUpgradeUnlocked(profile, 'extra_discard')).toBe(true);
+    expect(startingUpgradeChips(profile)).toBe(4);
   });
 });
