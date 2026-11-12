@@ -367,18 +367,29 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
             <RoundStatus :run="run" :hand="hand" :remaining-deck="remainingDeck"
               @next-round="nextRound" @restart-run="restartRun" />
 
-            <PlayingCardHand :hand="hand" :card-modifiers="run.cardModifiers ?? {}" :selected-indexes="selectedIndexes"
+            <PlayingCardHand :hand="hand" 
+              :card-modifiers="run.cardModifiers ?? {}" 
+              :selected-indexes="selectedIndexes"
               :scoring-card-indexes="scoringCardIndexes"
-              :cards-per-play="rules.cardsPerPlay" :max-cards-per-discard="rules.maxCardsPerDiscard"
-              :round="run.round" :hands-played="run.handsPlayed" :in-round="inRound"
-              v-model:sort-mode="sortMode" @toggle-card="toggleCard" />
+              :cards-per-play="rules.cardsPerPlay" 
+              :max-cards-per-discard="rules.maxCardsPerDiscard"
+              :round="run.round" 
+              :hands-played="run.handsPlayed" 
+              :in-round="inRound"
+              v-model:sort-mode="sortMode" 
+              @toggle-card="toggleCard" />
 
-            <HandActions :preview="preview" :in-round="inRound"
+            <HandActions
+              :preview="preview"
+              :in-round="inRound"
               :hands-remaining="run.handsRemaining"
+              :discards-remaining="run.discardsRemaining"
               :can-discard-selection="canDiscardSelection"
               :selected-count="selectedIndexes.length"
-              @score-hand="scoreSelectedHand" @discard-selected="discardSelectedCards"
-              @clear-selection="clearSelection" />
+              @score-hand="scoreSelectedHand"
+              @discard-selected="discardSelectedCards"
+              @clear-selection="clearSelection"
+            />
 
             <div class="flex flex-wrap gap-3">
               <UButton data-testid="new-run" icon="i-lucide-rotate-ccw"

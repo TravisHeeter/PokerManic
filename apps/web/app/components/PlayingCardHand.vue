@@ -50,26 +50,17 @@ watch(cardStyle, value => {
 </script>
 
 <template>
-            <p class="text-sm text-muted">
-              Choose 1 to {{ cardsPerPlay }} cards to score, or select up to {{ maxCardsPerDiscard }} to discard.
-              The game scores the strongest qualifying hand automatically
-              until the Manual Hand Selection perk is unlocked.
-              <strong data-testid="selected-count" class="text-highlighted">{{ selectedIndexes.length }} selected · 1–{{ cardsPerPlay }} to score</strong>
-              <span class="text-xs text-muted">Selected cards rise with a bright blue border and a checkmark.</span>
-            </p>
 
             <div role="group" aria-label="Sort cards" class="flex flex-wrap items-center gap-2">
-              <span class="text-sm text-muted">Sort cards:</span>
               <UButton data-testid="sort-dealt" size="sm" color="neutral"
                 :variant="props.sortMode === 'dealt' ? 'solid' : 'outline'"
                 :aria-pressed="props.sortMode === 'dealt'" @click="emit('update:sortMode', 'dealt')">Dealt order</UButton>
               <UButton data-testid="sort-rank" size="sm" color="neutral"
                 :variant="props.sortMode === 'rank' ? 'solid' : 'outline'"
-                :aria-pressed="props.sortMode === 'rank'" @click="emit('update:sortMode', 'rank')">Rank</UButton>
+                :aria-pressed="props.sortMode === 'rank'" @click="emit('update:sortMode', 'rank')">2</UButton>
               <UButton data-testid="sort-suit" size="sm" color="neutral"
                 :variant="props.sortMode === 'suit' ? 'solid' : 'outline'"
-                :aria-pressed="props.sortMode === 'suit'" @click="emit('update:sortMode', 'suit')">Suit</UButton>
-              <span class="text-xs text-muted">Highest first · suits ♠ ♥ ♦ ♣</span>
+                :aria-pressed="props.sortMode === 'suit'" @click="emit('update:sortMode', 'suit')">♠</UButton>
             </div>
 
             <div role="group" aria-label="Card appearance" class="flex flex-wrap items-center gap-2">
