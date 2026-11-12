@@ -363,3 +363,7 @@ Prestige currency now unlocks access to each of six run shop perks **once**; it 
 ## High-cost progression balancing (November 2026)
 
 Prestige unlock prices are now **10 / 20 / 30 / 40 / 50 / 60 prestige chips**, from extra discard through manual selection. Once unlocked, run-shop base costs are **40 / 60 / 80 / 100 / 140 / 180 upgrade chips** in the same order. Additional in-run levels still cost `baseCost × (level + 1)`; chip earnings and progression rewards have **not** been increased. These deliberately expensive starting values are provisional until gameplay balance testing.
+
+## Card appearance experiments
+
+The hand now offers four live-switchable designs: **Classic** (original colors), **Victorian** (aged parchment, Palatino), **Art Deco** (cream/gold with geometric sans serif), and **Cyber** (dark teal with bright suit colors and monospace ranks). The choice saves independently to `localStorage['pokermanic.card-style.v1']`; it does not alter gameplay state or the editable game-save format. Selecting a style immediately restyles the existing cards, including suit colors, rank typography, border and paper. No downloaded font files or external runtime font dependencies are required.

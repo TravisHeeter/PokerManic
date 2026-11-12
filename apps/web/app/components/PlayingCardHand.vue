@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import type { Card, CardSuit } from '@pokermanic/contracts';
 import { sortHandForDisplay, type HandSortMode } from '@pokermanic/engine';
 const props = defineProps<{
@@ -21,12 +21,24 @@ const displayedCards = computed(() => sortHandForDisplay(props.hand, props.sortM
 const SUIT_SYMBOLS: Record<CardSuit, string> = {
   hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠',
 };
-const SUIT_TEXT: Record<CardSuit, string> = {
-  hearts: 'text-[#87565D]',
-  diamonds: 'text-[#998258]',
-  clubs: 'text-[#577A75]',
-  spades: 'text-slate-800',
-};
+type CardStyle = 'classic' | 'victorian' | 'deco' | 'cyber';
+const STYLE_STORAGE_KEY = 'pokermanic.card-style.v1';
+const cardStyle = ref<CardStyle>('classic');
+const styles: { id: CardStyle; label: string }[] = [
+  { id: 'classic', label: 'Classic' },
+  { id: 'victorian', label: 'Victorian' },
+  { id: 'deco', label: 'Art Deco' },
+  { id: 'cyber', label: 'Cyber' },
+];
+onMounted(() => {
+  try {
+    const saved = localStorage.getItem(STYLE_STORAGE_KEY);
+    if (styles.some(style => style.id === saved)) cardStyle.value = saved as CardStyle;
+  } catch { /* Browser storage may be blocked; the Classic style still works. */ }
+});
+watch(cardStyle, value => {
+  try { localStorage.setItem(STYLE_STORAGE_KEY, value); } catch { /* Optional preference. */ }
+});
 </script>
 
 <template>
@@ -51,7 +63,17 @@ const SUIT_TEXT: Record<CardSuit, string> = {
               <span class="text-xs text-muted">Highest first · suits ♠ ♥ ♦ ♣</span>
             </div>
 
-            <div data-testid="card-hand" aria-label="Current card hand" class="grid grid-cols-4 gap-2 sm:grid-cols-8 sm:gap-3">
+            <div role="group" aria-label="Card appearance" class="flex flex-wrap items-center gap-2">
+              <span class="text-sm text-muted">Card style:</span>
+              <UButton v-for="style in styles" :key="style.id"
+                :data-testid="`card-style-${style.id}`"
+                size="sm" color="neutral"
+                :variant="cardStyle === style.id ? 'solid' : 'outline'"
+                :aria-pressed="cardStyle === style.id"
+                @click="cardStyle = style.id">{{ style.label }}</UButton>
+            </div>
+
+            <div data-testid="card-hand" :data-card-style="cardStyle" aria-label="Current card hand" class="grid grid-cols-4 gap-2 sm:grid-cols-8 sm:gap-3">
               <button
                 v-for="entry in displayedCards"
                 type="button"
@@ -61,19 +83,19 @@ const SUIT_TEXT: Record<CardSuit, string> = {
                 :aria-pressed="selectedIndexes.includes(entry.originalIndex)"
                 :disabled="!inRound || (selectedIndexes.length === Math.max(cardsPerPlay, maxCardsPerDiscard) && !selectedIndexes.includes(entry.originalIndex))"
                 @click="emit('toggle-card', entry.originalIndex)"
-                class="relative flex aspect-[5/7] select-none flex-col justify-between rounded-xl border border-slate-200 bg-[#faf8f1] p-2 text-left shadow-lg shadow-black/30 transition-all hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 disabled:cursor-not-allowed disabled:opacity-60 sm:p-3"
+                class="pm-card relative flex aspect-[5/7] select-none flex-col justify-between rounded-xl border p-2 text-left shadow-lg shadow-black/30 transition-all hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 disabled:cursor-not-allowed disabled:opacity-60 sm:p-3"
+                :data-suit="entry.card.suit"
                 :data-scoring-card="scoringCardIndexes.includes(entry.originalIndex) ? 'true' : 'false'"
                 :class="[
-                  SUIT_TEXT[entry.card.suit],
                   scoringCardIndexes.includes(entry.originalIndex) ? '-translate-y-2 ring-4 ring-amber-300' :
                     selectedIndexes.includes(entry.originalIndex) ? '-translate-y-1 ring-2 ring-sky-500' : '',
                 ]"
               >
                 <div class="flex flex-col items-start leading-none">
-                  <span class="text-lg font-bold sm:text-2xl">{{ entry.card.rank }}</span>
+                  <span class="pm-card-rank text-lg font-bold sm:text-2xl">{{ entry.card.rank }}</span>
                   <span class="mt-1 text-lg sm:text-xl">{{ SUIT_SYMBOLS[entry.card.suit] }}</span>
                 </div>
-                <span aria-hidden="true" class="self-center text-3xl sm:text-5xl">{{ SUIT_SYMBOLS[entry.card.suit] }}</span>
+                <span aria-hidden="true" class="pm-card-center self-center text-3xl sm:text-5xl">{{ SUIT_SYMBOLS[entry.card.suit] }}</span>
                 <div aria-hidden="true" class="flex rotate-180 flex-col items-start leading-none">
                   <span class="text-lg font-bold sm:text-2xl">{{ entry.card.rank }}</span>
                   <span class="mt-1 text-lg sm:text-xl">{{ SUIT_SYMBOLS[entry.card.suit] }}</span>

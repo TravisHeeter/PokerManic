@@ -5,3 +5,63 @@ body {
   min-height: 100vh;
   background: radial-gradient(circle at 20% 15%, #1a2830 0%, #090c15 55%, #07090d 100%);
 }
+
+
+/* Four card presentations; selectors live on the hand to avoid rerendering or touching scoring logic.
+   Fonts use dependable local fallbacks, so the deck remains readable offline. */
+[data-card-style] {
+  --pm-card-paper: #faf8f1;
+  --pm-card-border: #d3d4d6;
+  --pm-card-font: Georgia, "Times New Roman", serif;
+  --pm-card-center-font: Georgia, "Times New Roman", serif;
+  --pm-spades: #334155;
+  --pm-hearts: #87565d;
+  --pm-clubs: #577a75;
+  --pm-diamonds: #998258;
+}
+[data-card-style="victorian"] {
+  --pm-card-paper: #efe0bd;
+  --pm-card-border: #a88f67;
+  --pm-card-font: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+  --pm-card-center-font: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+  --pm-spades: #313a31;
+  --pm-hearts: #8c3535;
+  --pm-clubs: #345b47;
+  --pm-diamonds: #9b7032;
+}
+[data-card-style="deco"] {
+  --pm-card-paper: #f7f0dc;
+  --pm-card-border: #b99e5c;
+  --pm-card-font: "Trebuchet MS", "Arial Narrow", sans-serif;
+  --pm-card-center-font: "Trebuchet MS", "Arial Narrow", sans-serif;
+  --pm-spades: #202c43;
+  --pm-hearts: #a22d43;
+  --pm-clubs: #18665e;
+  --pm-diamonds: #ae741f;
+}
+[data-card-style="cyber"] {
+  --pm-card-paper: #101a1b;
+  --pm-card-border: #3b6664;
+  --pm-card-font: "Lucida Console", Monaco, monospace;
+  --pm-card-center-font: "Lucida Console", Monaco, monospace;
+  --pm-spades: #86b9b4;
+  --pm-hearts: #ff789d;
+  --pm-clubs: #56dcb7;
+  --pm-diamonds: #f5c86b;
+}
+.pm-card {
+  background-color: var(--pm-card-paper);
+  border-color: var(--pm-card-border);
+  font-family: var(--pm-card-font);
+  box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--pm-card-border) 25%, transparent), 0 9px 16px #0004;
+}
+.pm-card-rank { font-family: var(--pm-card-font); }
+.pm-card-center { font-family: var(--pm-card-center-font); }
+.pm-card[data-suit="spades"] { color: var(--pm-spades); }
+.pm-card[data-suit="hearts"] { color: var(--pm-hearts); }
+.pm-card[data-suit="clubs"] { color: var(--pm-clubs); }
+.pm-card[data-suit="diamonds"] { color: var(--pm-diamonds); }
+[data-card-style="deco"] .pm-card { border-width: 2px; border-radius: 0.35rem; }
+[data-card-style="deco"] .pm-card-rank { letter-spacing: 0.045em; }
+[data-card-style="victorian"] .pm-card { border-width: 2px; }
+[data-card-style="cyber"] .pm-card { border-width: 1px; }

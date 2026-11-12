@@ -76,6 +76,11 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.ok(html.indexOf('data-testid="score-hand"') < html.indexOf('Hand selection'));
   assert.match(html, /1–5 to score|1.{0,25}5 to score/);
   assert.match(html, /Sort cards:/);
+  assert.match(html, /Card style:/);
+  assert.match(html, /data-card-style="classic"/);
+  for (const style of ['classic', 'victorian', 'deco', 'cyber']) {
+    assert.match(html, new RegExp(`data-testid="card-style-${style}"`));
+  }
   assert.match(html, /Dealt order/);
   assert.match(html, />Rank</);
   assert.match(html, /data-testid="sort-rank"[^>]*aria-pressed="true"|aria-pressed="true"[^>]*data-testid="sort-rank"/);
