@@ -1,5 +1,7 @@
 import { cardSchema, type Card, type CardRank } from '@pokermanic/contracts';
 import { POKER_HAND_VALUES, type PokerHandCategory } from './scoring.js';
+import { matchingWildCategories, type WildAssignment } from './wild.js';
+import type { CardModifierMap } from './modifiers.js';
 
 /**
  * An eligible formation uses a subset of the cards the player has committed.
@@ -19,6 +21,7 @@ export interface ScoringOption {
   /** Optional run-long card modifier totals applied to the chosen formation. */
   modifierBonusChips?: number;
   modifierMultiplier?: number;
+  wildAssignments?: WildAssignment[];
   /** Present only for a two-formation scoring combination. */
   components?: [ScoringComponent, ScoringComponent];
   combinationType?: 'separate' | 'overlapping';
@@ -32,6 +35,7 @@ export interface ScoringComponent {
   baseChips: number;
   multiplier: number;
   score: number;
+  wildAssignments?: WildAssignment[];
 }
 
 export interface HandSelectionSettings {
@@ -74,6 +78,7 @@ const CATEGORY_STRENGTH: Record<ScoringCategory, number> = {
   four_of_a_kind: 10,
   straight_flush: 11,
   royal_flush: 12,
+  five_of_a_kind: 13,
 };
 
 const RANK_VALUE: Record<CardRank, number> = {
@@ -176,6 +181,12 @@ function combinedOptions(options: readonly ScoringOption[]): ScoringOption[] {
     const a = candidates[i]!;
     for (let j = i + 1; j < candidates.length; j++) {
       const b = candidates[j]!;
+      // Overlapping wild cards must use one consistent interpretation.
+      const wildA = new Map((a.wildAssignments ?? []).map(w => [w.index, w]));
+      if ((b.wildAssignments ?? []).some(w => {
+        const other = wildA.get(w.index);
+        return other && (other.rank !== w.rank || other.suit !== w.suit);
+      })) continue;
       if (isContained(a.scoringCardIndices, b.scoringCardIndices)
         || isContained(b.scoringCardIndices, a.scoringCardIndices)) continue;
       const union = [...new Set([...a.scoringCardIndices, ...b.scoringCardIndices])]
@@ -195,6 +206,8 @@ function combinedOptions(options: readonly ScoringOption[]): ScoringOption[] {
         score,
         components: [a as ScoringComponent, b as ScoringComponent],
         combinationType: overlap ? 'overlapping' : 'separate',
+        wildAssignments: [...new Map([...(a.wildAssignments ?? []), ...(b.wildAssignments ?? [])]
+          .map(w => [w.index, w])).values()].sort((x,y)=>x.index-y.index),
       });
     }
   }
@@ -207,7 +220,7 @@ function combinedOptions(options: readonly ScoringOption[]): ScoringOption[] {
  * The hard limit of eight applies only to this early engine, not game design.
  * No perk is granted here; selection is enforced by resolveScoringOption.
  */
-export function listEligiblePokerHands(cards: readonly Card[]): ScoringOption[] {
+export function listEligiblePokerHands(cards: readonly Card[], modifiers: Readonly<CardModifierMap> = {}): ScoringOption[] {
   if (cards.length > 8) {
     throw new RangeError('This milestone supports up to eight committed cards.');
   }
@@ -221,7 +234,11 @@ export function listEligiblePokerHands(cards: readonly Card[]): ScoringOption[] 
   for (let mask = 1; mask < (1 << validCards.length); mask++) {
     const scoringCardIndices = validCards.flatMap((_, i) => mask & (1 << i) ? [i] : []);
     const subset = scoringCardIndices.map((i) => validCards[i]!);
-    for (const category of matchingCategories(subset)) {
+    const hasWild = subset.some(card => ['wild_suit','wild_rank','wild_full'].includes(modifiers[card.suit + ':' + card.rank] ?? ''));
+    const matches = hasWild
+      ? matchingWildCategories(subset, modifiers)
+      : matchingCategories(subset).map(category => ({ category, assignments: [] as WildAssignment[] }));
+    for (const { category, assignments } of matches) {
       const entry = category === 'three_pair' || category === 'four_pair'
         ? EXTRA_PAIR_VALUES[category]
         : POKER_HAND_VALUES[category];
@@ -237,6 +254,7 @@ export function listEligiblePokerHands(cards: readonly Card[]): ScoringOption[] 
         baseChips,
         multiplier: entry.multiplier,
         score: baseChips * entry.multiplier,
+        ...(assignments.length ? { wildAssignments: assignments.map(w => ({ ...w, index: scoringCardIndices[w.index]! })) } : {}),
       });
     }
   }
