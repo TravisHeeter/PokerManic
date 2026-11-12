@@ -73,7 +73,7 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(discardButton, /aria-label="Discard selected cards"/);
   assert.equal((html.match(/data-testid="score-hand"/g) ?? []).length, 1);
   assert.equal((html.match(/data-testid="discard-selected"/g) ?? []).length, 1);
-  assert.ok(html.indexOf('data-testid="score-hand"') < html.indexOf('Hand selection'));
+  assert.ok(html.indexOf('data-testid="hand-shop-content"') < html.indexOf('data-testid="score-hand"'));
   assert.match(html, /1–5 to score|1.{0,25}5 to score/);
   assert.match(html, /Sort cards:/);
   assert.match(html, /Card style:/);
