@@ -1,5 +1,5 @@
 import type { Card } from '@pokermanic/contracts';
-import { applyCardModifiers, type CardModifierMap } from './modifiers.js';
+import { applyCardModifiers, goldCardReward, cardIdentity, type CardModifierMap } from './modifiers.js';
 import { createStandardDeck, dealCards, shuffleDeck } from './deck.js';
 import { listEligiblePokerHands, resolveScoringOption, type HandSelectionSettings, type ScoringOption } from './choices.js';
 
@@ -50,6 +50,8 @@ export interface RunState {
   discardedCards: Card[];
   lastScored: ScoringOption | null;
   cardModifiers?: CardModifierMap;
+  cardGrowth?: Record<string, number>;
+  lastGoldReward?: number;
 }
 
 function validateRuleInteger(value: number, name: string, minimum: number): void {
@@ -103,7 +105,7 @@ export function getRoundDiscards(round: number, rules: Readonly<RoundRules> = DE
   return count;
 }
 
-function freshRound(round: number, totalChips: number, rules: Readonly<RoundRules>, random: () => number, cardModifiers: CardModifierMap = {}): RunState {
+function freshRound(round: number, totalChips: number, rules: Readonly<RoundRules>, random: () => number, cardModifiers: CardModifierMap = {}, cardGrowth: Record<string, number> = {}): RunState {
   const { hand, remainingDeck } = dealCards(shuffleDeck(createStandardDeck(), random), rules.handSize);
   return {
     phase: 'playing',
@@ -120,6 +122,8 @@ function freshRound(round: number, totalChips: number, rules: Readonly<RoundRule
     discardedCards: [],
     lastScored: null,
     cardModifiers,
+    cardGrowth,
+    lastGoldReward: 0,
   };
 }
 
@@ -141,7 +145,7 @@ export function advanceRound(
   if (state.phase !== 'round_won') {
     throw new Error('The next round is available only after meeting the chip target.');
   }
-  return freshRound(state.round + 1, state.totalChips, rules, random, { ...state.cardModifiers });
+  return freshRound(state.round + 1, state.totalChips, rules, random, { ...state.cardModifiers }, { ...state.cardGrowth });
 }
 
 function activeRound(state: Readonly<RunState>): void {
@@ -280,14 +284,20 @@ export function playScoringHand(
   if (state.handsRemaining <= 0) throw new Error('No scoring hands remain.');
   const chosen = selectedIndices(indices, state.hand.length, 1, rules.cardsPerPlay);
   const cards = chosen.map((index) => state.hand[index]!);
-  const options = listEligiblePokerHands(cards);
+  const options = listEligiblePokerHands(cards, state.cardModifiers);
   const manual = settings.manualSelectionUnlocked && settings.selectionMode === 'manual';
   if (manual && manualOptionId && !options.some((option) => option.id === manualOptionId)) {
     throw new RangeError('The selected scoring option is not eligible for these cards.');
   }
   const option = resolveScoringOption(options, settings, manualOptionId);
   if (!option) throw new Error('No eligible scoring option found.');
-  const selected = applyCardModifiers(option, cards, state.cardModifiers);
+  const selected = applyCardModifiers(option, cards, state.cardModifiers, state.cardGrowth);
+  const goldReward = goldCardReward(option, cards, state.cardModifiers);
+  const cardGrowth = { ...state.cardGrowth };
+  for (const index of option.scoringCardIndices) {
+    const key = cardIdentity(cards[index]!);
+    if (state.cardModifiers?.[key] === 'growing') cardGrowth[key] = (cardGrowth[key] ?? 0) + 1;
+  }
   const updatedChips = state.roundChips + selected.score;
   const updatedTotal = state.totalChips + selected.score;
   if (!Number.isSafeInteger(updatedChips) || !Number.isSafeInteger(updatedTotal)) {
@@ -309,6 +319,8 @@ export function playScoringHand(
     handsRemaining,
     handsPlayed: state.handsPlayed + 1,
     lastScored: selected,
+    cardGrowth,
+    lastGoldReward: goldReward,
   };
 }
 
@@ -332,5 +344,6 @@ export function discardCards(
     discardedCards: next.discardedCards,
     discardsRemaining: state.discardsRemaining - 1,
     lastScored: null,
+    lastGoldReward: 0,
   };
 }
