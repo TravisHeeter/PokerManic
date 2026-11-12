@@ -11,9 +11,10 @@ const positiveInt = z.number().int().safe().positive();
 const scoringCategory = z.enum([
   'high_card', 'pair', 'two_pair', 'three_pair', 'four_pair',
   'three_of_a_kind', 'straight', 'flush', 'full_house',
-  'four_of_a_kind', 'straight_flush', 'royal_flush', 'combination',
+  'four_of_a_kind', 'five_of_a_kind', 'straight_flush', 'royal_flush', 'combination',
 ]);
 const cardIndices = z.array(safeInt);
+const wildAssignmentSchema = z.strictObject({ index: safeInt, rank: cardSchema.shape.rank, suit: cardSchema.shape.suit });
 const scoreComponentSchema = z.strictObject({
   id: z.string(),
   category: scoringCategory.exclude(['combination']),
@@ -22,6 +23,7 @@ const scoreComponentSchema = z.strictObject({
   baseChips: safeInt,
   multiplier: safeInt,
   score: safeInt,
+  wildAssignments: z.array(wildAssignmentSchema).optional(),
 });
 const scoreSchema = z.strictObject({
   id: z.string(),
@@ -33,6 +35,7 @@ const scoreSchema = z.strictObject({
   score: safeInt,
   modifierBonusChips: safeInt.optional(),
   modifierMultiplier: z.number().finite().positive().optional(),
+  wildAssignments: z.array(wildAssignmentSchema).optional(),
   components: z.tuple([scoreComponentSchema, scoreComponentSchema]).optional(),
   combinationType: z.enum(['separate', 'overlapping']).optional(),
 });
@@ -64,7 +67,9 @@ export const savedRunSchema = z.strictObject({
   playedCards: z.array(cardSchema),
   discardedCards: z.array(cardSchema),
   lastScored: scoreSchema.nullable(),
-  cardModifiers: z.record(z.string(), z.enum(['bonus', 'multiplier'])).optional(),
+  cardModifiers: z.record(z.string(), z.enum(['bonus', 'multiplier', 'gold', 'echo', 'growing', 'wild_suit', 'wild_rank', 'wild_full'])).optional(),
+  cardGrowth: z.record(z.string(), safeInt).optional(),
+  lastGoldReward: safeInt.optional(),
 });
 
 export const savedProgressSchema = z.strictObject({
@@ -114,7 +119,9 @@ export const gameSaveV1Schema = z.strictObject({
   }),
 }).superRefine((save, ctx) => {
   const error = (message: string) => ctx.addIssue({ code: 'custom', message });
-  if (Object.keys(save.run.cardModifiers ?? {}).some(key => !/^(hearts|diamonds|clubs|spades):(2|3|4|5|6|7|8|9|10|J|Q|K|A)$/.test(key))) error('Invalid card modifier identity');
+  const validCardKey = /^(hearts|diamonds|clubs|spades):(2|3|4|5|6|7|8|9|10|J|Q|K|A)$/;
+  if (Object.keys(save.run.cardModifiers ?? {}).some(key => !validCardKey.test(key))) error('Invalid card modifier identity');
+  if (Object.keys(save.run.cardGrowth ?? {}).some(key => !validCardKey.test(key) || save.run.cardModifiers?.[key] !== 'growing')) error('Invalid growing-card history');
   if (save.run.hand.length !== save.rules.handSize) error('Held hand size does not match saved rules');
   const cards = [
     ...save.run.hand, ...save.run.drawPile,
