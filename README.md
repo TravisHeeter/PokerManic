@@ -379,3 +379,7 @@ A dedicated in-run card modifier shop upgrades exactly one selected card at a ti
 ## Bottom dock with game-control tabs
 
 The fixed bottom dock now has two adjacent tabs: **Perk shop** and **Hand selection & card modifiers**. Opening a tab reveals a scrollable panel; switching tabs replaces its content, while clicking the active tab collapses the dock. The second tab houses the existing Hand Selection/Scoring Panel (including Play, Discard, Clear Selection and manual formation controls) and the Card Modifier Shop. These controls no longer occupy space beneath the cards on the main screen. All selections, preview updates, prices and purchase actions remain bound to the same reactive game state. Upgrade-chip balance remains visible in the dock header even while collapsed. The dock remains outside the main page container for correct viewport positioning.
+
+## Direct card actions below the hand
+
+Play, Discard and Clear Selection have moved out of the docked Hand Selection panel into a compact action group directly under the displayed playing cards. The fixed bottom dock continues to hold hand evaluation and manual formation selection alongside the Card Modifier Shop, while the play/discard/clear controls remain visible without opening a tab. The actions use the existing game-state callbacks and disabled rules; no scoring or card-modifier behavior changes.

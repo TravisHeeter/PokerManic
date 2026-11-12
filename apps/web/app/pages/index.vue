@@ -372,6 +372,13 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
               :round="run.round" :hands-played="run.handsPlayed" :in-round="inRound"
               v-model:sort-mode="sortMode" @toggle-card="toggleCard" />
 
+            <HandActions :preview="preview" :in-round="inRound"
+              :hands-remaining="run.handsRemaining"
+              :can-discard-selection="canDiscardSelection"
+              :selected-count="selectedIndexes.length"
+              @score-hand="scoreSelectedHand" @discard-selected="discardSelectedCards"
+              @clear-selection="clearSelection" />
+
             <div class="flex flex-wrap gap-3">
               <UButton data-testid="new-run" icon="i-lucide-rotate-ccw"
                 color="neutral" variant="ghost" @click="restartRun">
@@ -410,13 +417,9 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
       
       <ScoringPanel :preview="preview" :scored-hand="scoredHand"
       :eligible-options="eligibleOptions" :selected-cards="selectedCards"
-      :selected-count="selectedIndexes.length" :manual-unlocked="manualUnlocked"
+      :manual-unlocked="manualUnlocked"
       :selection-mode="selectionMode" :cards-per-play="rules.cardsPerPlay"
-      :in-round="inRound" :hands-remaining="run.handsRemaining"
-      :can-discard-selection="canDiscardSelection"
-      @set-selection-mode="setSelectionMode" @choose-scoring-option="chooseScoringOption"
-      @score-hand="scoreSelectedHand" @discard-selected="discardSelectedCards"
-      @clear-selection="clearSelection" />
+      @set-selection-mode="setSelectionMode" @choose-scoring-option="chooseScoringOption" />
     </template>
   </PerkShop>
 </template>
