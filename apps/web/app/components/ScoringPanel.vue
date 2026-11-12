@@ -26,10 +26,25 @@ const emit = defineEmits<{
               <div class="flex flex-wrap items-start justify-between gap-3">
                 <div class="space-y-1">
                   <h3 class="font-semibold text-lg">Poker hand evaluation</h3>
-                  <p v-if="preview" data-testid="hand-preview" class="text-sm">
-                    <strong>{{ preview.label }}</strong> — {{ preview.baseChips }} chips
-                    × {{ preview.multiplier }} multiplier = <strong>{{ preview.score }} points</strong>
-                  </p>
+                  <div v-if="preview" data-testid="hand-preview" class="text-sm">
+                    <strong>{{ preview.label }}</strong>
+                    <template v-if="preview.components">
+                      <p class="mt-1 text-xs text-muted">
+                        {{ preview.combinationType === 'separate' ? 'Separate formations:' : 'Overlapping formations:' }}
+                        <span v-for="(part, index) in preview.components" :key="part.id">
+                          {{ index ? ' + ' : '' }}{{ part.label }} ({{ part.baseChips }} × {{ part.multiplier }})
+                        </span>
+                      </p>
+                      <p class="text-xs">
+                        {{ preview.combinationType === 'separate'
+                          ? `${preview.components[0].score} + ${preview.components[1].score}`
+                          : `(${preview.baseChips}) × (${preview.multiplier})` }}
+                        = <strong>{{ preview.score }} chips</strong>
+                      </p>
+                    </template>
+                    <p v-else>— {{ preview.baseChips }} chips × {{ preview.multiplier }} multiplier
+                      = <strong>{{ preview.score }} chips</strong></p>
+                  </div>
                   <p v-else class="text-sm text-muted">Choose 1 to {{ cardsPerPlay }} cards to see the hand type and score.</p>
                 </div>
                 <UBadge color="neutral" variant="subtle">Base values only</UBadge>
@@ -74,6 +89,11 @@ const emit = defineEmits<{
                     <span>{{ option.label }}:
                       <span class="text-muted">{{ option.scoringCardIndices.map(i =>
                         selectedCards[i]!.rank + ' of ' + selectedCards[i]!.suit).join(', ') }}</span>
+                      <span class="block text-xs text-muted">{{ option.score }} chips
+                        <template v-if="option.components">
+                          · {{ option.combinationType === 'separate' ? 'separate scores' : 'combined multiplier' }}
+                        </template>
+                      </span>
                     </span>
                   </label>
                 </div>

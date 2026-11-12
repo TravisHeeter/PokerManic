@@ -6,11 +6,24 @@ import { POKER_HAND_VALUES, type PokerHandCategory } from './scoring.js';
  * Indices are positional within the passed cards until unique card-instance IDs
  * are introduced with the player inventory and card-modifier system.
  */
-export type ScoringCategory = PokerHandCategory | 'three_pair' | 'four_pair';
+export type ScoringCategory = PokerHandCategory | 'three_pair' | 'four_pair' | 'combination';
 
 export interface ScoringOption {
   id: string;
   category: ScoringCategory;
+  label: string;
+  scoringCardIndices: number[];
+  baseChips: number;
+  multiplier: number;
+  score: number;
+  /** Present only for a two-formation scoring combination. */
+  components?: [ScoringComponent, ScoringComponent];
+  combinationType?: 'separate' | 'overlapping';
+}
+
+export interface ScoringComponent {
+  id: string;
+  category: Exclude<ScoringCategory, 'combination'>;
   label: string;
   scoringCardIndices: number[];
   baseChips: number;
@@ -45,6 +58,7 @@ const EXTRA_PAIR_VALUES = {
 // Strongest *poker-ranking* formation wins in automatic mode, not
 // necessarily the formation with the highest score after upgrades.
 const CATEGORY_STRENGTH: Record<ScoringCategory, number> = {
+  combination: 0,
   high_card: 1,
   pair: 2,
   two_pair: 3,
@@ -132,6 +146,58 @@ function compareRanks(a: readonly number[], b: readonly number[]): number {
   return 0;
 }
 
+
+function categoryStrength(option: ScoringOption): number {
+  return option.components
+    ? Math.max(...option.components.map((component) => CATEGORY_STRENGTH[component.category]))
+    : CATEGORY_STRENGTH[option.category];
+}
+
+function isContained(a: readonly number[], b: readonly number[]): boolean {
+  const bSet = new Set(b);
+  return a.every((index) => bSet.has(index));
+}
+
+/**
+ * Combine exactly two independent qualifying formations.
+ * - Disjoint cards: add both calculated scores.
+ * - Shared card(s): add base chips and multipliers, then multiply.
+ * A formation wholly contained in another does not count as an extra hand.
+ * Avoid High Card add-ons and composite-of-composite scoring.
+ */
+function combinedOptions(options: readonly ScoringOption[]): ScoringOption[] {
+  const candidates = options.filter((option) => option.category !== 'high_card'
+    && option.category !== 'combination');
+  const result: ScoringOption[] = [];
+  for (let i = 0; i < candidates.length; i++) {
+    const a = candidates[i]!;
+    for (let j = i + 1; j < candidates.length; j++) {
+      const b = candidates[j]!;
+      if (isContained(a.scoringCardIndices, b.scoringCardIndices)
+        || isContained(b.scoringCardIndices, a.scoringCardIndices)) continue;
+      const union = [...new Set([...a.scoringCardIndices, ...b.scoringCardIndices])]
+        .sort((x, y) => x - y);
+      const overlap = union.length < a.scoringCardIndices.length + b.scoringCardIndices.length;
+      const baseChips = a.baseChips + b.baseChips;
+      const multiplier = overlap ? a.multiplier + b.multiplier : 0;
+      const score = overlap ? baseChips * multiplier : a.score + b.score;
+      if (!Number.isSafeInteger(score)) throw new RangeError('Combined score exceeds safe integer precision.');
+      result.push({
+        id: `combination:${a.id}|${b.id}`,
+        category: 'combination',
+        label: `${a.label} + ${b.label}`,
+        scoringCardIndices: union,
+        baseChips,
+        multiplier,
+        score,
+        components: [a as ScoringComponent, b as ScoringComponent],
+        combinationType: overlap ? 'overlapping' : 'separate',
+      });
+    }
+  }
+  return result;
+}
+
 /**
  * List EVERY qualifying scoring subset of the committed cards, including
  * each individual high-card choice even when a better hand is also present.
@@ -172,8 +238,10 @@ export function listEligiblePokerHands(cards: readonly Card[]): ScoringOption[] 
     }
   }
 
+  options.push(...combinedOptions(options));
   options.sort((a, b) =>
-    CATEGORY_STRENGTH[b.category] - CATEGORY_STRENGTH[a.category]
+    categoryStrength(b) - categoryStrength(a)
+    || Number(Boolean(b.components)) - Number(Boolean(a.components))
     || b.scoringCardIndices.length - a.scoringCardIndices.length
     || compareRanks(numericRankKey(a, validCards), numericRankKey(b, validCards))
     || a.id.localeCompare(b.id),
