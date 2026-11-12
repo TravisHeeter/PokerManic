@@ -145,3 +145,13 @@ body {
   font-weight: 900;
   letter-spacing: -0.035em;
 }
+
+/* The central rank and suit are prominent without covering the corner indexes. */
+.pm-card-center-rank,
+.pm-card-center-suit {
+  font-family: var(--pm-card-center-font);
+  line-height: 0.92;
+  text-align: center;
+}
+.pm-card-center-rank { font-weight: 800; }
+.pm-card-center-suit { line-height: 1; }

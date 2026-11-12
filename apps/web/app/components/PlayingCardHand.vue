@@ -98,12 +98,15 @@ watch(cardStyle, value => {
                     selectedIndexes.includes(entry.originalIndex) ? '-translate-y-1 ring-2 ring-sky-500' : '',
                 ]"
               >
-                <div class="flex flex-col items-start leading-none">
+                <div class="relative z-10 flex flex-col items-start leading-none">
                   <span class="pm-card-rank text-lg font-bold sm:text-2xl">{{ entry.card.rank }}</span>
                   <span class="mt-1 text-lg sm:text-xl">{{ SUIT_SYMBOLS[entry.card.suit] }}</span>
                 </div>
-                <span aria-hidden="true" class="pm-card-center self-center text-3xl sm:text-5xl">{{ SUIT_SYMBOLS[entry.card.suit] }}</span>
-                <div aria-hidden="true" class="flex rotate-180 flex-col items-start leading-none">
+                <div aria-hidden="true" class="pm-card-center absolute inset-0 flex flex-col items-center justify-center leading-none pointer-events-none">
+                  <span data-testid="card-center-rank" class="pm-card-center-rank text-4xl font-bold sm:text-6xl">{{ entry.card.rank }}</span>
+                  <span data-testid="card-center-suit" class="pm-card-center-suit text-4xl sm:text-6xl">{{ SUIT_SYMBOLS[entry.card.suit] }}</span>
+                </div>
+                <div aria-hidden="true" class="relative z-10 flex rotate-180 flex-col items-start leading-none">
                   <span class="text-lg font-bold sm:text-2xl">{{ entry.card.rank }}</span>
                   <span class="mt-1 text-lg sm:text-xl">{{ SUIT_SYMBOLS[entry.card.suit] }}</span>
                 </div>

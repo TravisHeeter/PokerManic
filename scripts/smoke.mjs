@@ -125,6 +125,8 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /Remaining in deck/);
   // The first hand is random per server render and serialized for identical browser hydration.
   assert.equal((html.match(/data-testid="playing-card"/g) ?? []).length, 8);
+  assert.equal((html.match(/data-testid="card-center-rank"/g) ?? []).length, 8);
+  assert.equal((html.match(/data-testid="card-center-suit"/g) ?? []).length, 8);
   assert.match(html, /data-testid="deck-count"[^>]*>44</);
   assert.match(html, /data-testid="chip-target"[^>]*>60</);
   assert.match(html, /data-testid="hands-remaining"[^>]*>4</);
