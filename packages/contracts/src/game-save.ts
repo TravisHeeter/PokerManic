@@ -89,9 +89,10 @@ export const savedProfileSchema = z.strictObject({
     held_card: safeInt.max(4).default(0),
     cards_per_play: safeInt.max(3).default(0),
     discard_batch: safeInt.max(3).default(0),
+    manual_selection: safeInt.max(1).default(0),
   }).default({
     starting_hand: 0, starting_discard: 0, starting_chips: 0,
-    held_card: 0, cards_per_play: 0, discard_batch: 0,
+    held_card: 0, cards_per_play: 0, discard_batch: 0, manual_selection: 0,
   }),
 });
 

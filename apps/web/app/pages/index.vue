@@ -16,7 +16,7 @@ import {
   resolveScoringOption,
   startRun,
   manualSelectionUnlocked,
-  createPermanentProgress, applyPermanentUpgrades, startingUpgradeChips,
+  createPermanentProgress, startingUpgradeChips,
   transcendReward, transcendRun, PERMANENT_UPGRADES,
   permanentUpgradeCost, buyPermanentUpgrade,
 } from '@pokermanic/engine';
@@ -158,7 +158,7 @@ function resetToFreshRun() {
   savingBlocked.value = false;
   saveJsonDirty.value = false;
   progress.value = { ...createRunProgress(), upgradeChips: startingUpgradeChips(profile.value) };
-  rules.value = applyPermanentUpgrades(DEFAULT_ROUND_RULES, profile.value);
+  rules.value = { ...DEFAULT_ROUND_RULES };
   run.value = startRun(rules.value);
   selectionMode.value = 'automatic';
   sortMode.value = 'rank';
@@ -168,7 +168,7 @@ function resetToFreshRun() {
 function restartRun() {
   if (import.meta.client && !window.confirm('Start a new run? Temporary progress resets; permanent upgrades remain.')) return;
   resetToFreshRun();
-  lastAction.value = 'New run started with your permanent perks.';
+  lastAction.value = 'New run started. Prestige unlocks remain available in the shop.';
 }
 const earnedPrestige = computed(() => transcendReward(run.value));
 function transcend() {
@@ -182,12 +182,12 @@ function transcend() {
 }
 function purchasePermanent(id: PermanentUpgradeId) {
   profile.value = { ...profile.value, ...buyPermanentUpgrade(profile.value, id) };
-  lastAction.value = 'Permanent perk bought. It activates on your next run.';
+  lastAction.value = 'Shop perk permanently unlocked. You can purchase it with upgrade chips in the Perk Shop.';
 }
 
 function buyPerk(id: RunUpgradeId) {
   // Calculate the complete transaction before updating the reactive UI.
-  const purchased = purchaseRunUpgrade(run.value, progress.value, id);
+  const purchased = purchaseRunUpgrade(run.value, progress.value, id, profile.value);
   const upgradedRules = applyRunUpgrades(activeRunBaseRules(), purchased);
   const updatedRun = applyPurchasedRuleUpgrade(run.value, rules.value, upgradedRules);
 
@@ -373,7 +373,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
             </div>
             <p aria-live="polite" class="text-sm text-muted">{{ lastAction }}</p>
             <p class="text-xs text-muted">
-              Played and discarded cards are recycled when needed. Temporary perks take effect immediately. Card capacity upgrades are permanent prestige perks that apply on your next run.
+              Played and discarded cards are recycled when needed. Temporary perks take effect immediately. Prestige permanently unlocks perks; each run purchases their effects with upgrade chips.
             </p>
           </div>
         </UCard>
@@ -394,6 +394,6 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
   </UContainer>
 
   <!-- The viewport dock must not inherit the centered page container's layout. -->
-  <PerkShop :phase="run.phase" :progress="progress" :rules="rules"
+  <PerkShop :phase="run.phase" :progress="progress" :profile="profile" :rules="rules"
     :next-round-rules="nextRoundRules" @buy-perk="buyPerk" />
 </template>

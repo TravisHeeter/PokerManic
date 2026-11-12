@@ -1,5 +1,6 @@
 import type { RoundRules, RunState } from './rounds.js';
 import { validateRoundRules } from './rounds.js';
+import { isRunUpgradeUnlocked, type PermanentProgress } from './permanent.js';
 
 /** Temporary perks; legacy card-capacity levels remain supported in existing run saves. */
 export type RunUpgradeId =
@@ -19,9 +20,12 @@ export interface RunUpgradeDefinition {
 }
 
 export const RUN_UPGRADES: readonly RunUpgradeDefinition[] = [
-  { id: 'extra_hand', label: '+1 scoring hand', description: 'One more scoring attempt each round.', baseCost: 5, maxLevel: 4 },
   { id: 'extra_discard', label: '+1 discard', description: 'One more discard action each round.', baseCost: 4, maxLevel: 4 },
-  { id: 'manual_selection', label: 'Manual hand selection', description: 'Choose the scoring formation and its contributing cards.', baseCost: 10, maxLevel: 1 },
+  { id: 'hand_size', label: '+1 held card', description: 'Hold an additional card during this run.', baseCost: 6, maxLevel: 4 },
+  { id: 'discard_batch', label: '+1 card per discard', description: 'Discard one more card per action, up to eight.', baseCost: 8, maxLevel: 3 },
+  { id: 'extra_hand', label: '+1 scoring hand', description: 'One more scoring attempt each round.', baseCost: 10, maxLevel: 4 },
+  { id: 'cards_per_play', label: '+1 card per play', description: 'Play six, seven, then eight cards.', baseCost: 14, maxLevel: 3 },
+  { id: 'manual_selection', label: 'Manual hand selection', description: 'Choose scoring formations and contributing cards.', baseCost: 18, maxLevel: 1 },
 ];
 
 export interface RunProgress {
@@ -85,12 +89,13 @@ export function purchaseRunUpgrade(
   state: Readonly<RunState>,
   progress: Readonly<RunProgress>,
   id: RunUpgradeId,
+  permanent: Readonly<PermanentProgress>,
 ): RunProgress {
   if (state.phase === 'game_over') {
     throw new Error('Cannot buy run-only perks after the run has ended.');
   }
-  if (id === 'hand_size' || id === 'cards_per_play' || id === 'discard_batch') {
-    throw new Error('Card capacity upgrades are permanent prestige perks.');
+  if (!isRunUpgradeUnlocked(permanent, id)) {
+    throw new Error('This perk must be unlocked using prestige chips first.');
   }
   const cost = upgradeCost(progress, id);
   if (cost === null) throw new Error('This perk is already at its maximum level.');

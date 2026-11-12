@@ -27,17 +27,17 @@ const emit = defineEmits<{ transcend: []; purchase: [id: PermanentUpgradeId] }>(
         <UButton data-testid="transcend-action" color="warning" :disabled="earnedPrestige === 0"
           @click="emit('transcend')">Transcend (+{{ earnedPrestige }} prestige)</UButton>
         <div class="space-y-3">
-          <h3 class="font-semibold">Permanent upgrades</h3>
-          <p class="text-xs text-muted">Purchased bonuses apply to your next new run.</p>
+          <h3 class="font-semibold">Permanent shop unlocks</h3>
+          <p class="text-xs text-muted">Unlock a perk here once using prestige chips, then buy its levels with upgrade chips during each run.</p>
           <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <div v-for="perk in perks" :key="perk.id" class="space-y-2 rounded-lg border border-default p-3">
               <h4 class="font-semibold">{{ perk.label }}</h4>
               <p class="text-xs text-muted">{{ perk.description }}</p>
-              <p class="text-xs text-muted">Level {{ profile.permanentLevels[perk.id] }} / {{ perk.maxLevel }}</p>
+              <p class="text-xs text-muted">{{ profile.permanentLevels[perk.id] > 0 ? 'Unlocked permanently' : 'Locked' }}</p>
               <UButton size="sm" :data-testid="`permanent-${perk.id}`"
                 :disabled="prices[perk.id] === null || profile.prestigeChips < (prices[perk.id] ?? Infinity)"
                 @click="emit('purchase', perk.id)">
-                {{ prices[perk.id] === null ? 'Max level' : `Buy for ${prices[perk.id]} prestige` }}
+                {{ prices[perk.id] === null ? 'Unlocked' : `Unlock for ${prices[perk.id]} prestige` }}
               </UButton>
             </div>
           </div>
