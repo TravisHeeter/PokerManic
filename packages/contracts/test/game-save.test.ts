@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { createStandardDeck } from '../../engine/src/deck.js';
+import { CARD_RANKS, CARD_SUITS } from '../src/cards.js';
 import { GAME_SAVE_STORAGE_KEY, formatGameSave, gameSaveV1Schema, parseGameSave } from '../src/game-save.js';
 
-const allCards = createStandardDeck();
+const allCards = CARD_SUITS.flatMap(suit => CARD_RANKS.map(rank => ({ suit, rank })));
 const base = {
   version: 1 as const,
   savedAt: '2026-11-12T12:00:00.000Z',

@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
+import { GAME_SAVE_STORAGE_KEY, formatGameSave, parseGameSave } from '@pokermanic/contracts';
+import type { GameSaveV1, SavedProfile } from '@pokermanic/contracts';
 import {
   DEFAULT_ROUND_RULES,
   advanceRound,
@@ -15,14 +17,20 @@ import {
   startRun,
   manualSelectionUnlocked,
 } from '@pokermanic/engine';
-import type { RunState, ScoringOption, RunUpgradeId, RunProgress } from '@pokermanic/engine';
+import type { RunState, ScoringOption, RunUpgradeId, RunProgress, HandSortMode } from '@pokermanic/engine';
 
 useSeoMeta({
-  title: 'PokerManic | Milestone 5 — Run upgrades',
-  description: 'Earn upgrade chips on round wins and purchase run upgrades at any time during a run.',
+  title: 'PokerManic | Milestone 6 — Local saves',
+  description: 'Save, export and customize your local PokerManic progress with readable JSON.',
 });
 
 const progress = ref<RunProgress>(createRunProgress());
+const profile = ref<SavedProfile>({ lifetimeRunsStarted: 1, bestRound: 1 });
+const sortMode = ref<HandSortMode>('rank');
+const hydrated = ref(false);
+const savingBlocked = ref(false);
+const saveStatus = ref('Loading browser save…');
+const saveJson = ref('');
 // Effective rules update as perks are purchased, without resetting the round.
 
 const rules = ref({ ...DEFAULT_ROUND_RULES });
@@ -122,11 +130,20 @@ function nextRound() {
 }
 
 function restartRun() {
+  if (import.meta.client && !window.confirm('Start a new run? Your active run and its purchased perks will be reset. Permanent profile stats stay.')) return;
+  profile.value = {
+    ...profile.value,
+    lifetimeRunsStarted: profile.value.lifetimeRunsStarted + 1,
+    bestRound: Math.max(profile.value.bestRound, run.value.round),
+  };
+  savingBlocked.value = false;
   progress.value = createRunProgress();
   rules.value = { ...DEFAULT_ROUND_RULES };
   run.value = startRun(rules.value);
   selectionMode.value = 'automatic';
+  sortMode.value = 'rank';
   clearSelection();
+  saveStatus.value = 'New run created. Autosaving in this browser.';
   lastAction.value = 'New run started. Run-only perks, upgrade chips and prior scores were reset.';
 }
 
@@ -154,6 +171,99 @@ function buyPerk(id: RunUpgradeId) {
             : `You can now discard up to ${upgradedRules.maxCardsPerDiscard} cards at once.`;
 }
 
+
+/** The saved payload is also the public modding format: readable, without obfuscation. */
+function snapshot(): GameSaveV1 {
+  return {
+    version: 1,
+    savedAt: new Date().toISOString(),
+    run: run.value,
+    progress: progress.value,
+    rules: rules.value,
+    profile: profile.value,
+    ui: {
+      selectedIndexes: selectedIndexes.value,
+      selectionMode: selectionMode.value,
+      manualOptionId: manualOptionId.value ?? null,
+      sortMode: sortMode.value,
+    },
+  };
+}
+function installSave(save: GameSaveV1) {
+  run.value = save.run;
+  rules.value = save.rules;
+  progress.value = save.progress;
+  profile.value = save.profile;
+  selectedIndexes.value = save.ui.selectedIndexes;
+  selectionMode.value = save.ui.selectionMode;
+  manualOptionId.value = save.ui.manualOptionId ?? undefined;
+  sortMode.value = save.ui.sortMode;
+  scoredHand.value = save.run.lastScored;
+  lastAction.value = 'Local save restored. Continue your run or import edited JSON.';
+}
+function persistSave() {
+  if (!hydrated.value || savingBlocked.value || !import.meta.client) return;
+  try {
+    localStorage.setItem(GAME_SAVE_STORAGE_KEY, formatGameSave(snapshot()));
+    saveStatus.value = 'Autosaved locally in this browser.';
+  } catch (error) {
+    savingBlocked.value = true;
+    saveStatus.value = 'Autosave paused: ' + (error instanceof Error ? error.message : 'browser storage unavailable');
+  }
+}
+onMounted(() => {
+  try {
+    const raw = localStorage.getItem(GAME_SAVE_STORAGE_KEY);
+    if (raw) {
+      installSave(parseGameSave(raw));
+      saveStatus.value = 'Existing save restored from this browser.';
+    } else {
+      saveStatus.value = 'New run. Autosave enabled in this browser.';
+    }
+  } catch (error) {
+    savingBlocked.value = true;
+    saveStatus.value = 'Save not loaded: ' + (error instanceof Error ? error.message : 'invalid JSON');
+    try { saveJson.value = localStorage.getItem(GAME_SAVE_STORAGE_KEY) ?? ''; } catch { /* storage denied */ }
+  } finally {
+    hydrated.value = true;
+    persistSave();
+  }
+});
+watch([run, rules, progress, profile, selectedIndexes, selectionMode, manualOptionId, sortMode],
+  () => {
+    if (run.value.round > profile.value.bestRound) profile.value.bestRound = run.value.round;
+    persistSave();
+  }, { deep: true, flush: 'post' });
+
+function exportSave() {
+  try {
+    const json = formatGameSave(snapshot());
+    saveJson.value = json;
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'pokermanic-save-v1.json';
+    link.click();
+    URL.revokeObjectURL(url);
+    saveStatus.value = 'JSON exported. You can also edit it in the textarea below.';
+  } catch (error) {
+    saveStatus.value = error instanceof Error ? error.message : 'Could not export save.';
+  }
+}
+function importSave() {
+  try {
+    const parsed = parseGameSave(saveJson.value);
+    installSave(parsed);
+    savingBlocked.value = false;
+    persistSave();
+    saveStatus.value = 'Edited JSON imported successfully and saved locally.';
+  } catch (error) {
+    saveStatus.value = 'Import rejected (your run is unchanged): ' +
+      (error instanceof Error ? error.message : 'invalid JSON');
+  }
+}
+
 const { data: health, error, status, refresh } = await useFetch('/api/health');
 </script>
 
@@ -162,7 +272,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
     <div class="mx-auto max-w-6xl space-y-9">
       <header class="space-y-4">
         <div class="flex flex-wrap items-center gap-3">
-          <p class="uppercase tracking-[0.25em] text-sm text-amber-300">Milestone 5 / Run upgrades</p>
+          <p class="uppercase tracking-[0.25em] text-sm text-amber-300">Milestone 6 / Browser saves</p>
           <UBadge color="primary" variant="subtle">Current milestone</UBadge>
         </div>
         <div class="space-y-2">
@@ -179,7 +289,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
             <div class="flex flex-wrap items-start justify-between gap-4">
               <div class="space-y-1">
                 <p class="text-xs font-semibold uppercase tracking-widest text-amber-300">
-                  Milestone 5 playable upgrade demo
+                  Milestone 6 · Local save demo
                 </p>
                 <h2 id="hand-heading" class="text-3xl font-bold">Your hand</h2>
                 <p class="text-sm text-muted">
@@ -198,7 +308,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
               :scoring-card-indexes="scoringCardIndexes"
               :cards-per-play="rules.cardsPerPlay" :max-cards-per-discard="rules.maxCardsPerDiscard"
               :round="run.round" :hands-played="run.handsPlayed" :in-round="inRound"
-              @toggle-card="toggleCard" />
+              v-model:sort-mode="sortMode" @toggle-card="toggleCard" />
 
             <ScoringPanel :preview="preview" :scored-hand="scoredHand"
               :eligible-options="eligibleOptions" :selected-cards="selectedCards"
@@ -226,6 +336,9 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
 
       <PerkShop :phase="run.phase" :progress="progress" :rules="rules"
         :next-round-rules="nextRoundRules" @buy-perk="buyPerk" />
+
+      <SaveManager v-model:json="saveJson" :status="saveStatus" :blocked="savingBlocked"
+        @export="exportSave" @import="importSave" @new-run="restartRun" />
 
       <DevelopmentProgress />
 
