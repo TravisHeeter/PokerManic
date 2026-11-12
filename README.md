@@ -347,3 +347,7 @@ The perk shop is now docked to the bottom of the browser viewport as a fixed-pos
 ### Viewport dock positioning correction
 
 Render PerkShop as a sibling of the main `UContainer` rather than inside its centered, padded content tree. This isolates the fixed shop from page-level layouts and permits `bottom: 0` to align with the viewport boundary while the UContainer retains padding for unobstructed content. The shop tab and accordion functionality remain the same.
+
+## Milestone 7 — Prestige progression
+
+Once at least two rounds are completed, players may transcend to earn one prestige chip per two cleared rounds, resetting all temporary run perks and score. Prestige chips buy permanent levels in starting scoring hands (+1), starting discards (+1), and initial temporary upgrade chips (+2 per level). Each permanent perk caps at three levels. Permanent purchases activate when beginning the next run. Local save v1 remains backwards-compatible: missing permanent fields default to zero when loaded, and its readable JSON profile exposes `prestigeChips`, `transcends`, and `permanentLevels`. No account or anti-cheat restriction.

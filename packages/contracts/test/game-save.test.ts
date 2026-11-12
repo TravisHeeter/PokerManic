@@ -32,8 +32,18 @@ describe('editable game save v1', () => {
   it('round-trips a readable, versioned JSON save', () => {
     const json = formatGameSave(base);
     expect(JSON.parse(json).version).toBe(1);
-    expect(parseGameSave(json)).toEqual(base);
+    expect(parseGameSave(json)).toMatchObject(base);
+    expect(parseGameSave(json).profile.prestigeChips).toBe(0);
+    expect(parseGameSave(json).profile.transcends).toBe(0);
     expect(GAME_SAVE_STORAGE_KEY).toBe('pokermanic.save.v1');
+  });
+  it('validates optional permanent upgrades', () => {
+    const profile = { ...base.profile, prestigeChips: 20, transcends: 2,
+      permanentLevels: { starting_hand: 1, starting_discard: 2, starting_chips: 3 } };
+    expect(gameSaveV1Schema.parse({ ...base, profile }).profile.prestigeChips).toBe(20);
+    expect(gameSaveV1Schema.safeParse({ ...base, profile: {
+      ...profile, permanentLevels: { ...profile.permanentLevels, starting_hand: 4 },
+    } }).success).toBe(false);
   });
   it('allows intentional player modifications to valid chip counts', () => {
     const custom = structuredClone(base);
