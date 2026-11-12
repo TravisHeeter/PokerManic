@@ -25,11 +25,7 @@ const canBuy = (id: RunUpgradeId) => {
             <div class="flex flex-wrap items-start justify-between gap-3">
               <div class="space-y-1">
                 <p class="text-xs font-semibold uppercase tracking-widest text-amber-300">Milestone 5 · Run upgrades</p>
-                <h2 id="shop-heading" class="text-2xl font-bold">Perk shop — always open</h2>
-                <p class="text-sm text-muted">
-                  Clear rounds to earn upgrade chips, then shop any time during an active run.
-                  All purchases take effect immediately, including an additional drawn card, scoring hands, discards, limits, and Manual Selection. Scoring chips are never spent.
-                </p>
+                <h2 id="shop-heading" class="text-2xl font-bold">Perk shop</h2>
               </div>
               <div class="rounded-lg border border-default p-3">
                 <p class="text-xs text-muted">Upgrade chips available</p>
