@@ -14,12 +14,12 @@ export interface PermanentProgress {
 
 /** Price order corresponds to perceived strategic value. Each is a one-time unlock. */
 export const PERMANENT_UPGRADES = [
-  { id: 'starting_discard', label: 'Unlock +1 discard', description: 'Allows buying extra discard actions in the run shop.', baseCost: 1, maxLevel: 1 },
-  { id: 'held_card', label: 'Unlock +1 held card', description: 'Allows buying extra held cards in the run shop.', baseCost: 2, maxLevel: 1 },
-  { id: 'discard_batch', label: 'Unlock +1 card per discard', description: 'Allows buying a larger discard batch in the run shop.', baseCost: 3, maxLevel: 1 },
-  { id: 'starting_hand', label: 'Unlock +1 scoring hand', description: 'Allows buying extra scoring hands in the run shop.', baseCost: 4, maxLevel: 1 },
-  { id: 'cards_per_play', label: 'Unlock +1 card per play', description: 'Allows buying more cards per play in the run shop.', baseCost: 5, maxLevel: 1 },
-  { id: 'manual_selection', label: 'Unlock manual hand selection', description: 'Allows buying manual scoring selection in the run shop.', baseCost: 6, maxLevel: 1 },
+  { id: 'starting_discard', label: 'Unlock +1 discard', description: 'Allows buying extra discard actions in the run shop.', baseCost: 10, maxLevel: 1 },
+  { id: 'held_card', label: 'Unlock +1 held card', description: 'Allows buying extra held cards in the run shop.', baseCost: 20, maxLevel: 1 },
+  { id: 'discard_batch', label: 'Unlock +1 card per discard', description: 'Allows buying a larger discard batch in the run shop.', baseCost: 30, maxLevel: 1 },
+  { id: 'starting_hand', label: 'Unlock +1 scoring hand', description: 'Allows buying extra scoring hands in the run shop.', baseCost: 40, maxLevel: 1 },
+  { id: 'cards_per_play', label: 'Unlock +1 card per play', description: 'Allows buying more cards per play in the run shop.', baseCost: 50, maxLevel: 1 },
+  { id: 'manual_selection', label: 'Unlock manual hand selection', description: 'Allows buying manual scoring selection in the run shop.', baseCost: 60, maxLevel: 1 },
 ] as const;
 
 export function createPermanentProgress(): PermanentProgress {

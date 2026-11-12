@@ -359,3 +359,7 @@ Once at least two rounds are completed, players may transcend to earn one presti
 ## Prestige unlocks instead of automatic power
 
 Prestige currency now unlocks access to each of six run shop perks **once**; it never automatically grants the perk level. Every fresh run uses the same base card rules. Shop order and base upgrade-chip prices are: extra discard 4, held card 6, discard batch 8, scoring hand 10, cards per play 14, manual selection 18. The shop requires the matching permanent prestige unlock for every purchase; subsequent levels cost `baseCost × (level + 1)`. Prestige unlock costs rise from 1 to 6 in the same order. Existing browser profile keys `starting_discard` and `starting_hand` are recognized as unlocks, even if previously purchased at level 2 or 3; legacy `starting_chips` bonuses are retained for save compatibility but no longer sold. In-progress run capacity remains unchanged; older saves remain editable and load with missing `manual_selection` prestige key defaulting to zero.
+
+## High-cost progression balancing (November 2026)
+
+Prestige unlock prices are now **10 / 20 / 30 / 40 / 50 / 60 prestige chips**, from extra discard through manual selection. Once unlocked, run-shop base costs are **40 / 60 / 80 / 100 / 140 / 180 upgrade chips** in the same order. Additional in-run levels still cost `baseCost × (level + 1)`; chip earnings and progression rewards have **not** been increased. These deliberately expensive starting values are provisional until gameplay balance testing.

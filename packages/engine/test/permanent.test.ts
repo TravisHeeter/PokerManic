@@ -16,14 +16,14 @@ describe('prestige unlocks', () => {
     expect(earned.transcends).toBe(1);
   });
   it('unlocks each perk exactly once without changing any run rules', () => {
-    let profile = { ...createPermanentProgress(), prestigeChips: 30 };
+    let profile = { ...createPermanentProgress(), prestigeChips: 300 };
     const pairs = [
-      ['starting_discard', 'extra_discard', 1],
-      ['held_card', 'hand_size', 2],
-      ['discard_batch', 'discard_batch', 3],
-      ['starting_hand', 'extra_hand', 4],
-      ['cards_per_play', 'cards_per_play', 5],
-      ['manual_selection', 'manual_selection', 6],
+      ['starting_discard', 'extra_discard', 10],
+      ['held_card', 'hand_size', 20],
+      ['discard_batch', 'discard_batch', 30],
+      ['starting_hand', 'extra_hand', 40],
+      ['cards_per_play', 'cards_per_play', 50],
+      ['manual_selection', 'manual_selection', 60],
     ] as const;
     for (const [unlock, perk, price] of pairs) {
       expect(isRunUpgradeUnlocked(profile, perk)).toBe(false);
@@ -33,7 +33,7 @@ describe('prestige unlocks', () => {
       expect(permanentUpgradeCost(profile, unlock)).toBeNull();
       expect(() => buyPermanentUpgrade(profile, unlock)).toThrow('already unlocked');
     }
-    expect(profile.prestigeChips).toBe(9);
+    expect(profile.prestigeChips).toBe(90);
     expect(DEFAULT_ROUND_RULES.handSize).toBe(8);
     expect(startRun(DEFAULT_ROUND_RULES, () => 0.5).hand).toHaveLength(8);
   });

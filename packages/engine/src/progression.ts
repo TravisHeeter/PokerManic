@@ -20,12 +20,12 @@ export interface RunUpgradeDefinition {
 }
 
 export const RUN_UPGRADES: readonly RunUpgradeDefinition[] = [
-  { id: 'extra_discard', label: '+1 discard', description: 'One more discard action each round.', baseCost: 4, maxLevel: 4 },
-  { id: 'hand_size', label: '+1 held card', description: 'Hold an additional card during this run.', baseCost: 6, maxLevel: 4 },
-  { id: 'discard_batch', label: '+1 card per discard', description: 'Discard one more card per action, up to eight.', baseCost: 8, maxLevel: 3 },
-  { id: 'extra_hand', label: '+1 scoring hand', description: 'One more scoring attempt each round.', baseCost: 10, maxLevel: 4 },
-  { id: 'cards_per_play', label: '+1 card per play', description: 'Play six, seven, then eight cards.', baseCost: 14, maxLevel: 3 },
-  { id: 'manual_selection', label: 'Manual hand selection', description: 'Choose scoring formations and contributing cards.', baseCost: 18, maxLevel: 1 },
+  { id: 'extra_discard', label: '+1 discard', description: 'One more discard action each round.', baseCost: 40, maxLevel: 4 },
+  { id: 'hand_size', label: '+1 held card', description: 'Hold an additional card during this run.', baseCost: 60, maxLevel: 4 },
+  { id: 'discard_batch', label: '+1 card per discard', description: 'Discard one more card per action, up to eight.', baseCost: 80, maxLevel: 3 },
+  { id: 'extra_hand', label: '+1 scoring hand', description: 'One more scoring attempt each round.', baseCost: 100, maxLevel: 4 },
+  { id: 'cards_per_play', label: '+1 card per play', description: 'Play six, seven, then eight cards.', baseCost: 140, maxLevel: 3 },
+  { id: 'manual_selection', label: 'Manual hand selection', description: 'Choose scoring formations and contributing cards.', baseCost: 180, maxLevel: 1 },
 ];
 
 export interface RunProgress {
