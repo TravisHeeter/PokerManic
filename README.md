@@ -371,3 +371,19 @@ The hand now offers four live-switchable designs: **Classic** (original colors),
 ## Expanded card appearance selector
 
 The selectable card styles now include **Bold Victorian**, **Vivid Gothic**, **Art Nouveau**, **Cosmic Horror**, and **Medieval Illuminated**, alongside Classic, Victorian, Art Deco, and Cyber. Art Nouveau uses warm ivory, ornamental double borders, and elegant serif ranks; Cosmic Horror uses deep indigo, luminous purple/red/green/gold suits, and subtle celestial glow; Medieval Illuminated uses parchment, squared gold borders, strong red/green/gold suits, and heavy book-style serif ranks. Fonts use installed browser fallbacks without external dependencies. The browser remembers the selected style using the existing card-style localStorage key, independent of gameplay save files.
+
+## Milestone 8 — Card modifiers
+
+A dedicated in-run card modifier shop upgrades exactly one selected card at a time. **Bonus** costs 100 upgrade chips and adds +10 base chips whenever that card contributes to a scoring formation. **Multiplier** costs 180 and multiplies the resulting score by 1.5. Cards are identified by suit and rank and can hold at most one modifier; modifier effects persist through discards, deck recycling, and round transitions but reset with the run. Only cards contributing to the chosen scoring formation trigger effects, and overlapping combinations count each physical card once. The preview and committed score use the same engine helper. Saved JSON v1 accepts optional `run.cardModifiers` keyed by `suit:rank`, retaining compatibility with saves created before this milestone. Card badges show modifiers in all nine visual themes.
+
+## Bottom dock with game-control tabs
+
+The fixed bottom dock now has two adjacent tabs: **Perk shop** and **Hand selection & card modifiers**. Opening a tab reveals a scrollable panel; switching tabs replaces its content, while clicking the active tab collapses the dock. The second tab houses the existing Hand Selection/Scoring Panel (including Play, Discard, Clear Selection and manual formation controls) and the Card Modifier Shop. These controls no longer occupy space beneath the cards on the main screen. All selections, preview updates, prices and purchase actions remain bound to the same reactive game state. Upgrade-chip balance remains visible in the dock header even while collapsed. The dock remains outside the main page container for correct viewport positioning.
+
+## Direct card actions below the hand
+
+Play, Discard and Clear Selection have moved out of the docked Hand Selection panel into a compact action group directly under the displayed playing cards. The fixed bottom dock continues to hold hand evaluation and manual formation selection alongside the Card Modifier Shop, while the play/discard/clear controls remain visible without opening a tab. The actions use the existing game-state callbacks and disabled rules; no scoring or card-modifier behavior changes.
+
+## Prestige-gated hand-selection dock tab
+
+The dock exposes **Perk shop** and **Card modifiers** independently at the start of every run. A third **Hand selection** tab is rendered only after the player has both permanently unlocked Manual Hand Selection in the prestige shop and bought its temporary level in the Perk Shop for the current run. The tab contains the scoring preview and manual formation controls. Buying the perk reveals the tab immediately; starting a fresh run hides it again until the temporary level is repurchased. If the tab is open when the perk becomes unavailable, it closes safely. Play, Discard and Clear remain directly below the cards.

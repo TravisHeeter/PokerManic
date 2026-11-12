@@ -56,26 +56,25 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /API connected/);
   assert.match(html, /Milestone 8/);
   assert.match(html, /Transcendence/);
-  assert.match(html, /Round 1/);
-  assert.match(html, /Chip target/);
-  assert.match(html, /Hands remaining/);
-  assert.match(html, /Discards remaining/);
-  assert.match(html, /Run scoring chips/);
-  assert.match(html, /No fixed final round|no fixed final round/);
+  assert.match(html, /data-testid="round-number"[^>]*>\s*Round 1 - 60 Chips\s*</);
+  assert.match(html, /Chip count/);
   assert.match(html, /Hand selection/);
-  assert.match(html, /Manual Selection locked/);
-  assert.match(html, /Automatic selection active/);
+  assert.doesNotMatch(html, /data-testid="manual-perk-status"/);
   const playButton = html.match(/<button[^>]*data-testid="score-hand"[^>]*>[\s\S]*?<\/button>/)?.[0];
   const discardButton = html.match(/<button[^>]*data-testid="discard-selected"[^>]*>[\s\S]*?<\/button>/)?.[0];
   assert.ok(playButton, 'Play button should render');
   assert.ok(discardButton, 'Discard button should render');
   assert.match(playButton, /aria-label="Play selected cards"/);
   assert.match(discardButton, /aria-label="Discard selected cards"/);
+  // Remaining action counts are now shown inside the play/discard buttons.
+  assert.match(playButton, /\(x\s*4\)/);
+  assert.match(discardButton, /\(x\s*3\)/);
   assert.equal((html.match(/data-testid="score-hand"/g) ?? []).length, 1);
   assert.equal((html.match(/data-testid="discard-selected"/g) ?? []).length, 1);
-  assert.ok(html.indexOf('data-testid="score-hand"') < html.indexOf('Hand selection'));
-  assert.match(html, /1–5 to score|1.{0,25}5 to score/);
-  assert.match(html, /Sort cards:/);
+  assert.match(html, /data-testid="hand-actions"/);
+  assert.equal((html.match(/data-testid="hand-actions"/g) ?? []).length, 1);
+  assert.equal((html.match(/data-testid="clear-selection"/g) ?? []).length, 1);
+  assert.match(html, /aria-label="Sort cards"/);
   assert.match(html, /Card style:/);
   assert.match(html, /data-card-style="classic"/);
   for (const style of [
@@ -85,24 +84,25 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
     assert.match(html, new RegExp(`data-testid="card-style-${style}"`));
   }
   assert.match(html, /Dealt order/);
-  assert.match(html, />Rank</);
+  assert.match(html, /data-testid="sort-rank"/);
   assert.match(html, /data-testid="sort-rank"[^>]*aria-pressed="true"|aria-pressed="true"[^>]*data-testid="sort-rank"/);
-  assert.match(html, />Suit</);
+  assert.match(html, /data-testid="sort-suit"/);
 
   assert.match(html, /Start new run/);
   assert.match(html, /id="shop-heading"[^>]*>Perk shop<\/span>/);
   // These sections are rendered by separate Nuxt auto-imported components.
-  assert.match(html, /Poker hand evaluation/);
   assert.match(html, /Development progress/);
-  assert.match(html, /Permanent upgrades/);
   assert.match(html, /Prestige chips/);
+  assert.match(html, /Card modifier shop/);
+  assert.match(html, /data-testid="buy-card-modifier-bonus"/);
+  assert.match(html, /data-testid="buy-card-modifier-multiplier"/);
   assert.match(html, /data-testid="transcend-action"/);
-  assert.match(html, /7 milestones implemented/);
-  for (let milestone = 1; milestone <= 7; milestone++) {
+  assert.match(html, /8 milestones implemented/);
+  for (let milestone = 1; milestone <= 8; milestone++) {
     assert.match(html, new RegExp(`data-testid="milestone-${milestone}"`));
   }
   assert.match(html, /data-testid="milestone-next"/);
-  assert.match(html, /Milestone 7/);
+  assert.match(html, /Milestone 8/);
   assert.match(html, /Transcendence/);
   assert.doesNotMatch(html, /Milestone 2[^]*?Current/);
   assert.match(html, /Local saves &amp; modding|Local saves & modding/);
@@ -115,13 +115,19 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.doesNotMatch(html, /Shop closed/);
   assert.match(html, /data-testid="perk-shop-dock"/);
   assert.match(html, /data-testid="perk-shop-toggle"/);
+  assert.match(html, /data-testid="modifier-shop-toggle"/);
+  assert.match(html, /aria-controls="modifier-shop-content"/);
+  assert.match(html, /data-testid="modifier-shop-content"/);
+  assert.doesNotMatch(html, /data-testid="hand-shop-toggle"/);
+  assert.doesNotMatch(html, /data-testid="hand-shop-content"/);
+  assert.match(html, /role="tablist"/);
   assert.match(html, /aria-expanded="false"/);
   assert.match(html, /aria-controls="perk-shop-content"/);
   assert.match(html, /data-testid="perk-shop-content"/);
   assert.match(html, /Show upgrades/);
   assert.match(html, /Upgrade chips/);
   assert.match(html, /Manual hand selection/);
-  assert.match(html, /Milestone 7/);
+  assert.match(html, /Milestone 8/);
   assert.match(html, /Remaining in deck/);
   // The first hand is random per server render and serialized for identical browser hydration.
   assert.equal((html.match(/data-testid="playing-card"/g) ?? []).length, 8);
@@ -130,9 +136,7 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.doesNotMatch(html, /data-testid="card-center-rank"/);
   assert.equal((html.match(/data-testid="card-center-suit"/g) ?? []).length, 8);
   assert.match(html, /data-testid="deck-count"[^>]*>44</);
-  assert.match(html, /data-testid="chip-target"[^>]*>60</);
-  assert.match(html, /data-testid="hands-remaining"[^>]*>4</);
-  assert.match(html, /data-testid="discards-remaining"[^>]*>3</);
+  assert.match(html, /data-testid="round-score"[^>]*>0 \/ 60</);
   assert.match(html, /data-testid="upgrade-chip-balance"[^>]*>0</);
 });
 
@@ -148,5 +152,5 @@ await run('Custom PokerManic favicon is served', async () => {
 if (process.exitCode) {
   console.error('The current milestone is NOT verified. Fix failures before proceeding.');
 } else {
-  console.log('Milestone 7 smoke tests passed.');
+  console.log('Milestone 8 smoke tests passed.');
 }

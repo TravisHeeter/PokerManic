@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import type { Card, CardSuit } from '@pokermanic/contracts';
-import { sortHandForDisplay, type HandSortMode } from '@pokermanic/engine';
+import { sortHandForDisplay, cardIdentity, type HandSortMode, type CardModifierMap } from '@pokermanic/engine';
 const props = defineProps<{
   hand: Card[];
+  cardModifiers: CardModifierMap;
   selectedIndexes: number[];
   scoringCardIndexes: number[];
   cardsPerPlay: number;
@@ -49,26 +50,17 @@ watch(cardStyle, value => {
 </script>
 
 <template>
-            <p class="text-sm text-muted">
-              Choose 1 to {{ cardsPerPlay }} cards to score, or select up to {{ maxCardsPerDiscard }} to discard.
-              The game scores the strongest qualifying hand automatically
-              until the Manual Hand Selection perk is unlocked.
-              <strong data-testid="selected-count" class="text-highlighted">{{ selectedIndexes.length }} selected · 1–{{ cardsPerPlay }} to score</strong>
-              <span class="text-xs text-muted">Selected cards rise with a bright blue border and a checkmark.</span>
-            </p>
 
             <div role="group" aria-label="Sort cards" class="flex flex-wrap items-center gap-2">
-              <span class="text-sm text-muted">Sort cards:</span>
               <UButton data-testid="sort-dealt" size="sm" color="neutral"
                 :variant="props.sortMode === 'dealt' ? 'solid' : 'outline'"
                 :aria-pressed="props.sortMode === 'dealt'" @click="emit('update:sortMode', 'dealt')">Dealt order</UButton>
               <UButton data-testid="sort-rank" size="sm" color="neutral"
                 :variant="props.sortMode === 'rank' ? 'solid' : 'outline'"
-                :aria-pressed="props.sortMode === 'rank'" @click="emit('update:sortMode', 'rank')">Rank</UButton>
+                :aria-pressed="props.sortMode === 'rank'" @click="emit('update:sortMode', 'rank')">2</UButton>
               <UButton data-testid="sort-suit" size="sm" color="neutral"
                 :variant="props.sortMode === 'suit' ? 'solid' : 'outline'"
-                :aria-pressed="props.sortMode === 'suit'" @click="emit('update:sortMode', 'suit')">Suit</UButton>
-              <span class="text-xs text-muted">Highest first · suits ♠ ♥ ♦ ♣</span>
+                :aria-pressed="props.sortMode === 'suit'" @click="emit('update:sortMode', 'suit')">♠</UButton>
             </div>
 
             <div role="group" aria-label="Card appearance" class="flex flex-wrap items-center gap-2">
@@ -96,6 +88,11 @@ watch(cardStyle, value => {
                 :data-selected="selectedIndexes.includes(entry.originalIndex) ? 'true' : 'false'"
                 :data-scoring-card="scoringCardIndexes.includes(entry.originalIndex) ? 'true' : 'false'"
               >
+                <span v-if="cardModifiers[cardIdentity(entry.card)]" aria-hidden="true"
+                  data-testid="card-modifier-badge"
+                  class="pm-card-modifier-badge absolute bottom-2 left-1 z-20 rounded px-1 py-0.5 text-[10px] font-bold leading-none text-white shadow-sm sm:left-2">
+                  {{ cardModifiers[cardIdentity(entry.card)] === 'bonus' ? '+10' : '×1.5' }}
+                </span>
                 <span v-if="selectedIndexes.includes(entry.originalIndex)"
                   aria-hidden="true" data-testid="selected-card-check"
                   class="pm-card-selected-check absolute right-1 top-1 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-sky-500 text-lg font-black leading-none text-slate-950 shadow-md shadow-black/50 sm:right-2 sm:top-2 sm:h-8 sm:w-8">✓</span>

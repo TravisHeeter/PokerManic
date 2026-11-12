@@ -1,4 +1,5 @@
 import type { Card } from '@pokermanic/contracts';
+import { applyCardModifiers, type CardModifierMap } from './modifiers.js';
 import { createStandardDeck, dealCards, shuffleDeck } from './deck.js';
 import { listEligiblePokerHands, resolveScoringOption, type HandSelectionSettings, type ScoringOption } from './choices.js';
 
@@ -48,6 +49,7 @@ export interface RunState {
   playedCards: Card[];
   discardedCards: Card[];
   lastScored: ScoringOption | null;
+  cardModifiers?: CardModifierMap;
 }
 
 function validateRuleInteger(value: number, name: string, minimum: number): void {
@@ -101,7 +103,7 @@ export function getRoundDiscards(round: number, rules: Readonly<RoundRules> = DE
   return count;
 }
 
-function freshRound(round: number, totalChips: number, rules: Readonly<RoundRules>, random: () => number): RunState {
+function freshRound(round: number, totalChips: number, rules: Readonly<RoundRules>, random: () => number, cardModifiers: CardModifierMap = {}): RunState {
   const { hand, remainingDeck } = dealCards(shuffleDeck(createStandardDeck(), random), rules.handSize);
   return {
     phase: 'playing',
@@ -117,6 +119,7 @@ function freshRound(round: number, totalChips: number, rules: Readonly<RoundRule
     playedCards: [],
     discardedCards: [],
     lastScored: null,
+    cardModifiers,
   };
 }
 
@@ -138,7 +141,7 @@ export function advanceRound(
   if (state.phase !== 'round_won') {
     throw new Error('The next round is available only after meeting the chip target.');
   }
-  return freshRound(state.round + 1, state.totalChips, rules, random);
+  return freshRound(state.round + 1, state.totalChips, rules, random, { ...state.cardModifiers });
 }
 
 function activeRound(state: Readonly<RunState>): void {
@@ -282,8 +285,9 @@ export function playScoringHand(
   if (manual && manualOptionId && !options.some((option) => option.id === manualOptionId)) {
     throw new RangeError('The selected scoring option is not eligible for these cards.');
   }
-  const selected = resolveScoringOption(options, settings, manualOptionId);
-  if (!selected) throw new Error('No eligible scoring option found.');
+  const option = resolveScoringOption(options, settings, manualOptionId);
+  if (!option) throw new Error('No eligible scoring option found.');
+  const selected = applyCardModifiers(option, cards, state.cardModifiers);
   const updatedChips = state.roundChips + selected.score;
   const updatedTotal = state.totalChips + selected.score;
   if (!Number.isSafeInteger(updatedChips) || !Number.isSafeInteger(updatedTotal)) {

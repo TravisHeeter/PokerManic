@@ -18,12 +18,13 @@ import {
   manualSelectionUnlocked,
   createPermanentProgress, startingUpgradeChips,
   transcendReward, transcendRun, PERMANENT_UPGRADES,
-  permanentUpgradeCost, buyPermanentUpgrade,
+  permanentUpgradeCost, buyPermanentUpgrade, isRunUpgradeUnlocked,
+  CARD_MODIFIERS, purchaseCardModifier, applyCardModifiers,
 } from '@pokermanic/engine';
-import type { RunState, ScoringOption, RunUpgradeId, RunProgress, HandSortMode, PermanentUpgradeId } from '@pokermanic/engine';
+import type { RunState, ScoringOption, RunUpgradeId, RunProgress, HandSortMode, PermanentUpgradeId, CardModifier } from '@pokermanic/engine';
 
 useSeoMeta({
-  title: 'PokerManic | Milestone 7 — Transcendence',
+  title: 'PokerManic | Milestone 8 — Card Modifiers',
   description: 'Earn permanent prestige perks that survive every run.',
 });
 
@@ -70,13 +71,17 @@ const eligibleOptions = computed(() => selectedCards.value.length >= 1
   && selectedCards.value.length <= rules.value.cardsPerPlay
   ? listEligiblePokerHands(selectedCards.value) : []);
 
-const manualUnlocked = computed(() => manualSelectionUnlocked(progress.value));
+const manualUnlocked = computed(() =>
+  isRunUpgradeUnlocked(profile.value, 'manual_selection') && manualSelectionUnlocked(progress.value));
 const selectionMode = ref<'automatic' | 'manual'>('automatic');
 const manualOptionId = ref<string>();
-const preview = computed(() => resolveScoringOption(eligibleOptions.value, {
-  manualSelectionUnlocked: manualUnlocked.value,
-  selectionMode: selectionMode.value,
-}, manualOptionId.value));
+const preview = computed(() => {
+  const option = resolveScoringOption(eligibleOptions.value, {
+    manualSelectionUnlocked: manualUnlocked.value,
+    selectionMode: selectionMode.value,
+  }, manualOptionId.value);
+  return option ? applyCardModifiers(option, selectedCards.value, run.value.cardModifiers) : null;
+});
 const scoringCardIndexes = computed(() => preview.value?.scoringCardIndices
   .map((i) => selectedInputIndexes.value[i]!) ?? []);
 const scoredHand = ref<ScoringOption | null>(null);
@@ -183,6 +188,19 @@ function transcend() {
 function purchasePermanent(id: PermanentUpgradeId) {
   profile.value = { ...profile.value, ...buyPermanentUpgrade(profile.value, id) };
   lastAction.value = 'Shop perk permanently unlocked. You can purchase it with upgrade chips in the Perk Shop.';
+}
+
+function buyCardModifier(id: CardModifier) {
+  if (selectedIndexes.value.length !== 1) return;
+  try {
+    const card = hand.value[selectedIndexes.value[0]!]!;
+    const purchase = purchaseCardModifier(run.value, progress.value, selectedIndexes.value[0]!, id);
+    run.value = purchase.run;
+    progress.value = purchase.progress;
+    lastAction.value = `${card.rank} of ${card.suit} upgraded with ${id} for this run.`;
+  } catch (error) {
+    lastAction.value = error instanceof Error ? error.message : 'Modifier purchase failed.';
+  }
 }
 
 function buyPerk(id: RunUpgradeId) {
@@ -317,7 +335,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
     <div class="mx-auto max-w-6xl space-y-9">
       <header class="space-y-4">
         <div class="flex flex-wrap items-center gap-3">
-          <p class="uppercase tracking-[0.25em] text-sm text-amber-300">Milestone 7 / Transcendence</p>
+          <p class="uppercase tracking-[0.25em] text-sm text-amber-300">Milestone 8 / Card Modifiers</p>
           <UBadge color="primary" variant="subtle">Current milestone</UBadge>
         </div>
         <div class="space-y-2">
@@ -334,7 +352,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
             <div class="flex flex-wrap items-start justify-between gap-4">
               <div class="space-y-1">
                 <p class="text-xs font-semibold uppercase tracking-widest text-amber-300">
-                  Milestone 7 · Prestige progression
+                  Milestone 8 · Card modifiers
                 </p>
                 <h2 id="hand-heading" class="text-3xl font-bold">Your hand</h2>
                 <p class="text-sm text-muted">
@@ -349,21 +367,29 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
             <RoundStatus :run="run" :hand="hand" :remaining-deck="remainingDeck"
               @next-round="nextRound" @restart-run="restartRun" />
 
-            <PlayingCardHand :hand="hand" :selected-indexes="selectedIndexes"
+            <PlayingCardHand :hand="hand" 
+              :card-modifiers="run.cardModifiers ?? {}" 
+              :selected-indexes="selectedIndexes"
               :scoring-card-indexes="scoringCardIndexes"
-              :cards-per-play="rules.cardsPerPlay" :max-cards-per-discard="rules.maxCardsPerDiscard"
-              :round="run.round" :hands-played="run.handsPlayed" :in-round="inRound"
-              v-model:sort-mode="sortMode" @toggle-card="toggleCard" />
+              :cards-per-play="rules.cardsPerPlay" 
+              :max-cards-per-discard="rules.maxCardsPerDiscard"
+              :round="run.round" 
+              :hands-played="run.handsPlayed" 
+              :in-round="inRound"
+              v-model:sort-mode="sortMode" 
+              @toggle-card="toggleCard" />
 
-            <ScoringPanel :preview="preview" :scored-hand="scoredHand"
-              :eligible-options="eligibleOptions" :selected-cards="selectedCards"
-              :selected-count="selectedIndexes.length" :manual-unlocked="manualUnlocked"
-              :selection-mode="selectionMode" :cards-per-play="rules.cardsPerPlay"
-              :in-round="inRound" :hands-remaining="run.handsRemaining"
+            <HandActions
+              :preview="preview"
+              :in-round="inRound"
+              :hands-remaining="run.handsRemaining"
+              :discards-remaining="run.discardsRemaining"
               :can-discard-selection="canDiscardSelection"
-              @set-selection-mode="setSelectionMode" @choose-scoring-option="chooseScoringOption"
-              @score-hand="scoreSelectedHand" @discard-selected="discardSelectedCards"
-              @clear-selection="clearSelection" />
+              :selected-count="selectedIndexes.length"
+              @score-hand="scoreSelectedHand"
+              @discard-selected="discardSelectedCards"
+              @clear-selection="clearSelection"
+            />
 
             <div class="flex flex-wrap gap-3">
               <UButton data-testid="new-run" icon="i-lucide-rotate-ccw"
@@ -395,5 +421,18 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
 
   <!-- The viewport dock must not inherit the centered page container's layout. -->
   <PerkShop :phase="run.phase" :progress="progress" :profile="profile" :rules="rules"
-    :next-round-rules="nextRoundRules" @buy-perk="buyPerk" />
+    :next-round-rules="nextRoundRules" :manual-selection-available="manualUnlocked" @buy-perk="buyPerk">
+    <template #modifiers>
+      <CardModifierShop :modifiers="CARD_MODIFIERS" :selected-cards="selectedCards"
+        :selected-count="selectedIndexes.length" :card-modifiers="run.cardModifiers ?? {}"
+        :upgrade-chips="progress.upgradeChips" :phase="run.phase" @purchase="buyCardModifier" />
+    </template>
+    <template #hand>
+      <ScoringPanel :preview="preview" :scored-hand="scoredHand"
+        :eligible-options="eligibleOptions" :selected-cards="selectedCards"
+        :manual-unlocked="manualUnlocked"
+        :selection-mode="selectionMode" :cards-per-play="rules.cardsPerPlay"
+        @set-selection-mode="setSelectionMode" @choose-scoring-option="chooseScoringOption" />
+    </template>
+  </PerkShop>
 </template>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import type { RunPhase, RunProgress, RoundRules, RunUpgradeId } from '@pokermanic/engine';
 import { RUN_UPGRADES, upgradeCost, isRunUpgradeUnlocked } from '@pokermanic/engine';
 import type { SavedProfile } from '@pokermanic/contracts';
@@ -10,10 +10,29 @@ const props = defineProps<{
   profile: SavedProfile;
   rules: RoundRules;
   nextRoundRules: RoundRules;
+  manualSelectionAvailable: boolean;
 }>();
 const emit = defineEmits<{ 'buy-perk': [id: RunUpgradeId] }>();
 const perkCatalog = RUN_UPGRADES;
 const expanded = ref(false);
+type DockTab = 'perks' | 'modifiers' | 'hand';
+const activeTab = ref<DockTab>('perks');
+const handTabAvailable = computed(() => props.manualSelectionAvailable);
+watch(handTabAvailable, available => {
+  if (!available && activeTab.value === 'hand') {
+    activeTab.value = 'perks';
+    expanded.value = false;
+  }
+});
+function selectTab(tab: DockTab) {
+  if (tab === 'hand' && !handTabAvailable.value) return;
+  if (expanded.value && activeTab.value === tab) {
+    expanded.value = false;
+  } else {
+    activeTab.value = tab;
+    expanded.value = true;
+  }
+}
 const priceFor = (id: RunUpgradeId) => upgradeCost(props.progress, id);
 const unlocked = (id: RunUpgradeId) => isRunUpgradeUnlocked(props.profile, id);
 const canBuy = (id: RunUpgradeId) => {
@@ -27,23 +46,43 @@ const canBuy = (id: RunUpgradeId) => {
     data-testid="perk-shop-dock"
     class="fixed inset-x-0 bottom-0 z-50 border-t border-default bg-default shadow-2xl shadow-black/40">
     <div class="mx-auto max-w-6xl">
-      <button type="button" data-testid="perk-shop-toggle"
-        class="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-elevated focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-amber-300 sm:px-6"
-        :aria-expanded="expanded" aria-controls="perk-shop-content"
-        @click="expanded = !expanded">
-        <span class="flex items-center gap-3">
-          <span class="rounded-md border border-default px-2 py-1 text-xs text-muted">
-            {{ expanded ? '▼' : '▲' }}
-          </span>
-          <span id="shop-heading" class="font-bold">Perk shop</span>
-          <span class="text-xs text-muted">{{ expanded ? 'Hide' : 'Show' }} upgrades</span>
-        </span>
-        <span class="flex items-center gap-2">
+      <div class="flex flex-wrap items-stretch justify-between gap-2 border-b border-default px-3 py-2 sm:px-6">
+        <div role="tablist" aria-label="Game controls" class="flex min-w-0 flex-wrap gap-2">
+          <button type="button" id="perk-shop-toggle" role="tab" data-testid="perk-shop-toggle"
+            :aria-selected="activeTab === 'perks'"
+            :aria-expanded="expanded && activeTab === 'perks'" aria-controls="perk-shop-content"
+            class="rounded-lg px-3 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-amber-300"
+            :class="activeTab === 'perks' ? 'bg-elevated text-highlighted' : 'text-muted hover:bg-elevated'"
+            @click="selectTab('perks')">
+            <span id="shop-heading">Perk shop</span>
+            <span class="ml-1 text-xs font-normal">{{ expanded && activeTab === 'perks' ? '▼ Hide' : '▲ Show' }} upgrades</span>
+          </button>
+          <button type="button" id="modifier-shop-toggle" role="tab" data-testid="modifier-shop-toggle"
+            :aria-selected="activeTab === 'modifiers'"
+            :aria-expanded="expanded && activeTab === 'modifiers'" aria-controls="modifier-shop-content"
+            class="rounded-lg px-3 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-amber-300"
+            :class="activeTab === 'modifiers' ? 'bg-elevated text-highlighted' : 'text-muted hover:bg-elevated'"
+            @click="selectTab('modifiers')">
+            Card modifiers
+            <span class="ml-1 text-xs font-normal">{{ expanded && activeTab === 'modifiers' ? '▼ Hide' : '▲ Show' }}</span>
+          </button>
+          <button v-if="handTabAvailable" type="button" id="hand-shop-toggle" role="tab" data-testid="hand-shop-toggle"
+            :aria-selected="activeTab === 'hand'"
+            :aria-expanded="expanded && activeTab === 'hand'" aria-controls="hand-shop-content"
+            class="rounded-lg px-3 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-amber-300"
+            :class="activeTab === 'hand' ? 'bg-elevated text-highlighted' : 'text-muted hover:bg-elevated'"
+            @click="selectTab('hand')">
+            Hand selection
+            <span class="ml-1 text-xs font-normal">{{ expanded && activeTab === 'hand' ? '▼ Hide' : '▲ Show' }}</span>
+          </button>
+        </div>
+        <span class="flex shrink-0 items-center gap-2 px-2">
           <span class="text-xs text-muted">Upgrade chips</span>
           <strong data-testid="upgrade-chip-balance" class="text-lg tabular-nums">{{ progress.upgradeChips }}</strong>
         </span>
-      </button>
-      <div id="perk-shop-content" v-show="expanded" data-testid="perk-shop-content"
+      </div>
+      <div id="perk-shop-content" role="tabpanel" aria-labelledby="perk-shop-toggle"
+        v-show="expanded && activeTab === 'perks'" data-testid="perk-shop-content"
         class="max-h-[min(70dvh,38rem)] overflow-y-auto overscroll-contain border-t border-default px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-6">
         <div class="space-y-4">
           <p v-if="phase !== 'game_over'" data-testid="shop-open" class="text-sm text-green-400">
@@ -71,6 +110,20 @@ const canBuy = (id: RunUpgradeId) => {
             and {{ rules.baseDiscardsPerRound }} base discards. Purchases apply immediately.
             Run upgrades reset on a new run.
           </p>
+        </div>
+      </div>
+      <div id="modifier-shop-content" role="tabpanel" aria-labelledby="modifier-shop-toggle"
+        v-show="expanded && activeTab === 'modifiers'" data-testid="modifier-shop-content"
+        class="max-h-[min(70dvh,38rem)] overflow-y-auto overscroll-contain border-t border-default px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-6">
+        <div class="space-y-4">
+          <slot name="modifiers" />
+        </div>
+      </div>
+      <div v-if="handTabAvailable" id="hand-shop-content" role="tabpanel" aria-labelledby="hand-shop-toggle"
+        v-show="expanded && activeTab === 'hand'" data-testid="hand-shop-content"
+        class="max-h-[min(70dvh,38rem)] overflow-y-auto overscroll-contain border-t border-default px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-6">
+        <div class="space-y-4">
+          <slot name="hand" />
         </div>
       </div>
     </div>

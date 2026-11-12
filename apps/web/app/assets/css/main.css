@@ -177,3 +177,5 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .pm-card { transition: none; }
 }
+
+.pm-card-modifier-badge { background: #166534; color: white; font-family: ui-sans-serif, system-ui, sans-serif; }
