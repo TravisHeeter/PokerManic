@@ -351,3 +351,7 @@ Render PerkShop as a sibling of the main `UContainer` rather than inside its cen
 ## Milestone 7 — Prestige progression
 
 Once at least two rounds are completed, players may transcend to earn one prestige chip per two cleared rounds, resetting all temporary run perks and score. Prestige chips buy permanent levels in starting scoring hands (+1), starting discards (+1), and initial temporary upgrade chips (+2 per level). Each permanent perk caps at three levels. Permanent purchases activate when beginning the next run. Local save v1 remains backwards-compatible: missing permanent fields default to zero when loaded, and its readable JSON profile exposes `prestigeChips`, `transcends`, and `permanentLevels`. No account or anti-cheat restriction.
+
+## Card capacity as prestige perks
+
+**+1 card held**, **+1 card per play**, and **+1 card per discard** now belong to the permanent prestige shop, with max levels 4, 3, and 3. The temporary docked shop retains only extra scoring hands, extra discard actions, and manual selection. Purchases apply on the next fresh run, not to an active run. Existing local saves load without changes: new permanent fields default to zero and legacy temporary card-capacity levels remain effective until that run is reset. Saved profile JSON exposes `held_card`, `cards_per_play`, and `discard_batch`.

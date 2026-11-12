@@ -1,7 +1,7 @@
 import type { RoundRules, RunState } from './rounds.js';
 import { validateRoundRules } from './rounds.js';
 
-/** Temporary within-run perk economy; transcendent/persistent progression comes later. */
+/** Temporary perks; legacy card-capacity levels remain supported in existing run saves. */
 export type RunUpgradeId =
   | 'extra_hand'
   | 'extra_discard'
@@ -21,9 +21,6 @@ export interface RunUpgradeDefinition {
 export const RUN_UPGRADES: readonly RunUpgradeDefinition[] = [
   { id: 'extra_hand', label: '+1 scoring hand', description: 'One more scoring attempt each round.', baseCost: 5, maxLevel: 4 },
   { id: 'extra_discard', label: '+1 discard', description: 'One more discard action each round.', baseCost: 4, maxLevel: 4 },
-  { id: 'hand_size', label: '+1 held card', description: 'Deal one more card into your hand each round.', baseCost: 8, maxLevel: 4 },
-  { id: 'cards_per_play', label: '+1 card per play', description: 'Score six, seven, then eight played cards.', baseCost: 12, maxLevel: 3 },
-  { id: 'discard_batch', label: '+1 card per discard', description: 'Discard up to eight at once.', baseCost: 7, maxLevel: 3 },
   { id: 'manual_selection', label: 'Manual hand selection', description: 'Choose the scoring formation and its contributing cards.', baseCost: 10, maxLevel: 1 },
 ];
 
@@ -91,6 +88,9 @@ export function purchaseRunUpgrade(
 ): RunProgress {
   if (state.phase === 'game_over') {
     throw new Error('Cannot buy run-only perks after the run has ended.');
+  }
+  if (id === 'hand_size' || id === 'cards_per_play' || id === 'discard_batch') {
+    throw new Error('Card capacity upgrades are permanent prestige perks.');
   }
   const cost = upgradeCost(progress, id);
   if (cost === null) throw new Error('This perk is already at its maximum level.');

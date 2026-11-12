@@ -19,6 +19,23 @@ describe('transcendence and permanent progression', () => {
     expect(earned.transcends).toBe(1);
     expect(transcendRun({ ...run, phase: 'game_over' }, earned).prestigeChips).toBe(5);
   });
+  it('makes held, played, and discarded card capacity permanent within evaluator caps', () => {
+    let profile = { ...createPermanentProgress(), prestigeChips: 100 };
+    for (let i = 0; i < 4; i++) profile = buyPermanentUpgrade(profile, 'held_card');
+    for (let i = 0; i < 3; i++) {
+      profile = buyPermanentUpgrade(profile, 'cards_per_play');
+      profile = buyPermanentUpgrade(profile, 'discard_batch');
+    }
+    const rules = applyPermanentUpgrades(DEFAULT_ROUND_RULES, profile);
+    expect(rules.handSize).toBe(12);
+    expect(rules.cardsPerPlay).toBe(8);
+    expect(rules.maxCardsPerDiscard).toBe(8);
+    expect(startRun(rules, () => 0.5).hand).toHaveLength(12);
+    expect(permanentUpgradeCost(profile, 'held_card')).toBeNull();
+    expect(permanentUpgradeCost(profile, 'cards_per_play')).toBeNull();
+    expect(permanentUpgradeCost(profile, 'discard_batch')).toBeNull();
+    expect(() => buyPermanentUpgrade(profile, 'held_card')).toThrow('maximum');
+  });
   it('permanent upgrades spend only prestige, are capped and improve fresh-run rules', () => {
     let profile = { ...createPermanentProgress(), prestigeChips: 30 };
     profile = buyPermanentUpgrade(profile, 'starting_hand');

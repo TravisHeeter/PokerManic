@@ -42,7 +42,19 @@ function updateSaveJson(value: string) {
 // Effective rules update as perks are purchased, without resetting the round.
 
 const rules = ref({ ...DEFAULT_ROUND_RULES });
-const nextRoundRules = computed(() => applyRunUpgrades(applyPermanentUpgrades(DEFAULT_ROUND_RULES, profile.value), progress.value));
+// Keep active run rules stable when prestige perks are bought mid-run.
+const nextRoundRules = computed(() => rules.value);
+function activeRunBaseRules() {
+  const levels = progress.value.levels;
+  return {
+    ...rules.value,
+    handSize: rules.value.handSize - levels.hand_size,
+    cardsPerPlay: rules.value.cardsPerPlay - levels.cards_per_play,
+    maxCardsPerDiscard: rules.value.maxCardsPerDiscard - levels.discard_batch,
+    baseHandsPerRound: rules.value.baseHandsPerRound - levels.extra_hand,
+    baseDiscardsPerRound: rules.value.baseDiscardsPerRound - levels.extra_discard,
+  };
+}
 
 // Nuxt useState serializes the randomly dealt opening run into the SSR payload.
 // The browser hydrates that exact run instead of shuffling a second time.
@@ -176,7 +188,7 @@ function purchasePermanent(id: PermanentUpgradeId) {
 function buyPerk(id: RunUpgradeId) {
   // Calculate the complete transaction before updating the reactive UI.
   const purchased = purchaseRunUpgrade(run.value, progress.value, id);
-  const upgradedRules = applyRunUpgrades(DEFAULT_ROUND_RULES, purchased);
+  const upgradedRules = applyRunUpgrades(activeRunBaseRules(), purchased);
   const updatedRun = applyPurchasedRuleUpgrade(run.value, rules.value, upgradedRules);
 
   run.value = updatedRun;
@@ -361,7 +373,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
             </div>
             <p aria-live="polite" class="text-sm text-muted">{{ lastAction }}</p>
             <p class="text-xs text-muted">
-              Played and discarded cards are recycled when needed. Shop upgrades take effect immediately, including extra cards and actions.
+              Played and discarded cards are recycled when needed. Temporary perks take effect immediately. Card capacity upgrades are permanent prestige perks that apply on your next run.
             </p>
           </div>
         </UCard>

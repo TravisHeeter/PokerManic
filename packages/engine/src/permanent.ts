@@ -2,7 +2,7 @@ import type { RoundRules, RunState } from './rounds.js';
 import { validateRoundRules } from './rounds.js';
 
 /** Permanent progression is independent of the temporary run perk wallet. */
-export type PermanentUpgradeId = 'starting_hand' | 'starting_discard' | 'starting_chips';
+export type PermanentUpgradeId = 'starting_hand' | 'starting_discard' | 'starting_chips' | 'held_card' | 'cards_per_play' | 'discard_batch';
 
 export interface PermanentProgress {
   prestigeChips: number;
@@ -14,13 +14,16 @@ export const PERMANENT_UPGRADES = [
   { id: 'starting_hand', label: 'Extra starting hand', description: 'Gain one additional scoring hand each round, permanently.', baseCost: 1, maxLevel: 3 },
   { id: 'starting_discard', label: 'Extra starting discard', description: 'Gain one additional discard each round, permanently.', baseCost: 1, maxLevel: 3 },
   { id: 'starting_chips', label: 'Starting upgrade chips', description: 'Begin every new run with two extra upgrade chips per level.', baseCost: 2, maxLevel: 3 },
+  { id: 'held_card', label: '+1 card held', description: 'Hold one additional card permanently.', baseCost: 2, maxLevel: 4 },
+  { id: 'cards_per_play', label: '+1 card per play', description: 'Play up to eight cards after three permanent levels.', baseCost: 3, maxLevel: 3 },
+  { id: 'discard_batch', label: '+1 card per discard', description: 'Discard up to eight cards at once after three permanent levels.', baseCost: 2, maxLevel: 3 },
 ] as const;
 
 export function createPermanentProgress(): PermanentProgress {
   return {
     prestigeChips: 0,
     transcends: 0,
-    permanentLevels: { starting_hand: 0, starting_discard: 0, starting_chips: 0 },
+    permanentLevels: { starting_hand: 0, starting_discard: 0, starting_chips: 0, held_card: 0, cards_per_play: 0, discard_batch: 0 },
   };
 }
 
@@ -50,6 +53,9 @@ export function buyPermanentUpgrade(profile: Readonly<PermanentProgress>, id: Pe
 export function applyPermanentUpgrades(base: Readonly<RoundRules>, profile: Readonly<PermanentProgress>): RoundRules {
   const rules = {
     ...base,
+    handSize: base.handSize + profile.permanentLevels.held_card,
+    cardsPerPlay: base.cardsPerPlay + profile.permanentLevels.cards_per_play,
+    maxCardsPerDiscard: base.maxCardsPerDiscard + profile.permanentLevels.discard_batch,
     baseHandsPerRound: base.baseHandsPerRound + profile.permanentLevels.starting_hand,
     baseDiscardsPerRound: base.baseDiscardsPerRound + profile.permanentLevels.starting_discard,
   };

@@ -45,6 +45,21 @@ describe('editable game save v1', () => {
       ...profile, permanentLevels: { ...profile.permanentLevels, starting_hand: 4 },
     } }).success).toBe(false);
   });
+  it('loads previous prestige saves and defaults new permanent card fields', () => {
+    const profile = { lifetimeRunsStarted: 3, bestRound: 4, prestigeChips: 2, transcends: 1,
+      permanentLevels: { starting_hand: 1, starting_discard: 0, starting_chips: 1 } };
+    const parsed = gameSaveV1Schema.parse({ ...base, profile });
+    expect(parsed.profile.permanentLevels).toMatchObject({
+      ...profile.permanentLevels, held_card: 0, cards_per_play: 0, discard_batch: 0,
+    });
+    const updated = { ...profile, permanentLevels: {
+      ...profile.permanentLevels, held_card: 4, cards_per_play: 3, discard_batch: 3,
+    } };
+    expect(gameSaveV1Schema.parse({ ...base, profile: updated }).profile.permanentLevels.held_card).toBe(4);
+    expect(gameSaveV1Schema.safeParse({ ...base, profile: {
+      ...updated, permanentLevels: { ...updated.permanentLevels, cards_per_play: 4 },
+    } }).success).toBe(false);
+  });
   it('allows intentional player modifications to valid chip counts', () => {
     const custom = structuredClone(base);
     custom.progress.upgradeChips = 9999;

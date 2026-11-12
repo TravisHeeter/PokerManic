@@ -20,7 +20,7 @@ describe('Milestone 5 in-run upgrade economy', () => {
     expect(progress.rewardedThroughRound).toBe(0);
     expect(manualSelectionUnlocked(progress)).toBe(false);
     expect(applyRunUpgrades(DEFAULT_ROUND_RULES, progress)).toEqual(DEFAULT_ROUND_RULES);
-    expect(RUN_UPGRADES).toHaveLength(6);
+    expect(RUN_UPGRADES).toHaveLength(3);
   });
 
   it('awards upgrade chips on victory without spending scoring chips, and only once', () => {
@@ -92,25 +92,17 @@ describe('Milestone 5 in-run upgrade economy', () => {
     expect(() => purchaseRunUpgrade(run, bought, 'manual_selection')).toThrow();
   });
 
-  it('enforces costs, caps and the future configurable limits', () => {
-    const run = won();
-    const poor = {...createRunProgress(), rewardedThroughRound:1};
-    expect(() => purchaseRunUpgrade(run, poor, 'hand_size')).toThrow('Not enough');
-    const rich = {...poor,upgradeChips:9999};
-    let purchased = rich;
-    for (let i = 0; i < 4; i++) purchased = purchaseRunUpgrade(run, purchased, 'hand_size');
-    expect(applyRunUpgrades(DEFAULT_ROUND_RULES,purchased).handSize).toBe(12);
-    expect(upgradeCost(purchased,'hand_size')).toBeNull();
-    expect(() => purchaseRunUpgrade(run,purchased,'hand_size')).toThrow();
-    let more = purchased;
-    for (let i = 0; i < 3; i++) {
-      more = purchaseRunUpgrade(run,more,'cards_per_play');
-      more = purchaseRunUpgrade(run,more,'discard_batch');
+  it('blocks card capacity in the temporary shop, but preserves saved legacy levels', () => {
+    const rich = { ...createRunProgress(), upgradeChips: 999 };
+    for (const id of ['hand_size', 'cards_per_play', 'discard_batch'] as const) {
+      expect(() => purchaseRunUpgrade(won(), rich, id)).toThrow('permanent prestige');
+      expect(RUN_UPGRADES.some(perk => perk.id === id)).toBe(false);
     }
-    const rules = applyRunUpgrades(DEFAULT_ROUND_RULES,more);
-    expect(rules.cardsPerPlay).toBe(8);
-    expect(rules.maxCardsPerDiscard).toBe(8);
-    expect(advanceRound(run,rules,() => 0.5).hand).toHaveLength(12);
+    const legacy = { ...rich, levels: { ...rich.levels, hand_size: 1, cards_per_play: 1, discard_batch: 1 } };
+    const rules = applyRunUpgrades(DEFAULT_ROUND_RULES, legacy);
+    expect(rules.handSize).toBe(9);
+    expect(rules.cardsPerPlay).toBe(6);
+    expect(rules.maxCardsPerDiscard).toBe(6);
   });
 
   it('creates a clean progression state at the next run instead of retaining run-only perks', () => {
