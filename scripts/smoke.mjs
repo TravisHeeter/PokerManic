@@ -102,7 +102,13 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /System status/);
   assert.match(html, /Shop open throughout your run/);
   assert.doesNotMatch(html, /Shop closed/);
-  assert.match(html, /Upgrade chips available/);
+  assert.match(html, /data-testid="perk-shop-dock"/);
+  assert.match(html, /data-testid="perk-shop-toggle"/);
+  assert.match(html, /aria-expanded="false"/);
+  assert.match(html, /aria-controls="perk-shop-content"/);
+  assert.match(html, /data-testid="perk-shop-content"/);
+  assert.match(html, /Show upgrades/);
+  assert.match(html, /Upgrade chips/);
   assert.match(html, /Manual hand selection/);
   assert.match(html, /Milestone 6/);
   assert.match(html, /Remaining in deck/);

@@ -339,3 +339,7 @@ The development progress UI lists all six merged milestones (1–6) as Implement
 ## Editable upgrade chips in the browser
 
 The JSON editor now automatically populates with the active browser save after mount and updates with subsequent autosaves until the player starts editing. Editing creates a separate draft that autosaving never overwrites. The visible **Upgrade chips** numeric field maps directly to `progress.upgradeChips` in the draft JSON (it does not bypass or change the save schema). Clicking **Import edited JSON** validates and applies the modified draft to the active game and persists it. Export JSON replaces the draft with the newest live save and downloads a backup. Invalid imports do not mutate live state.
+
+## Collapsible bottom perk shop
+
+The perk shop is now docked to the bottom of the browser viewport as a fixed-position panel. A persistent, keyboard-accessible tab toggles the shop open and closed and always displays the current upgrade-chip balance. It begins collapsed to avoid obscuring the cards. When expanded, the list of six perks scrolls within a viewport-constrained panel (up to 70dvh or 38rem), with safe-area padding for mobile and extra page-bottom space to prevent content hiding beneath the tab. Shopping rules, costs and immediate upgrades are unchanged.

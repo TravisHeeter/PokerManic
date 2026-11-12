@@ -281,7 +281,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
 </script>
 
 <template>
-  <UContainer class="min-h-screen py-10 md:py-16">
+  <UContainer class="min-h-screen pt-10 pb-28 md:pt-16 md:pb-28">
     <div class="mx-auto max-w-6xl space-y-9">
       <header class="space-y-4">
         <div class="flex flex-wrap items-center gap-3">
