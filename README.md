@@ -351,3 +351,23 @@ Render PerkShop as a sibling of the main `UContainer` rather than inside its cen
 ## Milestone 7 — Prestige progression
 
 Once at least two rounds are completed, players may transcend to earn one prestige chip per two cleared rounds, resetting all temporary run perks and score. Prestige chips buy permanent levels in starting scoring hands (+1), starting discards (+1), and initial temporary upgrade chips (+2 per level). Each permanent perk caps at three levels. Permanent purchases activate when beginning the next run. Local save v1 remains backwards-compatible: missing permanent fields default to zero when loaded, and its readable JSON profile exposes `prestigeChips`, `transcends`, and `permanentLevels`. No account or anti-cheat restriction.
+
+## Card capacity as prestige perks
+
+**+1 card held**, **+1 card per play**, and **+1 card per discard** now belong to the permanent prestige shop, with max levels 4, 3, and 3. The temporary docked shop retains only extra scoring hands, extra discard actions, and manual selection. Purchases apply on the next fresh run, not to an active run. Existing local saves load without changes: new permanent fields default to zero and legacy temporary card-capacity levels remain effective until that run is reset. Saved profile JSON exposes `held_card`, `cards_per_play`, and `discard_batch`.
+
+## Prestige unlocks instead of automatic power
+
+Prestige currency now unlocks access to each of six run shop perks **once**; it never automatically grants the perk level. Every fresh run uses the same base card rules. Shop order and base upgrade-chip prices are: extra discard 4, held card 6, discard batch 8, scoring hand 10, cards per play 14, manual selection 18. The shop requires the matching permanent prestige unlock for every purchase; subsequent levels cost `baseCost × (level + 1)`. Prestige unlock costs rise from 1 to 6 in the same order. Existing browser profile keys `starting_discard` and `starting_hand` are recognized as unlocks, even if previously purchased at level 2 or 3; legacy `starting_chips` bonuses are retained for save compatibility but no longer sold. In-progress run capacity remains unchanged; older saves remain editable and load with missing `manual_selection` prestige key defaulting to zero.
+
+## High-cost progression balancing (November 2026)
+
+Prestige unlock prices are now **10 / 20 / 30 / 40 / 50 / 60 prestige chips**, from extra discard through manual selection. Once unlocked, run-shop base costs are **40 / 60 / 80 / 100 / 140 / 180 upgrade chips** in the same order. Additional in-run levels still cost `baseCost × (level + 1)`; chip earnings and progression rewards have **not** been increased. These deliberately expensive starting values are provisional until gameplay balance testing.
+
+## Card appearance experiments
+
+The hand now offers four live-switchable designs: **Classic** (original colors), **Victorian** (aged parchment, Palatino), **Art Deco** (cream/gold with geometric sans serif), and **Cyber** (dark teal with bright suit colors and monospace ranks). The choice saves independently to `localStorage['pokermanic.card-style.v1']`; it does not alter gameplay state or the editable game-save format. Selecting a style immediately restyles the existing cards, including suit colors, rank typography, border and paper. No downloaded font files or external runtime font dependencies are required.
+
+## Expanded card appearance selector
+
+The selectable card styles now include **Bold Victorian**, **Vivid Gothic**, **Art Nouveau**, **Cosmic Horror**, and **Medieval Illuminated**, alongside Classic, Victorian, Art Deco, and Cyber. Art Nouveau uses warm ivory, ornamental double borders, and elegant serif ranks; Cosmic Horror uses deep indigo, luminous purple/red/green/gold suits, and subtle celestial glow; Medieval Illuminated uses parchment, squared gold borders, strong red/green/gold suits, and heavy book-style serif ranks. Fonts use installed browser fallbacks without external dependencies. The browser remembers the selected style using the existing card-style localStorage key, independent of gameplay save files.

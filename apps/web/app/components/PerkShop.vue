@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import type { RunPhase, RunProgress, RoundRules, RunUpgradeId } from '@pokermanic/engine';
-import { RUN_UPGRADES, upgradeCost } from '@pokermanic/engine';
+import { RUN_UPGRADES, upgradeCost, isRunUpgradeUnlocked } from '@pokermanic/engine';
+import type { SavedProfile } from '@pokermanic/contracts';
 
 const props = defineProps<{
   phase: RunPhase;
   progress: RunProgress;
+  profile: SavedProfile;
   rules: RoundRules;
   nextRoundRules: RoundRules;
 }>();
@@ -13,9 +15,10 @@ const emit = defineEmits<{ 'buy-perk': [id: RunUpgradeId] }>();
 const perkCatalog = RUN_UPGRADES;
 const expanded = ref(false);
 const priceFor = (id: RunUpgradeId) => upgradeCost(props.progress, id);
+const unlocked = (id: RunUpgradeId) => isRunUpgradeUnlocked(props.profile, id);
 const canBuy = (id: RunUpgradeId) => {
   const cost = priceFor(id);
-  return props.phase !== 'game_over' && cost !== null && props.progress.upgradeChips >= cost;
+  return unlocked(id) && props.phase !== 'game_over' && cost !== null && props.progress.upgradeChips >= cost;
 };
 </script>
 
@@ -55,9 +58,10 @@ const canBuy = (id: RunUpgradeId) => {
               <h3 class="font-semibold">{{ perk.label }}</h3>
               <p class="text-xs text-muted">{{ perk.description }}</p>
               <p class="text-xs text-muted">Level {{ progress.levels[perk.id] }} / {{ perk.maxLevel }}</p>
+              <p v-if="!unlocked(perk.id)" class="text-xs text-amber-300">Locked — unlock with prestige chips</p>
               <UButton size="sm" :data-testid="`buy-${perk.id}`"
                 :disabled="!canBuy(perk.id)" @click="emit('buy-perk', perk.id)">
-                {{ priceFor(perk.id) === null ? 'Max level' : `Buy for ${priceFor(perk.id)} upgrade chips` }}
+                {{ !unlocked(perk.id) ? 'Prestige locked' : priceFor(perk.id) === null ? 'Max level' : `Buy for ${priceFor(perk.id)} upgrade chips` }}
               </UButton>
             </div>
           </div>

@@ -17,7 +17,7 @@ export { sortHandForDisplay } from './hand-sort.js';
 export type { HandSortMode, IndexedCard } from './hand-sort.js';
 export {
   PERMANENT_UPGRADES, createPermanentProgress, permanentUpgradeCost,
-  buyPermanentUpgrade, applyPermanentUpgrades, startingUpgradeChips,
+  buyPermanentUpgrade, isRunUpgradeUnlocked, startingUpgradeChips,
   transcendReward, transcendRun,
 } from './permanent.js';
 export type { PermanentUpgradeId, PermanentProgress } from './permanent.js';

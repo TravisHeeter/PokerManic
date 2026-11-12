@@ -5,3 +5,175 @@ body {
   min-height: 100vh;
   background: radial-gradient(circle at 20% 15%, #1a2830 0%, #090c15 55%, #07090d 100%);
 }
+
+
+/* Nine card presentations; selectors live on the hand to avoid rerendering or touching scoring logic.
+   Fonts use dependable local fallbacks, so the deck remains readable offline. */
+[data-card-style] {
+  --pm-card-paper: #faf8f1;
+  --pm-card-border: #d3d4d6;
+  --pm-card-font: Georgia, "Times New Roman", serif;
+  --pm-card-center-font: Georgia, "Times New Roman", serif;
+  --pm-spades: #334155;
+  --pm-hearts: #87565d;
+  --pm-clubs: #577a75;
+  --pm-diamonds: #998258;
+}
+[data-card-style="victorian"] {
+  --pm-card-paper: #efe0bd;
+  --pm-card-border: #a88f67;
+  --pm-card-font: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+  --pm-card-center-font: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+  --pm-spades: #313a31;
+  --pm-hearts: #8c3535;
+  --pm-clubs: #345b47;
+  --pm-diamonds: #9b7032;
+}
+[data-card-style="deco"] {
+  --pm-card-paper: #f7f0dc;
+  --pm-card-border: #b99e5c;
+  --pm-card-font: "Trebuchet MS", "Arial Narrow", sans-serif;
+  --pm-card-center-font: "Trebuchet MS", "Arial Narrow", sans-serif;
+  --pm-spades: #202c43;
+  --pm-hearts: #a22d43;
+  --pm-clubs: #18665e;
+  --pm-diamonds: #ae741f;
+}
+[data-card-style="cyber"] {
+  --pm-card-paper: #101a1b;
+  --pm-card-border: #3b6664;
+  --pm-card-font: "Lucida Console", Monaco, monospace;
+  --pm-card-center-font: "Lucida Console", Monaco, monospace;
+  --pm-spades: #86b9b4;
+  --pm-hearts: #ff789d;
+  --pm-clubs: #56dcb7;
+  --pm-diamonds: #f5c86b;
+}
+.pm-card {
+  background-color: var(--pm-card-paper);
+  border-color: var(--pm-card-border);
+  font-family: var(--pm-card-font);
+  box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--pm-card-border) 25%, transparent), 0 9px 16px #0004;
+}
+.pm-card-rank { font-family: var(--pm-card-font); }
+.pm-card-center { font-family: var(--pm-card-center-font); }
+.pm-card[data-suit="spades"] { color: var(--pm-spades); }
+.pm-card[data-suit="hearts"] { color: var(--pm-hearts); }
+.pm-card[data-suit="clubs"] { color: var(--pm-clubs); }
+.pm-card[data-suit="diamonds"] { color: var(--pm-diamonds); }
+[data-card-style="deco"] .pm-card { border-width: 2px; border-radius: 0.35rem; }
+[data-card-style="deco"] .pm-card-rank { letter-spacing: 0.045em; }
+[data-card-style="victorian"] .pm-card { border-width: 2px; }
+[data-card-style="cyber"] .pm-card { border-width: 1px; }
+
+/* Additional visual experiments. All suit identities remain readable at card scale. */
+[data-card-style="bold-victorian"] {
+  --pm-card-paper: #f5ead2;
+  --pm-card-border: #8f7242;
+  --pm-card-font: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+  --pm-card-center-font: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+  --pm-spades: #101820;
+  --pm-hearts: #e32636;
+  --pm-clubs: #008f5a;
+  --pm-diamonds: #e5a000;
+}
+[data-card-style="vivid-gothic"] {
+  --pm-card-paper: #161922;
+  --pm-card-border: #67617b;
+  --pm-card-font: Georgia, "Times New Roman", serif;
+  --pm-card-center-font: Georgia, "Times New Roman", serif;
+  --pm-spades: #b7b9e8;
+  --pm-hearts: #ff1744;
+  --pm-clubs: #00bfa5;
+  --pm-diamonds: #ffb300;
+}
+[data-card-style="vivid-gothic"] .pm-card {
+  border-width: 2px;
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--pm-card-border) 55%, transparent), 0 9px 16px #0008;
+}
+[data-card-style="art-nouveau"] {
+  --pm-card-paper: #f4ead2;
+  --pm-card-border: #9a8450;
+  --pm-card-font: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+  --pm-card-center-font: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+  --pm-spades: #2b2b2b;
+  --pm-hearts: #c63444;
+  --pm-clubs: #1f7a63;
+  --pm-diamonds: #d08a1d;
+}
+[data-card-style="art-nouveau"] .pm-card {
+  border-width: 2px;
+  border-radius: 0.6rem;
+  background-image: radial-gradient(ellipse at center, transparent 62%, #9a84501c 100%);
+  box-shadow: inset 0 0 0 2px #9a84504d, inset 0 0 0 5px #f4ead2, inset 0 0 0 6px #9a845059, 0 9px 16px #0004;
+}
+[data-card-style="art-nouveau"] .pm-card-rank { letter-spacing: 0.02em; }
+[data-card-style="cosmic-horror"] {
+  --pm-card-paper: #131328;
+  --pm-card-border: #726bb4;
+  --pm-card-font: "Palatino Linotype", Georgia, serif;
+  --pm-card-center-font: "Palatino Linotype", Georgia, serif;
+  --pm-spades: #a0a0ff;
+  --pm-hearts: #ff315f;
+  --pm-clubs: #00d0a8;
+  --pm-diamonds: #ffbf36;
+}
+[data-card-style="cosmic-horror"] .pm-card {
+  border-width: 2px;
+  border-radius: 0.7rem;
+  background-image: radial-gradient(circle at 75% 20%, #4b347035, transparent 45%), radial-gradient(circle at 15% 80%, #233e593d, transparent 55%);
+  box-shadow: inset 0 0 0 2px #726bb46b, 0 9px 20px #0009;
+}
+[data-card-style="cosmic-horror"] .pm-card-center { text-shadow: 0 0 9px currentColor; }
+[data-card-style="medieval-illuminated"] {
+  --pm-card-paper: #f0dfb3;
+  --pm-card-border: #c49b35;
+  --pm-card-font: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+  --pm-card-center-font: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+  --pm-spades: #252525;
+  --pm-hearts: #c31632;
+  --pm-clubs: #116c45;
+  --pm-diamonds: #b77b07;
+}
+[data-card-style="medieval-illuminated"] .pm-card {
+  border-width: 3px;
+  border-radius: 0.3rem;
+  background-image: linear-gradient(125deg, #ffffff20, transparent 52%, #b98b1730);
+  box-shadow: inset 0 0 0 2px #f4e4b8, inset 0 0 0 4px #99721d91, 0 9px 16px #0005;
+}
+[data-card-style="medieval-illuminated"] .pm-card-rank {
+  font-weight: 900;
+  letter-spacing: -0.035em;
+}
+
+/* The central rank and suit are prominent without covering the corner indexes. */
+.pm-card-center-suit {
+  font-family: var(--pm-card-center-font);
+  line-height: 0.92;
+  text-align: center;
+}
+.pm-card-center-suit { line-height: 1; }
+
+/* Selection is intentionally theme-independent: cyan outline, elevation, and a check.
+   A separate amber "Scores" marker identifies which selected cards contribute. */
+.pm-card[data-selected="true"] {
+  z-index: 10;
+  transform: translateY(-10px);
+  outline: 4px solid #38bdf8;
+  outline-offset: 2px;
+  filter: drop-shadow(0 7px 10px #0284cbaa);
+}
+.pm-card[data-selected="true"]:hover {
+  transform: translateY(-12px);
+}
+.pm-card[data-selected="true"]:focus-visible {
+  outline: 4px solid #fcd34d;
+  outline-offset: 3px;
+}
+.pm-card-selected-check {
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  text-shadow: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pm-card { transition: none; }
+}

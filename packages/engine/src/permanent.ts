@@ -1,8 +1,10 @@
-import type { RoundRules, RunState } from './rounds.js';
-import { validateRoundRules } from './rounds.js';
+import type { RunState } from './rounds.js';
+import type { RunUpgradeId } from './progression.js';
 
-/** Permanent progression is independent of the temporary run perk wallet. */
-export type PermanentUpgradeId = 'starting_hand' | 'starting_discard' | 'starting_chips';
+/** Prestige unlocks shop availability, never gives free run upgrades. */
+export type PermanentUpgradeId = 'starting_discard' | 'held_card' | 'discard_batch'
+  | 'starting_hand' | 'cards_per_play' | 'manual_selection'
+  | 'starting_chips'; // legacy save key; no longer sold
 
 export interface PermanentProgress {
   prestigeChips: number;
@@ -10,53 +12,61 @@ export interface PermanentProgress {
   permanentLevels: Record<PermanentUpgradeId, number>;
 }
 
+/** Price order corresponds to perceived strategic value. Each is a one-time unlock. */
 export const PERMANENT_UPGRADES = [
-  { id: 'starting_hand', label: 'Extra starting hand', description: 'Gain one additional scoring hand each round, permanently.', baseCost: 1, maxLevel: 3 },
-  { id: 'starting_discard', label: 'Extra starting discard', description: 'Gain one additional discard each round, permanently.', baseCost: 1, maxLevel: 3 },
-  { id: 'starting_chips', label: 'Starting upgrade chips', description: 'Begin every new run with two extra upgrade chips per level.', baseCost: 2, maxLevel: 3 },
+  { id: 'starting_discard', label: 'Unlock +1 discard', description: 'Allows buying extra discard actions in the run shop.', baseCost: 10, maxLevel: 1 },
+  { id: 'held_card', label: 'Unlock +1 held card', description: 'Allows buying extra held cards in the run shop.', baseCost: 20, maxLevel: 1 },
+  { id: 'discard_batch', label: 'Unlock +1 card per discard', description: 'Allows buying a larger discard batch in the run shop.', baseCost: 30, maxLevel: 1 },
+  { id: 'starting_hand', label: 'Unlock +1 scoring hand', description: 'Allows buying extra scoring hands in the run shop.', baseCost: 40, maxLevel: 1 },
+  { id: 'cards_per_play', label: 'Unlock +1 card per play', description: 'Allows buying more cards per play in the run shop.', baseCost: 50, maxLevel: 1 },
+  { id: 'manual_selection', label: 'Unlock manual hand selection', description: 'Allows buying manual scoring selection in the run shop.', baseCost: 60, maxLevel: 1 },
 ] as const;
 
 export function createPermanentProgress(): PermanentProgress {
   return {
     prestigeChips: 0,
     transcends: 0,
-    permanentLevels: { starting_hand: 0, starting_discard: 0, starting_chips: 0 },
+    permanentLevels: {
+      starting_hand: 0, starting_discard: 0, starting_chips: 0,
+      held_card: 0, cards_per_play: 0, discard_batch: 0, manual_selection: 0,
+    },
   };
+}
+
+const unlockKey: Record<RunUpgradeId, PermanentUpgradeId> = {
+  extra_discard: 'starting_discard',
+  hand_size: 'held_card',
+  discard_batch: 'discard_batch',
+  extra_hand: 'starting_hand',
+  cards_per_play: 'cards_per_play',
+  manual_selection: 'manual_selection',
+};
+export function isRunUpgradeUnlocked(profile: Readonly<PermanentProgress>, id: RunUpgradeId): boolean {
+  return profile.permanentLevels[unlockKey[id]] > 0;
 }
 
 export function permanentUpgradeCost(profile: Readonly<PermanentProgress>, id: PermanentUpgradeId): number | null {
   const def = PERMANENT_UPGRADES.find(perk => perk.id === id);
-  if (!def) throw new RangeError('Unknown permanent perk.');
+  if (!def) throw new RangeError('Unknown prestige unlock.');
   const level = profile.permanentLevels[id];
-  if (!Number.isSafeInteger(level) || level < 0 || level > def.maxLevel) {
-    throw new RangeError('Invalid permanent perk level.');
-  }
-  return level === def.maxLevel ? null : def.baseCost * (level + 1);
+  if (!Number.isSafeInteger(level) || level < 0) throw new RangeError('Invalid unlock level.');
+  return level > 0 ? null : def.baseCost;
 }
 
 export function buyPermanentUpgrade(profile: Readonly<PermanentProgress>, id: PermanentUpgradeId): PermanentProgress {
   const cost = permanentUpgradeCost(profile, id);
-  if (cost === null) throw new Error('Permanent perk is at its maximum level.');
+  if (cost === null) throw new Error('Shop perk already unlocked.');
   if (!Number.isSafeInteger(profile.prestigeChips) || profile.prestigeChips < cost) {
     throw new Error('Not enough prestige chips.');
   }
   return {
     ...profile,
     prestigeChips: profile.prestigeChips - cost,
-    permanentLevels: { ...profile.permanentLevels, [id]: profile.permanentLevels[id] + 1 },
+    permanentLevels: { ...profile.permanentLevels, [id]: 1 },
   };
 }
 
-export function applyPermanentUpgrades(base: Readonly<RoundRules>, profile: Readonly<PermanentProgress>): RoundRules {
-  const rules = {
-    ...base,
-    baseHandsPerRound: base.baseHandsPerRound + profile.permanentLevels.starting_hand,
-    baseDiscardsPerRound: base.baseDiscardsPerRound + profile.permanentLevels.starting_discard,
-  };
-  validateRoundRules(rules);
-  return rules;
-}
-
+/** Old permanent chip-starter purchases are honored for preexisting saves only. */
 export function startingUpgradeChips(profile: Readonly<PermanentProgress>): number {
   return profile.permanentLevels.starting_chips * 2;
 }

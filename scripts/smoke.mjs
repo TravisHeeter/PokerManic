@@ -76,6 +76,14 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.ok(html.indexOf('data-testid="score-hand"') < html.indexOf('Hand selection'));
   assert.match(html, /1–5 to score|1.{0,25}5 to score/);
   assert.match(html, /Sort cards:/);
+  assert.match(html, /Card style:/);
+  assert.match(html, /data-card-style="classic"/);
+  for (const style of [
+    'classic', 'victorian', 'deco', 'cyber', 'bold-victorian',
+    'vivid-gothic', 'art-nouveau', 'cosmic-horror', 'medieval-illuminated',
+  ]) {
+    assert.match(html, new RegExp(`data-testid="card-style-${style}"`));
+  }
   assert.match(html, /Dealt order/);
   assert.match(html, />Rank</);
   assert.match(html, /data-testid="sort-rank"[^>]*aria-pressed="true"|aria-pressed="true"[^>]*data-testid="sort-rank"/);
@@ -117,6 +125,10 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /Remaining in deck/);
   // The first hand is random per server render and serialized for identical browser hydration.
   assert.equal((html.match(/data-testid="playing-card"/g) ?? []).length, 8);
+  assert.equal((html.match(/data-selected="false"/g) ?? []).length, 8);
+  assert.doesNotMatch(html, /data-testid="selected-card-check"/);
+  assert.doesNotMatch(html, /data-testid="card-center-rank"/);
+  assert.equal((html.match(/data-testid="card-center-suit"/g) ?? []).length, 8);
   assert.match(html, /data-testid="deck-count"[^>]*>44</);
   assert.match(html, /data-testid="chip-target"[^>]*>60</);
   assert.match(html, /data-testid="hands-remaining"[^>]*>4</);

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_ROUND_RULES, RUN_UPGRADES, advanceRound, applyRunUpgrades,
   awardRoundUpgradeChips, createRunProgress, manualSelectionUnlocked,
-  purchaseRunUpgrade, startRun, upgradeCost,
+  purchaseRunUpgrade, startRun, upgradeCost, createPermanentProgress, buyPermanentUpgrade,
 } from '../src/index';
 
 const won = (round = 1, roundChips = 120) => ({
@@ -13,7 +13,15 @@ const won = (round = 1, roundChips = 120) => ({
   totalChips: roundChips,
 });
 
-describe('Milestone 5 in-run upgrade economy', () => {
+const fullUnlocks = {
+  ...createPermanentProgress(),
+  permanentLevels: {
+    starting_discard: 1, held_card: 1, discard_batch: 1,
+    starting_hand: 1, cards_per_play: 1, manual_selection: 1, starting_chips: 0,
+  },
+};
+
+describe('in-run shop with prestige unlock gates', () => {
   it('starts with zero spendable upgrade chips and no unlocked perks', () => {
     const progress = createRunProgress();
     expect(progress.upgradeChips).toBe(0);
@@ -21,6 +29,7 @@ describe('Milestone 5 in-run upgrade economy', () => {
     expect(manualSelectionUnlocked(progress)).toBe(false);
     expect(applyRunUpgrades(DEFAULT_ROUND_RULES, progress)).toEqual(DEFAULT_ROUND_RULES);
     expect(RUN_UPGRADES).toHaveLength(6);
+    expect(RUN_UPGRADES.map(perk => perk.baseCost)).toEqual([40, 60, 80, 100, 140, 180]);
   });
 
   it('awards upgrade chips on victory without spending scoring chips, and only once', () => {
@@ -43,79 +52,70 @@ describe('Milestone 5 in-run upgrade economy', () => {
 
   it('buys perks with separate currency and applies changes only to future round rules', () => {
     const run = won();
-    const reward = awardRoundUpgradeChips(run, createRunProgress());
-    const purchased = purchaseRunUpgrade(run, reward, 'extra_hand');
-    expect(purchased).toMatchObject({upgradeChips:7, levels:{extra_hand:1}});
-    expect(upgradeCost(purchased, 'extra_hand')).toBe(10);
+    const reward = { ...awardRoundUpgradeChips(run, createRunProgress()), upgradeChips: 170 };
+    const purchased = purchaseRunUpgrade(run, reward, 'extra_hand', fullUnlocks);
+    expect(purchased).toMatchObject({upgradeChips:70, levels:{extra_hand:1}});
+    expect(upgradeCost(purchased, 'extra_hand')).toBe(200);
     expect(applyRunUpgrades(DEFAULT_ROUND_RULES, purchased).baseHandsPerRound).toBe(5);
     const advanced = advanceRound(run, applyRunUpgrades(DEFAULT_ROUND_RULES, purchased), () => 0.3);
     expect(advanced.handsRemaining).toBe(5);
     expect(run.handsRemaining).toBe(4);
     expect(run.roundChips).toBe(120);
-    const duringRound = purchaseRunUpgrade(advanced, purchased, 'extra_discard');
-    expect(duringRound).toMatchObject({ upgradeChips: 3, levels: { extra_hand: 1, extra_discard: 1 } });
+    const duringRound = purchaseRunUpgrade(advanced, purchased, 'extra_discard', fullUnlocks);
+    expect(duringRound).toMatchObject({ upgradeChips: 30, levels: { extra_hand: 1, extra_discard: 1 } });
     // The active round's already-established allowance is unaffected.
     expect(advanced.handsRemaining).toBe(5);
     expect(advanced.discardsRemaining).toBe(3);
-    expect(() => purchaseRunUpgrade(advanced, createRunProgress(), 'extra_discard'))
+    expect(() => purchaseRunUpgrade(advanced, createRunProgress(), 'extra_discard', fullUnlocks))
       .toThrow('Not enough');
   });
 
   it('keeps the shop open while playing and immediately unlocks manual hand selection', () => {
-    const rewarded = awardRoundUpgradeChips(won(), createRunProgress());
+    const rewarded = { ...awardRoundUpgradeChips(won(), createRunProgress()), upgradeChips: 250 };
     const active = advanceRound(won(), DEFAULT_ROUND_RULES, () => 0.5);
     const before = structuredClone(active);
-    const purchased = purchaseRunUpgrade(active, rewarded, 'manual_selection');
+    const purchased = purchaseRunUpgrade(active, rewarded, 'manual_selection', fullUnlocks);
     expect(manualSelectionUnlocked(purchased)).toBe(true);
-    expect(purchased.upgradeChips).toBe(2);
+    expect(purchased.upgradeChips).toBe(70);
     expect(active).toEqual(before);
     // No need to wait for another cleared round to activate the Manual toggle.
     expect(upgradeCost(purchased, 'manual_selection')).toBeNull();
-    expect(() => purchaseRunUpgrade(active, purchased, 'manual_selection')).toThrow('maximum');
+    expect(() => purchaseRunUpgrade(active, purchased, 'manual_selection', fullUnlocks)).toThrow('maximum');
   });
 
   it('rejects purchases after defeat without making the shop disappear', () => {
     const active = advanceRound(won(), DEFAULT_ROUND_RULES, () => 0.5);
     const progress = awardRoundUpgradeChips(won(), createRunProgress());
     const lost = { ...active, phase: 'game_over' as const };
-    expect(() => purchaseRunUpgrade(lost, progress, 'extra_discard')).toThrow('run has ended');
+    expect(() => purchaseRunUpgrade(lost, progress, 'extra_discard', fullUnlocks)).toThrow('run has ended');
     expect(progress.upgradeChips).toBe(12);
   });
 
   it('locks manual hand choice until the perk is purchased', () => {
     const run = won();
-    const rewarded = awardRoundUpgradeChips(run, createRunProgress());
-    const bought = purchaseRunUpgrade(run, rewarded, 'manual_selection');
+    const rewarded = { ...awardRoundUpgradeChips(run, createRunProgress()), upgradeChips: 250 };
+    const bought = purchaseRunUpgrade(run, rewarded, 'manual_selection', fullUnlocks);
     expect(manualSelectionUnlocked(bought)).toBe(true);
-    expect(bought.upgradeChips).toBe(2);
+    expect(bought.upgradeChips).toBe(70);
     expect(upgradeCost(bought, 'manual_selection')).toBeNull();
-    expect(() => purchaseRunUpgrade(run, bought, 'manual_selection')).toThrow();
+    expect(() => purchaseRunUpgrade(run, bought, 'manual_selection', fullUnlocks)).toThrow();
   });
 
-  it('enforces costs, caps and the future configurable limits', () => {
-    const run = won();
-    const poor = {...createRunProgress(), rewardedThroughRound:1};
-    expect(() => purchaseRunUpgrade(run, poor, 'hand_size')).toThrow('Not enough');
-    const rich = {...poor,upgradeChips:9999};
-    let purchased = rich;
-    for (let i = 0; i < 4; i++) purchased = purchaseRunUpgrade(run, purchased, 'hand_size');
-    expect(applyRunUpgrades(DEFAULT_ROUND_RULES,purchased).handSize).toBe(12);
-    expect(upgradeCost(purchased,'hand_size')).toBeNull();
-    expect(() => purchaseRunUpgrade(run,purchased,'hand_size')).toThrow();
-    let more = purchased;
-    for (let i = 0; i < 3; i++) {
-      more = purchaseRunUpgrade(run,more,'cards_per_play');
-      more = purchaseRunUpgrade(run,more,'discard_batch');
+  it('requires prestige unlocks but run purchase spends upgrade chips', () => {
+    const rich = { ...createRunProgress(), upgradeChips: 999 };
+    for (const perk of RUN_UPGRADES) {
+      expect(() => purchaseRunUpgrade(won(), rich, perk.id, createPermanentProgress()))
+        .toThrow('unlocked using prestige chips');
+      const purchased = purchaseRunUpgrade(won(), rich, perk.id, fullUnlocks);
+      expect(purchased.levels[perk.id]).toBe(1);
+      expect(purchased.upgradeChips).toBe(999 - perk.baseCost);
+      expect(fullUnlocks.prestigeChips).toBe(0);
     }
-    const rules = applyRunUpgrades(DEFAULT_ROUND_RULES,more);
-    expect(rules.cardsPerPlay).toBe(8);
-    expect(rules.maxCardsPerDiscard).toBe(8);
-    expect(advanceRound(run,rules,() => 0.5).hand).toHaveLength(12);
   });
 
   it('creates a clean progression state at the next run instead of retaining run-only perks', () => {
-    const earned = awardRoundUpgradeChips(won(), createRunProgress());
-    const purchased = purchaseRunUpgrade(won(), earned, 'extra_discard');
+    const earned = { ...awardRoundUpgradeChips(won(), createRunProgress()), upgradeChips: 40 };
+    const purchased = purchaseRunUpgrade(won(), earned, 'extra_discard', fullUnlocks);
     expect(purchased.levels.extra_discard).toBe(1);
     const fresh = createRunProgress();
     expect(fresh.levels.extra_discard).toBe(0);
