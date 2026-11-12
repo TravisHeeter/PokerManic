@@ -135,7 +135,7 @@ function scoreSelectedHand() {
   clearSelection();
   scoredHand.value = scored;
   lastAction.value = scored
-    ? `Scored ${scored.label}: +${scored.score} chips. ${next.roundChips} / ${next.roundTarget} this round.`
+    ? `Scored ${scored.label}: +${scored.score} chips.${next.lastGoldReward ? ` +${next.lastGoldReward} Gold upgrade chips.` : ''} ${next.roundChips} / ${next.roundTarget} this round.`
     : 'Hand scored.';
 }
 
