@@ -21,3 +21,5 @@ export type EchoResponse = z.infer<typeof echoResponseSchema>;
 
 // Playing card types are shared; the pure game engine implements the rules.
 export * from './cards.js';
+
+export * from './game-save.js';
