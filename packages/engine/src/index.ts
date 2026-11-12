@@ -5,7 +5,7 @@ export { listEligiblePokerHands, resolveScoringOption } from './choices.js';
 export type { ScoringOption, ScoringCategory, HandSelectionSettings } from './choices.js';
 export {
   DEFAULT_ROUND_RULES, validateRoundRules, getRoundTarget, getRoundHands, getRoundDiscards,
-  startRun, playScoringHand, discardCards, advanceRound,
+  startRun, playScoringHand, discardCards, advanceRound, applyPurchasedRuleUpgrade,
 } from './rounds.js';
 export type { RoundRules, RunState, RunPhase } from './rounds.js';
 export {

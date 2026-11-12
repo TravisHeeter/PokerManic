@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Card, CardRank, CardSuit } from '@pokermanic/contracts';
 import {
-  DEFAULT_ROUND_RULES, advanceRound, createStandardDeck, discardCards, getRoundDiscards,
+  DEFAULT_ROUND_RULES, advanceRound, applyPurchasedRuleUpgrade, createStandardDeck, discardCards, getRoundDiscards,
   getRoundHands, getRoundTarget, listEligiblePokerHands, playScoringHand, startRun,
   type RoundRules, type RunState,
 } from '../src/index';
@@ -220,5 +220,81 @@ describe('draw pile recycling', () => {
     }
     expect(state.handsRemaining).toBe(5);
     expect(state.roundChips).toBeGreaterThan(0);
+  });
+});
+
+
+describe('Milestone 5 immediate purchase effects', () => {
+  it('draws one extra card immediately, preserves selections and all cards exactly once', () => {
+    const original = fixture();
+    const nextRules = { ...DEFAULT_ROUND_RULES, handSize: 9 };
+    const before = structuredClone(original);
+    const updated = applyPurchasedRuleUpgrade(original, DEFAULT_ROUND_RULES, nextRules, () => 0.5);
+    expect(updated.hand).toHaveLength(9);
+    expect(updated.hand.slice(0,8)).toEqual(original.hand);
+    expect(updated.hand[8]).toEqual(original.drawPile[0]);
+    expect(updated.drawPile).toHaveLength(43);
+    expect(updated.handsRemaining).toBe(original.handsRemaining);
+    expect(updated.discardsRemaining).toBe(original.discardsRemaining);
+    expect(updated.roundChips).toBe(original.roundChips);
+    expect(updated.roundTarget).toBe(original.roundTarget);
+    expect(original).toEqual(before);
+    const ids = [...updated.hand,...updated.drawPile,...updated.playedCards,...updated.discardedCards]
+      .map(card => `${card.rank}:${card.suit}`);
+    expect(ids).toHaveLength(52);
+    expect(new Set(ids).size).toBe(52);
+    // The extra held card is usable in the same round.
+    const selectedExtra = playScoringHand(updated, [8], undefined, undefined, nextRules, () => 0.5);
+    expect(selectedExtra.playedCards).toHaveLength(1);
+    expect(selectedExtra.hand).toHaveLength(9);
+  });
+
+  it('immediately increases scoring hands and discard actions, without resetting spent actions', () => {
+    const original = { ...fixture(), handsRemaining: 1, discardsRemaining: 0, roundChips: 35 };
+    const upgradedRules = {
+      ...DEFAULT_ROUND_RULES, baseHandsPerRound: 5, baseDiscardsPerRound: 4,
+      cardsPerPlay: 6, maxCardsPerDiscard: 6,
+    };
+    const updated = applyPurchasedRuleUpgrade(original, DEFAULT_ROUND_RULES, upgradedRules);
+    expect(updated.handsRemaining).toBe(2);
+    expect(updated.discardsRemaining).toBe(1);
+    expect(updated.roundChips).toBe(35);
+    expect(updated.hand).toEqual(original.hand);
+    expect(discardCards(updated,[0,1,2,3,4,5],upgradedRules).discardsRemaining).toBe(0);
+    expect(playScoringHand(updated,[0,1,2,3,4,5],undefined,undefined,upgradedRules).handsRemaining).toBe(1);
+  });
+
+  it('supports repeated held-card purchases and recycling when the draw pile is empty', () => {
+    const original = fixture();
+    const firstRules = {...DEFAULT_ROUND_RULES, handSize:9 };
+    const secondRules = {...DEFAULT_ROUND_RULES, handSize:10 };
+    const first = applyPurchasedRuleUpgrade(original, DEFAULT_ROUND_RULES, firstRules, () => 0.5);
+    const second = applyPurchasedRuleUpgrade(first, firstRules, secondRules, () => 0.5);
+    expect(second.hand).toHaveLength(10);
+    expect(second.drawPile).toHaveLength(42);
+    expect(second.hand.slice(0,8)).toEqual(original.hand);
+    const exhausted = {
+      ...original,
+      drawPile: [],
+      playedCards: [original.drawPile[0]!, original.drawPile[1]!],
+      discardedCards: [],
+    };
+    const recycled = applyPurchasedRuleUpgrade(exhausted,DEFAULT_ROUND_RULES,firstRules,()=>0.5);
+    expect(recycled.hand).toHaveLength(9);
+    expect(recycled.playedCards).toHaveLength(0);
+    expect(recycled.drawPile).toHaveLength(1);
+    expect(recycled.hand[8]).toEqual(exhausted.playedCards[0]);
+  });
+
+  it('rejects purchases after defeat and invalid rule changes', () => {
+    const state = fixture();
+    expect(() => applyPurchasedRuleUpgrade({...state,phase:'game_over'},
+      DEFAULT_ROUND_RULES,{...DEFAULT_ROUND_RULES,handSize:9})).toThrow();
+    expect(() => applyPurchasedRuleUpgrade(state,DEFAULT_ROUND_RULES,
+      {...DEFAULT_ROUND_RULES,handSize:7})).toThrow(RangeError);
+    expect(() => applyPurchasedRuleUpgrade(state,DEFAULT_ROUND_RULES,
+      {...DEFAULT_ROUND_RULES,baseChipTarget:100})).toThrow(RangeError);
+    expect(() => applyPurchasedRuleUpgrade(state,DEFAULT_ROUND_RULES,
+      {...DEFAULT_ROUND_RULES,handSize:9},()=>0.5).hand).toHaveLength(9);
   });
 });

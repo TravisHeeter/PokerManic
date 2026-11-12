@@ -4,6 +4,7 @@ import {
   DEFAULT_ROUND_RULES,
   advanceRound,
   applyRunUpgrades,
+  applyPurchasedRuleUpgrade,
   awardRoundUpgradeChips,
   createRunProgress,
   discardCards,
@@ -22,8 +23,8 @@ useSeoMeta({
 });
 
 const progress = ref<RunProgress>(createRunProgress());
-// Snapshot the rules at the start of each round. Mid-round purchases must not
-// silently change the number of selected cards, existing hand size or allowances.
+// Effective rules update as perks are purchased, without resetting the round.
+
 const rules = ref({ ...DEFAULT_ROUND_RULES });
 const nextRoundRules = computed(() => applyRunUpgrades(DEFAULT_ROUND_RULES, progress.value));
 
@@ -130,18 +131,27 @@ function restartRun() {
 }
 
 function buyPerk(id: RunUpgradeId) {
-  // The engine enforces affordability and prevents purchases after defeat.
-  progress.value = purchaseRunUpgrade(run.value, progress.value, id);
-  // The maximum playable-card count and Manual Selection are immediate.
-  // Hand size and round action allowances remain fixed until next round.
-  if (id === 'cards_per_play') {
-    rules.value = { ...rules.value, cardsPerPlay: nextRoundRules.value.cardsPerPlay };
-  }
+  // Calculate the complete transaction before updating the reactive UI.
+  const purchased = purchaseRunUpgrade(run.value, progress.value, id);
+  const upgradedRules = applyRunUpgrades(DEFAULT_ROUND_RULES, purchased);
+  const updatedRun = applyPurchasedRuleUpgrade(run.value, rules.value, upgradedRules);
+
+  run.value = updatedRun;
+  rules.value = upgradedRules;
+  progress.value = purchased;
+  // Preserve selected card indices and any manual selection. New cards append
+  // after the existing hand, so selections don't move or silently clear.
   lastAction.value = id === 'manual_selection'
-    ? 'Manual Hand Selection unlocked! Switch to Manual to choose your scoring cards.'
-    : id === 'cards_per_play'
-      ? `You can now score 1 to ${rules.value.cardsPerPlay} cards per play, immediately.`
-      : 'Perk purchased. Your upgraded limits take effect next round.';
+    ? 'Manual Hand Selection unlocked immediately! You can switch to Manual now.'
+    : id === 'hand_size'
+      ? `Extra card drawn! Your hand now holds ${updatedRun.hand.length} cards.`
+      : id === 'extra_hand'
+        ? `Extra scoring hand added! ${updatedRun.handsRemaining} hands remain.`
+        : id === 'extra_discard'
+          ? `Extra discard added! ${updatedRun.discardsRemaining} discards remain.`
+          : id === 'cards_per_play'
+            ? `You can now score 1 to ${upgradedRules.cardsPerPlay} cards per play.`
+            : `You can now discard up to ${upgradedRules.maxCardsPerDiscard} cards at once.`;
 }
 
 const { data: health, error, status, refresh } = await useFetch('/api/health');
@@ -211,7 +221,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
             </div>
             <p aria-live="polite" class="text-sm text-muted">{{ lastAction }}</p>
             <p class="text-xs text-muted">
-              Played and discarded cards are recycled when needed. Rule upgrades purchased during play apply to the next round.
+              Played and discarded cards are recycled when needed. Shop upgrades take effect immediately, including extra cards and actions.
             </p>
           </div>
         </UCard>
