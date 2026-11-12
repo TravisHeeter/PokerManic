@@ -294,7 +294,7 @@ describe('Milestone 5 immediate purchase effects', () => {
       {...DEFAULT_ROUND_RULES,handSize:7})).toThrow(RangeError);
     expect(() => applyPurchasedRuleUpgrade(state,DEFAULT_ROUND_RULES,
       {...DEFAULT_ROUND_RULES,baseChipTarget:100})).toThrow(RangeError);
-    expect(() => applyPurchasedRuleUpgrade(state,DEFAULT_ROUND_RULES,
+    expect(applyPurchasedRuleUpgrade(state,DEFAULT_ROUND_RULES,
       {...DEFAULT_ROUND_RULES,handSize:9},()=>0.5).hand).toHaveLength(9);
   });
 });
