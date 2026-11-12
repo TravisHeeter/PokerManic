@@ -94,6 +94,7 @@ watch(cardStyle, value => {
               >
                 <span v-if="cardModifiers[cardIdentity(entry.card)]" aria-hidden="true"
                   data-testid="card-modifier-badge"
+                  :data-card-modifier="cardModifiers[cardIdentity(entry.card)]"
                   class="pm-card-modifier-badge absolute bottom-2 left-1 z-20 rounded px-1 py-0.5 text-[10px] font-bold leading-none text-white shadow-sm sm:left-2"
                   :title="cardModifiers[cardIdentity(entry.card)]?.replaceAll('_', ' ')">
                   {{ modifierBadges[cardModifiers[cardIdentity(entry.card)]!] }}
