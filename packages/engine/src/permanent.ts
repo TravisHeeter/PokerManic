@@ -10,6 +10,8 @@ export interface PermanentProgress {
   prestigeChips: number;
   transcends: number;
   permanentLevels: Record<PermanentUpgradeId, number>;
+  materiaSlots?: number;
+  materiaLinks?: number[];
 }
 
 /** Price order corresponds to perceived strategic value. Each is a one-time unlock. */
@@ -26,6 +28,8 @@ export function createPermanentProgress(): PermanentProgress {
   return {
     prestigeChips: 0,
     transcends: 0,
+    materiaSlots: 1,
+    materiaLinks: [],
     permanentLevels: {
       starting_hand: 0, starting_discard: 0, starting_chips: 0,
       held_card: 0, cards_per_play: 0, discard_batch: 0, manual_selection: 0,
