@@ -152,9 +152,18 @@ await run('Settings opens in a mobile-friendly Nuxt UI modal and retains customi
     assert.ok(settings.includes(`id: '${id}'`));
   }
   for (const control of ['suit-colors-themed', 'suit-colors-standard', 'suit-palette-settings',
-    'custom-suit-', 'reset-selected-suit-color', 'reset-all-suit-colors']) {
+    'suit-palette-original', 'suit-palette-row-', 'role="radiogroup"']) {
     assert.ok(settings.includes(control));
   }
+  const palettes = await readFile(new URL('../apps/web/app/utils/suitPalettes.ts', import.meta.url), 'utf8');
+  for (const id of ['vibrant', 'electric', 'jewel', 'earth', 'playful', 'pastel', 'accessible', 'modern']) {
+    assert.ok(palettes.includes(`id: '${id}'`));
+  }
+  assert.match(settings, /type="radio" name="suit-palette"/);
+  assert.doesNotMatch(settings, /custom-suit-|reset-selected-suit-color|chooseColor/);
+  const page = await readFile(new URL('../apps/web/app/pages/index.vue', import.meta.url), 'utf8');
+  assert.match(page, /v-model:selected-palette="selectedPalette"/);
+  assert.match(page, /suitPaletteColors\(selectedPalette\.value\)/);
 });
 
 await run('Custom PokerManic favicon is served', async () => {
