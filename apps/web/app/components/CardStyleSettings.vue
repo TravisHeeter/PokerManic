@@ -1,5 +1,5 @@
 <script setup lang="ts">
-export const CARD_STYLES = [
+const CARD_STYLES = [
   { id: 'classic', label: 'Classic' },
   { id: 'victorian', label: 'Victorian' },
   { id: 'deco', label: 'Art Deco' },
