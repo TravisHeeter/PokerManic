@@ -79,7 +79,7 @@ export function spellCost(kind: 'fire'|'ice'|'lightning', level: number, tier: n
   const base = kind === 'fire' ? [10,20,40] : kind === 'lightning' ? [20,40,80] : [15,30,50,70];
   return Math.max(1, Math.ceil((base[tier-1] ?? 10) / 2 ** (level-tier)));
 }
-export function castMateria(state: Readonly<MateriaState>, hand: readonly Card[], id: number, tier: number, targetIndex: number, linkedPairs: readonly number[] = []): MateriaState {
+export function castMateria(state: Readonly<MateriaState>, hand: readonly Card[], id: number, tier: number, targetIndex: number, linkedPairs: readonly number[] = [], visibleOrder?: readonly number[]): MateriaState {
   if (targetIndex < 0 || targetIndex >= hand.length || !Number.isInteger(targetIndex)) throw new RangeError('Choose a card in hand.');
   const slot = state.equipped.indexOf(id);
   const gem = state.collection.find(g => g.id === id);
@@ -120,8 +120,12 @@ export function castMateria(state: Readonly<MateriaState>, hand: readonly Card[]
   if (kind === 'ice') {
     effects[key] = { ...existing, frozen: true };
     // Ice copies the target's magical bonuses, not its frozen status, to neighbors.
-    const targets = tier === 1 ? [] : tier === 2 ? [targetIndex+1] : tier === 3 ? [targetIndex-1,targetIndex+1] : hand.map((_,i)=>i).filter(i=>i!==targetIndex);
-    for (const i of targets) if (i >= 0 && i < hand.length) {
+    const order = visibleOrder && visibleOrder.length === hand.length
+      && new Set(visibleOrder).size === hand.length ? visibleOrder : hand.map((_,i)=>i);
+    const position = order.indexOf(targetIndex);
+    const targets = tier === 1 ? [] : tier === 2 ? [order[position+1]] : tier === 3
+      ? [order[position-1],order[position+1]] : order.filter(i=>i!==targetIndex);
+    for (const i of targets) if (i !== undefined && i >= 0 && i < hand.length) {
       const recipient = materiaKey(hand[i]!);
       const old = effects[recipient] ?? { chips:0,mult:0,frozen:false };
       effects[recipient] = { ...old, chips:old.chips + existing.chips, mult:old.mult + existing.mult };
