@@ -14,7 +14,7 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{ 'buy-perk': [id: RunUpgradeId] }>();
 const perkCatalog = RUN_UPGRADES;
-type DockTab = 'perks' | 'modifiers' | 'hand' | 'transcendence' | 'god';
+type DockTab = 'perks' | 'modifiers' | 'hand' | 'transcendence' | 'god' | 'settings';
 const activeTab = ref<DockTab | ''>('');
 const handTabAvailable = computed(() => props.manualSelectionAvailable);
 const tabs = computed(() => [
@@ -26,6 +26,7 @@ const tabs = computed(() => [
   { label: 'Transcendence', icon: 'i-lucide-orbit', value: 'transcendence' },
   // A Lucide skull keeps the God Mode icon stylistically consistent with the other tabs.
   { label: 'God Mode', icon: 'i-lucide-skull', value: 'god' },
+  { label: 'Settings', icon: 'i-lucide-settings', value: 'settings' },
 ]);
 function selectTab(value: string | number) {
   activeTab.value = value as DockTab;
@@ -125,6 +126,11 @@ const canBuy = (id: RunUpgradeId) => {
         v-show="activeTab === 'god'" data-testid="god-mode-content"
         class="min-h-0 flex-1 overflow-y-auto overscroll-contain border-t border-default px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-6">
         <slot name="god" />
+      </div>
+      <div id="settings-content" role="tabpanel" aria-label="Settings"
+        v-show="activeTab === 'settings'" data-testid="settings-content"
+        class="min-h-0 flex-1 overflow-y-auto overscroll-contain border-t border-default px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-6">
+        <slot name="settings" />
       </div>
     </div>
   </section>
