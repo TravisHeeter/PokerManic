@@ -37,7 +37,7 @@ function change(event: Event) {
     <UCard>
       <div class="space-y-3">
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <h2 id="save-heading" class="text-2xl font-bold">Local saves & modding</h2>
+          <h2 id="save-heading" class="text-2xl font-bold">God Mode</h2>
           <UBadge color="neutral" variant="subtle">Browser only · JSON v1</UBadge>
         </div>
         <p data-testid="save-status" aria-live="polite" class="text-sm">{{ status }}</p>
