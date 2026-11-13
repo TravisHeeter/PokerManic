@@ -24,3 +24,6 @@ export type { PermanentUpgradeId, PermanentProgress } from './permanent.js';
 
 export { CARD_MODIFIERS, cardIdentity, purchaseCardModifier, applyCardModifiers } from './modifiers.js';
 export type { CardModifier, CardModifierMap } from './modifiers.js';
+
+export { beginAnotherRun } from './run-lifecycle.js';
+export type { NewRunState } from './run-lifecycle.js';
