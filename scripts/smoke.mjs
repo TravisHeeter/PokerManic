@@ -119,6 +119,8 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /data-testid="perk-shop-dock"/);
   assert.match(html, /Card modifiers/);
   assert.match(html, /data-testid="modifier-shop-content"/);
+  assert.match(html, /data-testid="settings-content"/);
+  assert.match(html, /Card styles/);
   assert.match(html, /data-testid="transcendence-shop-content"/);
   assert.match(html, /data-testid="god-mode-content"/);
   assert.doesNotMatch(html, /h-\\[25dvh\\]/);
