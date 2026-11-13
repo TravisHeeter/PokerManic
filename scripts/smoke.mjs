@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 
 const apiUrl = process.env.SMOKE_API_URL || 'http://localhost:4000';
@@ -75,15 +76,8 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.equal((html.match(/data-testid="hand-actions"/g) ?? []).length, 1);
   assert.equal((html.match(/data-testid="clear-selection"/g) ?? []).length, 1);
   assert.match(html, /aria-label="Sort cards"/);
-  assert.match(html, /Card styles/);
   assert.match(html, /data-card-style="classic"/);
   assert.match(html, /data-suit-colors="themed"/);
-  for (const style of [
-    'classic', 'victorian', 'deco', 'cyber', 'bold-victorian',
-    'vivid-gothic', 'art-nouveau', 'cosmic-horror', 'medieval-illuminated',
-  ]) {
-    assert.match(html, new RegExp(`data-testid="card-style-${style}"`));
-  }
   assert.match(html, /Dealt order/);
   assert.match(html, /data-testid="sort-rank"/);
   assert.match(html, /data-testid="sort-rank"[^>]*aria-pressed="true"|aria-pressed="true"[^>]*data-testid="sort-rank"/);
@@ -120,20 +114,6 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /data-testid="perk-shop-dock"/);
   assert.match(html, /Card modifiers/);
   assert.match(html, /data-testid="modifier-shop-content"/);
-  assert.match(html, /data-testid="settings-content"/);
-  assert.match(html, /data-testid="suit-colors-themed"/);
-  assert.match(html, /data-testid="suit-colors-standard"/);
-  assert.match(html, /data-testid="suit-palette-settings"/);
-  assert.match(html, /data-testid="custom-suit-spades"/);
-  assert.match(html, /data-testid="custom-suit-hearts"/);
-  assert.match(html, /data-testid="custom-suit-clubs"/);
-  assert.match(html, /data-testid="custom-suit-diamonds"/);
-  assert.match(html, /data-testid="suit-palette-e63946"/);
-  assert.match(html, /data-testid="suit-palette-2ec4b6"/);
-  assert.match(html, /data-testid="reset-selected-suit-color"/);
-  assert.match(html, /data-testid="reset-all-suit-colors"/);
-  assert.match(html, /Standard red &amp; black|Standard red & black/);
-  assert.match(html, /Card styles/);
   assert.match(html, /data-testid="transcendence-shop-content"/);
   assert.match(html, /data-testid="god-mode-content"/);
   assert.doesNotMatch(html, /h-\\[25dvh\\]/);
@@ -155,6 +135,26 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /data-testid="deck-count"[^>]*>44</);
   assert.match(html, /data-testid="round-score"[^>]*>0 \/ 60</);
   assert.match(html, /data-testid="upgrade-chip-balance"[^>]*>0</);
+});
+
+await run('Settings opens in a mobile-friendly Nuxt UI modal and retains customization controls', async () => {
+  const dock = await readFile(new URL('../apps/web/app/components/PerkShop.vue', import.meta.url), 'utf8');
+  const settings = await readFile(new URL('../apps/web/app/components/CardStyleSettings.vue', import.meta.url), 'utf8');
+  assert.match(dock, /<UModal[^>]*v-model:open="settingsOpen"/);
+  assert.match(dock, /value === 'settings'/);
+  assert.match(dock, /settingsOpen\.value = true/);
+  assert.match(dock, /<slot name="settings"/);
+  assert.doesNotMatch(dock, /id="settings-content"/);
+  assert.match(dock, /max-h-\[90dvh\]/);
+  assert.match(dock, /overflow-y-auto/);
+  for (const id of ['classic', 'victorian', 'deco', 'cyber', 'bold-victorian',
+    'vivid-gothic', 'art-nouveau', 'cosmic-horror', 'medieval-illuminated']) {
+    assert.ok(settings.includes(`id: '${id}'`));
+  }
+  for (const control of ['suit-colors-themed', 'suit-colors-standard', 'suit-palette-settings',
+    'custom-suit-spades', 'reset-selected-suit-color', 'reset-all-suit-colors']) {
+    assert.ok(settings.includes(control));
+  }
 });
 
 await run('Custom PokerManic favicon is served', async () => {
