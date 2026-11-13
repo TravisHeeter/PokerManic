@@ -60,7 +60,7 @@ const savedMateriaSchema = z.strictObject({
   nextId: positiveInt,
   mp: safeInt,
   castThisRound: z.array(positiveInt),
-  effects: z.record(z.string(), z.strictObject({ chips: safeInt, mult: safeInt, frozen: z.boolean() })),
+  effects: z.record(z.string(), z.strictObject({ chips: safeInt, mult: safeInt, frozen: z.boolean(), persistent: z.boolean().optional() })),
   offers: z.array(materiaKindSchema).max(3),
   discoveries: safeInt,
 });
