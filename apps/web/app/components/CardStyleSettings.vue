@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { SUIT_PALETTES, type SuitPaletteId } from '~/utils/suitPalettes';
+import { computed } from 'vue';
+import { SUIT_PALETTES, suitPaletteColors, type SuitPaletteId } from '~/utils/suitPalettes';
 
 const CARD_STYLES = [
   { id: 'classic', label: 'Classic' },
@@ -23,6 +24,7 @@ const emit = defineEmits<{
   'update:selectedPalette': [value: SuitPaletteId | null];
 }>();
 
+const previewSuitColors = computed(() => suitPaletteColors(props.selectedPalette));
 const SUIT_ORDER = [
   { id: 'hearts', symbol: '♥' },
   { id: 'spades', symbol: '♠' },
@@ -43,6 +45,31 @@ function contrast(hex: string) {
 
 <template>
   <section aria-labelledby="card-settings-heading" class="space-y-3">
+    <div class="space-y-2 rounded-xl border border-default bg-elevated/50 p-3" data-testid="card-style-sampler">
+      <h3 class="text-sm font-semibold">Live card preview</h3>
+      <p class="text-xs text-muted">See how all four aces look as you change settings.</p>
+      <div class="mx-auto grid max-w-md grid-cols-4 gap-2 sm:gap-3"
+        :data-card-style="props.cardStyle" :data-suit-colors="props.suitColors"
+        aria-label="Preview of the four aces">
+        <div v-for="suit in SUIT_ORDER" :key="suit.id"
+          class="pm-card relative flex aspect-[5/7] min-w-0 select-none flex-col justify-between rounded-xl border p-1.5 text-left shadow-lg shadow-black/30 sm:p-3"
+          :data-suit="suit.id" :data-testid="`preview-ace-${suit.id}`"
+          :aria-label="`Ace of ${suit.id}`"
+          :style="props.suitColors === 'themed' && previewSuitColors[suit.id] ? { color: previewSuitColors[suit.id] } : undefined">
+          <div class="relative z-10 flex flex-col items-start leading-none">
+            <span class="pm-card-rank text-lg font-bold sm:text-2xl">A</span>
+            <span class="mt-1 text-lg sm:text-xl">{{ suit.symbol }}</span>
+          </div>
+          <div aria-hidden="true" class="pm-card-center pointer-events-none absolute inset-0 flex items-center justify-center">
+            <span class="pm-card-center-suit text-3xl sm:text-6xl">{{ suit.symbol }}</span>
+          </div>
+          <div aria-hidden="true" class="relative z-10 flex rotate-180 flex-col items-start leading-none">
+            <span class="text-lg font-bold sm:text-2xl">A</span>
+            <span class="mt-1 text-lg sm:text-xl">{{ suit.symbol }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
     <h3 id="card-settings-heading" class="text-lg font-semibold">Card styles</h3>
     <p class="text-xs text-muted">Choose how playing cards look. Your choice is saved on this device.</p>
     <div role="group" aria-label="Card appearance" class="flex flex-wrap gap-2">
