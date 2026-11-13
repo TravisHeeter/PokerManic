@@ -25,5 +25,10 @@ export type { PermanentUpgradeId, PermanentProgress } from './permanent.js';
 export { CARD_MODIFIERS, cardIdentity, purchaseCardModifier, applyCardModifiers } from './modifiers.js';
 export type { CardModifier, CardModifierMap } from './modifiers.js';
 
+export { MATERIA_KINDS, MAX_MP, XP_LEVELS, materiaLevel, materiaKey, createMateriaState, reconcileMateriaSlots, equipMateria, unequipMateria, completeMateriaRound, claimMateria, newMateriaRound, castMateria, breakMateriaFreeze, spellCost, applyMateriaScore, releasePlayedMagic } from './materia.js';
+export type { MateriaKind, MateriaGem, MateriaState, CardMagic } from './materia.js';
 export { beginAnotherRun } from './run-lifecycle.js';
 export type { NewRunState } from './run-lifecycle.js';
+
+export { MATERIA_SLOT_COSTS, MATERIA_LINK_COSTS, materiaBoardPrice, buyMateriaBoardUpgrade } from './materia-board.js';
+export type { MateriaBoardPurchase } from './materia-board.js';

@@ -55,7 +55,7 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /PokerManic/);
   assert.match(html, /favicon\.svg\?v=1/);
   assert.match(html, /API connected/);
-  assert.match(html, /Milestone 9/);
+  assert.match(html, /Milestone 10/);
   assert.match(html, /Transcendence/);
   assert.match(html, /data-testid="round-number"[^>]*>\s*Round 1 - 60 Chips\s*</);
   assert.match(html, /Chip count/);
@@ -88,19 +88,18 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   // These sections are rendered by separate Nuxt auto-imported components.
   assert.match(html, /Development progress/);
   assert.match(html, /Prestige chips/);
-  assert.match(html, /Card modifier shop/);
-  assert.match(html, /data-testid="buy-card-modifier-bonus"/);
-  assert.match(html, /data-testid="buy-card-modifier-multiplier"/);
-  for (const id of ['gold','echo','growing','wild_suit','wild_rank','wild_full']) {
-    assert.match(html, new RegExp(`data-testid="buy-card-modifier-${id}"`));
-  }
+  assert.match(html, /data-testid="materia-board"/);
+  assert.match(html, /Materia Board/);
+  assert.match(html, /Spells/);
+  assert.match(html, /Materia Inventory/);
+  assert.doesNotMatch(html, /Card modifier shop/);
   assert.match(html, /data-testid="transcend-action"/);
   assert.match(html, /9 milestones implemented/);
   for (let milestone = 1; milestone <= 9; milestone++) {
     assert.match(html, new RegExp(`data-testid="milestone-${milestone}"`));
   }
   assert.match(html, /data-testid="milestone-next"/);
-  assert.match(html, /Milestone 9/);
+  assert.match(html, /Milestone 10/);
   assert.match(html, /Transcendence/);
   // The milestone badges are verified individually above; do not scan across unrelated panels.
   assert.match(html, /God Mode/);
@@ -112,8 +111,8 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /Shop open throughout your run/);
   assert.doesNotMatch(html, /Shop closed/);
   assert.match(html, /data-testid="perk-shop-dock"/);
-  assert.match(html, /Card modifiers/);
-  assert.match(html, /data-testid="modifier-shop-content"/);
+  assert.match(html, /Materia/);
+  assert.match(html, /Spells/);
   assert.match(html, /data-testid="transcendence-shop-content"/);
   assert.match(html, /data-testid="god-mode-content"/);
   assert.doesNotMatch(html, /h-\\[25dvh\\]/);
@@ -188,5 +187,5 @@ await run('Custom PokerManic favicon is served', async () => {
 if (process.exitCode) {
   console.error('The current milestone is NOT verified. Fix failures before proceeding.');
 } else {
-  console.log('Milestone 8 smoke tests passed.');
+  console.log('Milestone 10 smoke tests passed.');
 }
