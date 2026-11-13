@@ -14,8 +14,8 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{ 'buy-perk': [id: RunUpgradeId] }>();
 const perkCatalog = RUN_UPGRADES;
-type DockTab = 'perks' | 'modifiers' | 'hand';
-const activeTab = ref<DockTab>('perks');
+type DockTab = 'perks' | 'modifiers' | 'hand' | 'transcendence' | 'god';
+const activeTab = ref<DockTab | ''>('');
 const handTabAvailable = computed(() => props.manualSelectionAvailable);
 const tabs = computed(() => [
   { label: 'Perk shop', icon: 'i-lucide-shopping-bag', value: 'perks' },
@@ -23,9 +23,15 @@ const tabs = computed(() => [
   ...(handTabAvailable.value
     ? [{ label: 'Hand selection', icon: 'i-lucide-layers-3', value: 'hand' }]
     : []),
+  { label: 'Transcendence', icon: 'i-lucide-orbit', value: 'transcendence' },
+  // A Lucide skull keeps the God Mode icon stylistically consistent with the other tabs.
+  { label: 'God Mode', icon: 'i-lucide-skull', value: 'god' },
 ]);
+function selectTab(value: string | number) {
+  activeTab.value = value as DockTab;
+}
 watch(handTabAvailable, available => {
-  if (!available && activeTab.value === 'hand') activeTab.value = 'perks';
+  if (!available && activeTab.value === 'hand') activeTab.value = '';
 });
 const priceFor = (id: RunUpgradeId) => upgradeCost(props.progress, id);
 const unlocked = (id: RunUpgradeId) => isRunUpgradeUnlocked(props.profile, id);
@@ -38,11 +44,13 @@ const canBuy = (id: RunUpgradeId) => {
 <template>
   <section aria-label="Upgrade shops"
     data-testid="perk-shop-dock"
-    class="fixed inset-x-0 bottom-0 z-50 border-t border-default bg-default shadow-2xl shadow-black/40">
-    <div class="mx-auto max-w-6xl">
-      <div class="border-b border-default px-3 py-2 sm:px-6">
+    class="fixed inset-x-0 bottom-0 z-50 border-t border-default bg-default shadow-2xl shadow-black/40"
+    :class="activeTab ? 'h-[25dvh]' : ''">
+    <div class="mx-auto max-w-6xl" :class="activeTab ? 'flex h-full min-h-0 flex-col' : ''">
+      <div class="shrink-0 border-b border-default px-3 py-2 sm:px-6">
         <UTabs
-          v-model="activeTab"
+          :model-value="activeTab"
+          @update:model-value="selectTab"
           :items="tabs"
           :content="false"
           color="success"
@@ -50,19 +58,22 @@ const canBuy = (id: RunUpgradeId) => {
           aria-label="Game controls"
           :ui="{
             list: 'justify-around w-full',
-            trigger: 'grow flex-col gap-1 py-1',
-            label: 'text-[10px]/3'
+            trigger: 'grow min-w-0 flex-col gap-1 py-1 px-1',
+            label: 'text-[10px]/3 text-center leading-tight'
           }"
           class="w-full"
         />
         <div class="flex justify-end items-center gap-2 px-2 pt-2">
           <span class="text-xs text-muted">Upgrade chips</span>
           <strong data-testid="upgrade-chip-balance" class="text-lg tabular-nums">{{ progress.upgradeChips }}</strong>
+          <UButton v-if="activeTab" data-testid="close-dock" icon="i-lucide-x"
+            color="neutral" variant="ghost" size="xs" aria-label="Close dock"
+            @click="activeTab = ''" />
         </div>
       </div>
       <div id="perk-shop-content" role="tabpanel" aria-label="Perk shop"
         v-show="activeTab === 'perks'" data-testid="perk-shop-content"
-        class="max-h-[min(70dvh,38rem)] overflow-y-auto overscroll-contain border-t border-default px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-6">
+        class="min-h-0 flex-1 overflow-y-auto overscroll-contain border-t border-default px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-6">
         <div class="space-y-4">
           <p v-if="phase !== 'game_over'" data-testid="shop-open" class="text-sm text-green-400">
             Shop open throughout your run. Purchase any affordable upgrade whenever you like.
@@ -93,17 +104,27 @@ const canBuy = (id: RunUpgradeId) => {
       </div>
       <div id="modifier-shop-content" role="tabpanel" aria-label="Card modifiers"
         v-show="activeTab === 'modifiers'" data-testid="modifier-shop-content"
-        class="max-h-[min(70dvh,38rem)] overflow-y-auto overscroll-contain border-t border-default px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-6">
+        class="min-h-0 flex-1 overflow-y-auto overscroll-contain border-t border-default px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-6">
         <div class="space-y-4">
           <slot name="modifiers" />
         </div>
       </div>
       <div v-if="handTabAvailable" id="hand-shop-content" role="tabpanel" aria-label="Hand selection"
         v-show="activeTab === 'hand'" data-testid="hand-shop-content"
-        class="max-h-[min(70dvh,38rem)] overflow-y-auto overscroll-contain border-t border-default px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-6">
+        class="min-h-0 flex-1 overflow-y-auto overscroll-contain border-t border-default px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-6">
         <div class="space-y-4">
           <slot name="hand" />
         </div>
+      </div>
+      <div id="transcendence-shop-content" role="tabpanel" aria-label="Transcendence"
+        v-show="activeTab === 'transcendence'" data-testid="transcendence-shop-content"
+        class="min-h-0 flex-1 overflow-y-auto overscroll-contain border-t border-default px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-6">
+        <slot name="transcendence" />
+      </div>
+      <div id="god-mode-content" role="tabpanel" aria-label="God Mode"
+        v-show="activeTab === 'god'" data-testid="god-mode-content"
+        class="min-h-0 flex-1 overflow-y-auto overscroll-contain border-t border-default px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-6">
+        <slot name="god" />
       </div>
     </div>
   </section>
