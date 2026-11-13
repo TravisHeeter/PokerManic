@@ -14,6 +14,7 @@ const props = defineProps<{
   inRound: boolean;
   sortMode: HandSortMode;
   cardStyle: string;
+  suitColors: 'themed' | 'standard';
 }>();
 const emit = defineEmits<{
   'toggle-card': [index: number];
@@ -43,7 +44,7 @@ const SUIT_SYMBOLS: Record<CardSuit, string> = {
                 :aria-pressed="props.sortMode === 'suit'" @click="emit('update:sortMode', 'suit')">♠</UButton>
             </div>
 
-            <div data-testid="card-hand" :data-card-style="props.cardStyle" aria-label="Current card hand" class="grid grid-cols-4 gap-2 sm:grid-cols-8 sm:gap-3">
+            <div data-testid="card-hand" :data-card-style="props.cardStyle" :data-suit-colors="props.suitColors" aria-label="Current card hand" class="grid grid-cols-4 gap-2 sm:grid-cols-8 sm:gap-3">
               <button
                 v-for="entry in displayedCards"
                 type="button"
