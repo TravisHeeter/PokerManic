@@ -31,6 +31,12 @@ useSeoMeta({
 const progress = ref<RunProgress>(createRunProgress());
 const profile = ref<SavedProfile>({ lifetimeRunsStarted: 1, bestRound: 1, ...createPermanentProgress() });
 const sortMode = ref<HandSortMode>('rank');
+const cardStyle = ref('classic');
+const CARD_STYLE_STORAGE_KEY = 'pokermanic.card-style.v1';
+const validCardStyles = new Set([
+  'classic', 'victorian', 'deco', 'cyber', 'bold-victorian',
+  'vivid-gothic', 'art-nouveau', 'cosmic-horror', 'medieval-illuminated',
+]);
 const hydrated = ref(false);
 const savingBlocked = ref(false);
 const saveStatus = ref('Loading browser save…');
@@ -272,6 +278,10 @@ function persistSave() {
 }
 onMounted(() => {
   try {
+    const savedStyle = localStorage.getItem(CARD_STYLE_STORAGE_KEY);
+    if (savedStyle && validCardStyles.has(savedStyle)) cardStyle.value = savedStyle;
+  } catch { /* Appearance preference is optional when storage is blocked. */ }
+  try {
     const raw = localStorage.getItem(GAME_SAVE_STORAGE_KEY);
     if (raw) {
       installSave(parseGameSave(raw));
@@ -290,6 +300,10 @@ onMounted(() => {
     hydrated.value = true;
     persistSave();
   }
+});
+watch(cardStyle, value => {
+  if (!import.meta.client) return;
+  try { localStorage.setItem(CARD_STYLE_STORAGE_KEY, value); } catch { /* Optional preference. */ }
 });
 watch([run, rules, progress, profile, selectedIndexes, selectionMode, manualOptionId, sortMode],
   () => {
@@ -377,6 +391,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
               :round="run.round" 
               :hands-played="run.handsPlayed" 
               :in-round="inRound"
+              :card-style="cardStyle"
               v-model:sort-mode="sortMode" 
               @toggle-card="toggleCard" />
 
@@ -436,6 +451,9 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
     <template #god>
       <SaveManager :json="saveJson" @update:json="updateSaveJson" :status="saveStatus" :blocked="savingBlocked"
         @export="exportSave" @import="importSave" @new-run="restartRun" />
+    </template>
+    <template #settings>
+      <CardStyleSettings v-model:card-style="cardStyle" />
     </template>
   </PerkShop>
 </template>
