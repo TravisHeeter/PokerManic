@@ -20,12 +20,12 @@ import {
   createPermanentProgress, startingUpgradeChips,
   transcendReward, transcendRun, PERMANENT_UPGRADES,
   permanentUpgradeCost, buyPermanentUpgrade, isRunUpgradeUnlocked,
-  CARD_MODIFIERS, purchaseCardModifier, applyCardModifiers,
+  sortHandForDisplay, beginAnotherRun, createMateriaState, reconcileMateriaSlots, completeMateriaRound, claimMateria, equipMateria, unequipMateria, castMateria, breakMateriaFreeze, applyMateriaScore, buyMateriaBoardUpgrade,
 } from '@pokermanic/engine';
-import type { RunState, ScoringOption, RunUpgradeId, RunProgress, HandSortMode, PermanentUpgradeId, CardModifier } from '@pokermanic/engine';
+import type { RunState, ScoringOption, RunUpgradeId, RunProgress, HandSortMode, PermanentUpgradeId, MateriaKind, MateriaBoardPurchase } from '@pokermanic/engine';
 
 useSeoMeta({
-  title: 'PokerManic | Milestone 9 — Expanded Card Effects',
+  title: 'PokerManic | Milestone 10 — Materia & Magic',
   description: 'Earn permanent prestige perks that survive every run.',
 });
 
@@ -92,7 +92,7 @@ const preview = computed(() => {
     manualSelectionUnlocked: manualUnlocked.value,
     selectionMode: selectionMode.value,
   }, manualOptionId.value);
-  return option ? applyCardModifiers(option, selectedCards.value, run.value.cardModifiers, run.value.cardGrowth) : null;
+  return option ? applyMateriaScore(option, selectedCards.value, run.value.materia ?? createMateriaState()) : null;
 });
 const scoringCardIndexes = computed(() => preview.value?.scoringCardIndices
   .map((i) => selectedInputIndexes.value[i]!) ?? []);
@@ -143,6 +143,7 @@ function scoreSelectedHand() {
   if (next.lastGoldReward) progress.value = { ...progress.value, upgradeChips: progress.value.upgradeChips + next.lastGoldReward };
   if (next.phase === 'round_won') {
     progress.value = awardRoundUpgradeChips(next, progress.value);
+    run.value = { ...run.value, materia: completeMateriaRound(run.value.materia ?? createMateriaState(),next.round,(profile.value.materiaLinks ?? []).length > 0) };
   }
   clearSelection();
   scoredHand.value = scored;
@@ -162,12 +163,13 @@ function discardSelectedCards() {
 function nextRound() {
   if (run.value.phase !== 'round_won') return;
   rules.value = nextRoundRules.value;
+  if (run.value.materia?.offers.length) { lastAction.value = 'Choose your Materia reward before advancing.'; return; }
   run.value = advanceRound(run.value, rules.value);
   clearSelection();
   lastAction.value = `Round ${run.value.round} started. Reach ${run.value.roundTarget} chips to survive.`;
 }
 
-function resetToFreshRun() {
+function resetToFreshRun(transcending = false) {
   profile.value = {
     ...profile.value,
     lifetimeRunsStarted: profile.value.lifetimeRunsStarted + 1,
@@ -175,18 +177,19 @@ function resetToFreshRun() {
   };
   savingBlocked.value = false;
   saveJsonDirty.value = false;
-  progress.value = { ...createRunProgress(), upgradeChips: startingUpgradeChips(profile.value) };
-  rules.value = { ...DEFAULT_ROUND_RULES };
-  run.value = startRun(rules.value);
+  const fresh = beginAnotherRun(run.value, progress.value, profile.value, transcending);
+  progress.value = fresh.progress;
+  rules.value = fresh.rules;
+  run.value = fresh.run;
   selectionMode.value = 'automatic';
   sortMode.value = 'rank';
   clearSelection();
   saveStatus.value = 'New run created. Autosaving in this browser.';
 }
 function restartRun() {
-  if (import.meta.client && !window.confirm('Start a new run? Temporary progress resets; permanent upgrades remain.')) return;
+  if (import.meta.client && !window.confirm('Start a new run? Earned upgrade chips and purchased card upgrades will carry over.')) return;
   resetToFreshRun();
-  lastAction.value = 'New run started. Prestige unlocks remain available in the shop.';
+  lastAction.value = 'New run started. Upgrade chips, card upgrades and prestige unlocks carried over.';
 }
 const earnedPrestige = computed(() => transcendReward(run.value));
 function transcend() {
@@ -195,25 +198,50 @@ function transcend() {
   if (import.meta.client && !window.confirm(`Transcend for ${reward} prestige chips and reset this run?`)) return;
   const permanent = transcendRun(run.value, profile.value);
   profile.value = { ...profile.value, ...permanent };
-  resetToFreshRun();
-  lastAction.value = `Transcended! Earned ${reward} prestige chips.`;
+  resetToFreshRun(true);
+  lastAction.value = `Transcended! Earned ${reward} prestige chips. Materia and XP reset; board slots and links remain.`;
 }
 function purchasePermanent(id: PermanentUpgradeId) {
   profile.value = { ...profile.value, ...buyPermanentUpgrade(profile.value, id) };
   lastAction.value = 'Shop perk permanently unlocked. You can purchase it with upgrade chips in the Perk Shop.';
 }
 
-function buyCardModifier(id: CardModifier) {
+function buyMateriaBoard(id: MateriaBoardPurchase) {
+  try {
+    profile.value = { ...profile.value, ...buyMateriaBoardUpgrade(profile.value, id) };
+    run.value = { ...run.value, materia: reconcileMateriaSlots(run.value.materia ?? createMateriaState(),profile.value.materiaSlots ?? 1) };
+    lastAction.value = id === 'slot' ? 'Materia slot permanently unlocked.' : 'Materia link permanently unlocked.';
+  } catch (error) { lastAction.value = error instanceof Error ? error.message : 'Prestige purchase failed.'; }
+}
+function claimOfferedMateria(kind: MateriaKind) {
+  try {
+    run.value = { ...run.value, materia: claimMateria(run.value.materia ?? createMateriaState(),kind) };
+    lastAction.value = `Discovered ${kind} Materia! Equip it in the Materia tab.`;
+  } catch (error) { lastAction.value = error instanceof Error ? error.message : 'Discovery failed.'; }
+}
+function equipGem(id: number, slot: number) {
+  try {
+    run.value = { ...run.value, materia: equipMateria(run.value.materia ?? createMateriaState(),id,slot) };
+    lastAction.value = 'Materia equipped.';
+  } catch (error) { lastAction.value = error instanceof Error ? error.message : 'Equip failed.'; }
+}
+function unequipGem(slot: number) {
+  run.value = { ...run.value, materia: unequipMateria(run.value.materia ?? createMateriaState(),slot) };
+}
+function castSpell(id: number, tier: number) {
+  if (selectedIndexes.value.length !== 1 || !inRound.value) return;
+  try {
+    run.value = { ...run.value, materia: castMateria(run.value.materia ?? createMateriaState(),run.value.hand,id,tier,selectedIndexes.value[0]!,profile.value.materiaLinks ?? [],sortHandForDisplay(run.value.hand,sortMode.value).map(entry => entry.originalIndex)) };
+    lastAction.value = 'Spell cast! The magical effect lasts for this round.';
+    clearSelection();
+  } catch (error) { lastAction.value = error instanceof Error ? error.message : 'Spell failed.'; }
+}
+function breakFreeze() {
   if (selectedIndexes.value.length !== 1) return;
   try {
-    const card = hand.value[selectedIndexes.value[0]!]!;
-    const purchase = purchaseCardModifier(run.value, progress.value, selectedIndexes.value[0]!, id);
-    run.value = purchase.run;
-    progress.value = purchase.progress;
-    lastAction.value = `${card.rank} of ${card.suit} upgraded with ${id} for this run.`;
-  } catch (error) {
-    lastAction.value = error instanceof Error ? error.message : 'Modifier purchase failed.';
-  }
+    run.value = { ...run.value, materia: breakMateriaFreeze(run.value.materia ?? createMateriaState(),run.value.hand[selectedIndexes.value[0]!]!) };
+    lastAction.value = 'Freeze broken.';
+  } catch (error) { lastAction.value = error instanceof Error ? error.message : 'Cannot break freeze.'; }
 }
 
 function buyPerk(id: RunUpgradeId) {
@@ -259,7 +287,7 @@ function snapshot(): GameSaveV1 {
   };
 }
 function installSave(save: GameSaveV1) {
-  run.value = save.run;
+  run.value = { ...save.run, cardModifiers: {}, cardGrowth: {}, materia: reconcileMateriaSlots(save.run.materia ?? createMateriaState(),save.profile.materiaSlots ?? 1) };
   rules.value = save.rules;
   progress.value = save.progress;
   profile.value = save.profile;
@@ -371,7 +399,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
     <div class="mx-auto max-w-6xl space-y-9">
       <header class="space-y-4">
         <div class="flex flex-wrap items-center gap-3">
-          <p class="uppercase tracking-[0.25em] text-sm text-amber-300">Milestone 9 / Expanded Card Effects</p>
+          <p class="uppercase tracking-[0.25em] text-sm text-amber-300">Milestone 10 / Materia & Magic</p>
           <UBadge color="primary" variant="subtle">Current milestone</UBadge>
         </div>
         <div class="space-y-2">
@@ -388,7 +416,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
             <div class="flex flex-wrap items-start justify-between gap-4">
               <div class="space-y-1">
                 <p class="text-xs font-semibold uppercase tracking-widest text-amber-300">
-                  Milestone 9 · Expanded card effects
+                  Milestone 10 · Materia & Magic
                 </p>
                 <h2 id="hand-heading" class="text-3xl font-bold">Your hand</h2>
                 <p class="text-sm text-muted">
@@ -403,8 +431,10 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
             <RoundStatus :run="run" :hand="hand" :remaining-deck="remainingDeck"
               @next-round="nextRound" @restart-run="restartRun" />
 
+            <MateriaBoard :materia="run.materia ?? createMateriaState()" :links="profile.materiaLinks ?? []" />
+
             <PlayingCardHand :hand="hand" 
-              :card-modifiers="run.cardModifiers ?? {}" 
+              :card-modifiers="{}" :magic-effects="run.materia?.effects ?? {}" 
               :selected-indexes="selectedIndexes"
               :scoring-card-indexes="scoringCardIndexes"
               :cards-per-play="rules.cardsPerPlay" 
@@ -436,7 +466,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
             </div>
             <p aria-live="polite" class="text-sm text-muted">{{ lastAction }}</p>
             <p class="text-xs text-muted">
-              Played and discarded cards are recycled when needed. Temporary perks take effect immediately. Prestige permanently unlocks perks; each run purchases their effects with upgrade chips.
+              Played and discarded cards are recycled when needed. Purchased perks and Materia persist across new runs until you transcend. Prestige permanently unlocks Materia slots and links.
             </p>
           </div>
         </UCard>
@@ -451,10 +481,13 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
   <!-- The viewport dock must not inherit the centered page container's layout. -->
   <PerkShop :phase="run.phase" :progress="progress" :profile="profile" :rules="rules"
     :next-round-rules="nextRoundRules" :manual-selection-available="manualUnlocked" @buy-perk="buyPerk">
-    <template #modifiers>
-      <CardModifierShop :modifiers="CARD_MODIFIERS" :selected-cards="selectedCards"
-        :selected-count="selectedIndexes.length" :card-modifiers="run.cardModifiers ?? {}"
-        :upgrade-chips="progress.upgradeChips" :phase="run.phase" @purchase="buyCardModifier" />
+    <template #materia>
+      <MateriaPanel mode="inventory" :materia="run.materia ?? createMateriaState()" :target-ready="selectedIndexes.length === 1" :phase="run.phase"
+        @equip="equipGem" @unequip="unequipGem" @claim="claimOfferedMateria" @cast="castSpell" @break-freeze="breakFreeze" />
+    </template>
+    <template #spells>
+      <MateriaPanel mode="spells" :materia="run.materia ?? createMateriaState()" :target-ready="selectedIndexes.length === 1" :phase="run.phase"
+        @equip="equipGem" @unequip="unequipGem" @claim="claimOfferedMateria" @cast="castSpell" @break-freeze="breakFreeze" />
     </template>
     <template #hand>
       <ScoringPanel :preview="preview" :scored-hand="scoredHand"
@@ -467,7 +500,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
       <TranscendencePanel :profile="profile" :earned-prestige="earnedPrestige"
         :perks="PERMANENT_UPGRADES"
         :prices="Object.fromEntries(PERMANENT_UPGRADES.map(perk => [perk.id, permanentUpgradeCost(profile, perk.id)]))"
-        @transcend="transcend" @purchase="purchasePermanent" />
+        @transcend="transcend" @purchase="purchasePermanent" @buy-board="buyMateriaBoard" />
     </template>
     <template #god>
       <SaveManager :json="saveJson" @update:json="updateSaveJson" :status="saveStatus" :blocked="savingBlocked"

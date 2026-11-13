@@ -53,6 +53,18 @@ export const savedRulesSchema = z.strictObject({
 }).refine(r => r.cardsPerPlay <= r.handSize && r.maxCardsPerDiscard <= r.handSize,
   'Card play/discard limits cannot exceed hand size');
 
+const materiaKindSchema = z.enum(['fire','ice','lightning','rank','hand','suits','fortune']);
+const savedMateriaSchema = z.strictObject({
+  collection: z.array(z.strictObject({ id: positiveInt, kind: materiaKindSchema, xp: safeInt })),
+  equipped: z.array(positiveInt.nullable()).max(6),
+  nextId: positiveInt,
+  mp: safeInt,
+  castThisRound: z.array(positiveInt),
+  effects: z.record(z.string(), z.strictObject({ chips: safeInt, mult: safeInt, frozen: z.boolean(), persistent: z.boolean().optional() })),
+  offers: z.array(materiaKindSchema).max(3),
+  discoveries: safeInt,
+});
+
 export const savedRunSchema = z.strictObject({
   phase: z.enum(['playing', 'round_won', 'game_over']),
   round: positiveInt,
@@ -70,6 +82,7 @@ export const savedRunSchema = z.strictObject({
   cardModifiers: z.record(z.string(), z.enum(['bonus', 'multiplier', 'gold', 'echo', 'growing', 'wild_suit', 'wild_rank', 'wild_full'])).optional(),
   cardGrowth: z.record(z.string(), safeInt).optional(),
   lastGoldReward: safeInt.optional(),
+  materia: savedMateriaSchema.optional(),
 });
 
 export const savedProgressSchema = z.strictObject({
@@ -90,6 +103,8 @@ export const savedProfileSchema = z.strictObject({
   bestRound: positiveInt,
   prestigeChips: safeInt.default(0),
   transcends: safeInt.default(0),
+  materiaSlots: positiveInt.max(6).optional(),
+  materiaLinks: z.array(z.number().int().min(0).max(2)).max(3).optional(),
   permanentLevels: z.strictObject({
     starting_hand: safeInt.max(3),
     starting_discard: safeInt.max(3),
@@ -122,6 +137,14 @@ export const gameSaveV1Schema = z.strictObject({
   const validCardKey = /^(hearts|diamonds|clubs|spades):(2|3|4|5|6|7|8|9|10|J|Q|K|A)$/;
   if (Object.keys(save.run.cardModifiers ?? {}).some(key => !validCardKey.test(key))) error('Invalid card modifier identity');
   if (Object.keys(save.run.cardGrowth ?? {}).some(key => !validCardKey.test(key) || save.run.cardModifiers?.[key] !== 'growing')) error('Invalid growing-card history');
+  if (save.run.materia) {
+    const m = save.run.materia;
+    if (m.equipped.length !== (save.profile.materiaSlots ?? 1)) error('Materia slots must match permanent board');
+    const ids = m.collection.map(g => g.id);
+    if (new Set(ids).size !== ids.length) error('Materia identity must be unique');
+    if (m.equipped.some(id => id !== null && !ids.includes(id))) error('Equipped Materia must be owned');
+    if (new Set(m.equipped.filter(id => id !== null)).size !== m.equipped.filter(id => id !== null).length) error('Materia cannot be equipped twice');
+  }
   if (save.run.hand.length !== save.rules.handSize) error('Held hand size does not match saved rules');
   const cards = [
     ...save.run.hand, ...save.run.drawPile,

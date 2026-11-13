@@ -5,6 +5,7 @@ import { sortHandForDisplay, cardIdentity, type HandSortMode, type CardModifierM
 const props = defineProps<{
   hand: Card[];
   cardModifiers: CardModifierMap;
+  magicEffects: Record<string, { chips: number; mult: number; frozen: boolean }>;
   selectedIndexes: number[];
   scoringCardIndexes: number[];
   cardsPerPlay: number;
@@ -60,7 +61,13 @@ const SUIT_SYMBOLS: Record<CardSuit, string> = {
                 :style="props.suitColors === 'themed' && props.customSuitColors[entry.card.suit] ? { color: props.customSuitColors[entry.card.suit] } : undefined"
                 :data-selected="selectedIndexes.includes(entry.originalIndex) ? 'true' : 'false'"
                 :data-scoring-card="scoringCardIndexes.includes(entry.originalIndex) ? 'true' : 'false'"
+                :data-frozen="magicEffects[cardIdentity(entry.card)]?.frozen ? 'true' : 'false'"
               >
+                <span v-if="magicEffects[cardIdentity(entry.card)]" data-testid="card-magic-badge"
+                  class="absolute bottom-2 left-1 z-20 rounded bg-sky-900 px-1 py-0.5 text-[10px] font-bold text-white shadow-sm sm:left-2"
+                  :title="magicEffects[cardIdentity(entry.card)]?.frozen ? 'Frozen card' : 'Magical bonus'">
+                  {{ magicEffects[cardIdentity(entry.card)]?.frozen ? '❄ ' : '' }}{{ magicEffects[cardIdentity(entry.card)]?.chips ? '+' + magicEffects[cardIdentity(entry.card)]?.chips + ' Chips ' : '' }}{{ magicEffects[cardIdentity(entry.card)]?.mult ? '+' + magicEffects[cardIdentity(entry.card)]?.mult + ' Mult' : '' }}
+                </span>
                 <span v-if="cardModifiers[cardIdentity(entry.card)]" aria-hidden="true"
                   data-testid="card-modifier-badge"
                   :data-card-modifier="cardModifiers[cardIdentity(entry.card)]"
