@@ -2,7 +2,7 @@ import type { Card } from '@pokermanic/contracts';
 
 export type MateriaKind = 'fire' | 'ice' | 'lightning' | 'rank' | 'hand' | 'suits' | 'fortune';
 export interface MateriaGem { id: number; kind: MateriaKind; xp: number }
-export interface CardMagic { chips: number; mult: number; frozen: boolean }
+export interface CardMagic { chips: number; mult: number; frozen: boolean; persistent?: boolean }
 export interface MateriaState {
   collection: MateriaGem[];
   equipped: (number | null)[];
@@ -128,7 +128,7 @@ export function castMateria(state: Readonly<MateriaState>, hand: readonly Card[]
     for (const i of targets) if (i !== undefined && i >= 0 && i < hand.length) {
       const recipient = materiaKey(hand[i]!);
       const old = effects[recipient] ?? { chips:0,mult:0,frozen:false };
-      effects[recipient] = { ...old, chips:old.chips + existing.chips, mult:old.mult + existing.mult };
+      effects[recipient] = { ...old, chips:old.chips + existing.chips, mult:old.mult + existing.mult, persistent: true };
     }
   }
   return { ...state, effects, mp: state.mp-cost, castThisRound: [...state.castThisRound,id] };
