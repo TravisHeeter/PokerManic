@@ -108,7 +108,7 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /Milestone 9/);
   assert.match(html, /Transcendence/);
   assert.doesNotMatch(html, /Milestone 2[^]*?Current/);
-  assert.match(html, /Local saves &amp; modding|Local saves & modding/);
+  assert.match(html, /God Mode/);
   assert.match(html, /Show save tools and JSON editor/);
   assert.match(html, /data-testid="draft-upgrade-chips"/);
   assert.match(html, /progress\.upgradeChips/);
@@ -119,6 +119,11 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /data-testid="perk-shop-dock"/);
   assert.match(html, /Card modifiers/);
   assert.match(html, /data-testid="modifier-shop-content"/);
+  assert.match(html, /data-testid="transcendence-shop-content"/);
+  assert.match(html, /data-testid="god-mode-content"/);
+  assert.match(html, /h-\\[25dvh\\]/);
+  assert.doesNotMatch(html, /data-testid="close-dock"/);
+  assert.match(html, /data-testid="perk-shop-content"[^>]*style="display:none"|style="display:none"[^>]*data-testid="perk-shop-content"/);
   assert.doesNotMatch(html, /data-testid="hand-shop-content"/);
   assert.match(html, /role="tablist"/);
   assert.doesNotMatch(html, /Show upgrades|▲ Show|▼ Hide/);
