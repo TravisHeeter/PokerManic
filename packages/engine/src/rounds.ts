@@ -1,4 +1,4 @@
-import { createMateriaState, newMateriaRound, applyMateriaScore, materiaKey, type MateriaState } from './materia.js';
+import { createMateriaState, newMateriaRound, applyMateriaScore, materiaKey, releasePlayedMagic, type MateriaState } from './materia.js';
 import type { Card } from '@pokermanic/contracts';
 import { applyCardModifiers, goldCardReward, cardIdentity, type CardModifierMap } from './modifiers.js';
 import { createStandardDeck, dealCards, shuffleDeck } from './deck.js';
@@ -329,6 +329,7 @@ export function playScoringHand(
     handsPlayed: state.handsPlayed + 1,
     lastScored: selected,
     cardGrowth,
+    materia: releasePlayedMagic(state.materia ?? createMateriaState(), chosen.map(index => state.hand[index]!).filter(card => !state.materia?.effects[materiaKey(card)]?.frozen)),
     lastGoldReward: goldReward,
   };
 }
@@ -354,6 +355,7 @@ export function discardCards(
     discardedCards: next.discardedCards,
     discardsRemaining: state.discardsRemaining - 1,
     lastScored: null,
+    materia: releasePlayedMagic(state.materia ?? createMateriaState(), chosen.map(index => state.hand[index]!)),
     lastGoldReward: 0,
   };
 }
