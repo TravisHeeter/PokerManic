@@ -14,13 +14,14 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{ 'buy-perk': [id: RunUpgradeId] }>();
 const perkCatalog = RUN_UPGRADES;
-type DockTab = 'perks' | 'modifiers' | 'hand' | 'transcendence' | 'god' | 'settings';
+type DockTab = 'perks' | 'materia' | 'spells' | 'hand' | 'transcendence' | 'god' | 'settings';
 const activeTab = ref<DockTab | ''>('');
 const settingsOpen = ref(false);
 const handTabAvailable = computed(() => props.manualSelectionAvailable);
 const tabs = computed(() => [
   { label: 'Perk shop', icon: 'i-lucide-shopping-bag', value: 'perks' },
-  { label: 'Card modifiers', icon: 'i-lucide-sparkles', value: 'modifiers' },
+  { label: 'Materia', icon: 'i-lucide-gem', value: 'materia' },
+  { label: 'Spells', icon: 'i-lucide-wand-sparkles', value: 'spells' },
   ...(handTabAvailable.value
     ? [{ label: 'Hand selection', icon: 'i-lucide-layers-3', value: 'hand' }]
     : []),
@@ -109,12 +110,11 @@ const canBuy = (id: RunUpgradeId) => {
           </p>
         </div>
       </div>
-      <div id="modifier-shop-content" role="tabpanel" aria-label="Card modifiers"
-        v-show="activeTab === 'modifiers'" data-testid="modifier-shop-content"
+      <div v-for="tab in ['materia','spells']" :key="tab" role="tabpanel"
+        :aria-label="tab === 'materia' ? 'Materia' : 'Spells'"
+        v-show="activeTab === tab"
         class="min-h-0 flex-1 overflow-y-auto overscroll-contain border-t border-default px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-6">
-        <div class="space-y-4">
-          <slot name="modifiers" />
-        </div>
+        <slot :name="tab" />
       </div>
       <div v-if="handTabAvailable" id="hand-shop-content" role="tabpanel" aria-label="Hand selection"
         v-show="activeTab === 'hand'" data-testid="hand-shop-content"
