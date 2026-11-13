@@ -1,3 +1,4 @@
+import { createMateriaState, newMateriaRound, applyMateriaScore, materiaKey, type MateriaState } from './materia.js';
 import type { Card } from '@pokermanic/contracts';
 import { applyCardModifiers, goldCardReward, cardIdentity, type CardModifierMap } from './modifiers.js';
 import { createStandardDeck, dealCards, shuffleDeck } from './deck.js';
@@ -52,6 +53,7 @@ export interface RunState {
   cardModifiers?: CardModifierMap;
   cardGrowth?: Record<string, number>;
   lastGoldReward?: number;
+  materia?: MateriaState;
 }
 
 function validateRuleInteger(value: number, name: string, minimum: number): void {
@@ -124,6 +126,7 @@ function freshRound(round: number, totalChips: number, rules: Readonly<RoundRule
     cardModifiers,
     cardGrowth,
     lastGoldReward: 0,
+    materia: createMateriaState(),
   };
 }
 
@@ -145,7 +148,7 @@ export function advanceRound(
   if (state.phase !== 'round_won') {
     throw new Error('The next round is available only after meeting the chip target.');
   }
-  return freshRound(state.round + 1, state.totalChips, rules, random, { ...state.cardModifiers }, { ...state.cardGrowth });
+  return { ...freshRound(state.round + 1, state.totalChips, rules, random, {}, {}), materia: newMateriaRound(state.materia ?? createMateriaState()) };
 }
 
 function activeRound(state: Readonly<RunState>): void {
@@ -167,7 +170,7 @@ function replaceCards(
   destination: 'played' | 'discarded',
   random: () => number,
 ): Pick<RunState, 'hand' | 'drawPile' | 'playedCards' | 'discardedCards'> & { recycled: boolean } {
-  const selected = new Set(indices);
+  const selected = new Set(indices.filter(index => !state.materia?.effects[materiaKey(state.hand[index]!) ]?.frozen));
   const kept = state.hand.filter((_, index) => !selected.has(index));
   const removed = state.hand.filter((_, index) => selected.has(index));
   let drawPile = [...state.drawPile];
@@ -291,8 +294,8 @@ export function playScoringHand(
   }
   const option = resolveScoringOption(options, settings, manualOptionId);
   if (!option) throw new Error('No eligible scoring option found.');
-  const selected = applyCardModifiers(option, cards, state.cardModifiers, state.cardGrowth);
-  const goldReward = goldCardReward(option, cards, state.cardModifiers);
+  const selected = applyMateriaScore(option, cards, state.materia ?? createMateriaState());
+  const goldReward = 0;
   const cardGrowth = { ...state.cardGrowth };
   for (const index of option.scoringCardIndices) {
     const key = cardIdentity(cards[index]!);
@@ -335,6 +338,7 @@ export function discardCards(
   activeRound(state);
   if (state.discardsRemaining <= 0) throw new Error('No discards remain.');
   const chosen = selectedIndices(indices, state.hand.length, 1, rules.maxCardsPerDiscard);
+  if (chosen.some(index => state.materia?.effects[materiaKey(state.hand[index]!)]?.frozen)) throw new Error('Break Freeze before discarding this card.');
   const next = replaceCards(state, chosen, 'discarded', random);
   return {
     ...state,
