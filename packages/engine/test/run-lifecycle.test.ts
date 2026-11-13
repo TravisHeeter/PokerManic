@@ -8,7 +8,7 @@ import {
 describe('run transitions', () => {
   const profile = { ...createPermanentProgress(), prestigeChips: 23 };
 
-  it('keeps spendable chips, shop levels, and card modifiers after starting a new run', () => {
+  it('keeps spendable chips, shop levels, and Materia after starting a new run', () => {
     const progress = {
       ...createRunProgress(),
       upgradeChips: 345,
@@ -19,6 +19,7 @@ describe('run transitions', () => {
       ...startRun(applyRunUpgrades(DEFAULT_ROUND_RULES, progress), () => 0.5),
       cardModifiers: { 'spades:A': 'gold' as const, 'clubs:Q': 'growing' as const },
       cardGrowth: { 'clubs:Q': 3 },
+      materia: { ...startRun().materia!, collection: [{ id:1,kind:'fire' as const,xp:20 }], nextId:2, equipped:[1] },
     };
     const fresh = beginAnotherRun(original, progress, profile, false, () => 0.25);
 
@@ -30,7 +31,8 @@ describe('run transitions', () => {
     expect(fresh.run.totalChips).toBe(0);
     expect(fresh.run.cardModifiers).toEqual(original.cardModifiers);
     expect(fresh.run.cardModifiers).not.toBe(original.cardModifiers);
-    expect(fresh.run.cardGrowth).toEqual(original.cardGrowth);
+    expect(fresh.run.cardGrowth).toEqual({});
+    expect(fresh.run.materia?.collection).toEqual(original.materia.collection);
     expect(fresh.rules.handSize).toBe(10);
     expect(fresh.run.hand).toHaveLength(10);
     expect(fresh.run.handsRemaining).toBe(5);
@@ -63,6 +65,7 @@ describe('run transitions', () => {
     expect(fresh.progress.levels).toEqual(createRunProgress().levels);
     expect(fresh.run.cardModifiers).toEqual({});
     expect(fresh.run.cardGrowth).toEqual({});
+    expect(fresh.run.materia?.collection).toEqual([]);
     expect(fresh.rules).toEqual(DEFAULT_ROUND_RULES);
     expect(fresh.run.round).toBe(1);
     expect(fresh.run.hand).toHaveLength(8);
