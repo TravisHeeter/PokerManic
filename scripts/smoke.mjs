@@ -77,6 +77,7 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /aria-label="Sort cards"/);
   assert.match(html, /Card styles/);
   assert.match(html, /data-card-style="classic"/);
+  assert.match(html, /data-suit-colors="themed"/);
   for (const style of [
     'classic', 'victorian', 'deco', 'cyber', 'bold-victorian',
     'vivid-gothic', 'art-nouveau', 'cosmic-horror', 'medieval-illuminated',
@@ -120,6 +121,9 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /Card modifiers/);
   assert.match(html, /data-testid="modifier-shop-content"/);
   assert.match(html, /data-testid="settings-content"/);
+  assert.match(html, /data-testid="suit-colors-themed"/);
+  assert.match(html, /data-testid="suit-colors-standard"/);
+  assert.match(html, /Standard red &amp; black|Standard red & black/);
   assert.match(html, /Card styles/);
   assert.match(html, /data-testid="transcendence-shop-content"/);
   assert.match(html, /data-testid="god-mode-content"/);
