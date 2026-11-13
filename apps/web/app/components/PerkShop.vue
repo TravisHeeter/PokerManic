@@ -105,7 +105,7 @@ const canBuy = (id: RunUpgradeId) => {
             Active limits: {{ rules.handSize }} held cards, up to {{ rules.cardsPerPlay }} cards per play,
             {{ rules.maxCardsPerDiscard }} cards per discard, {{ rules.baseHandsPerRound }} base hands,
             and {{ rules.baseDiscardsPerRound }} base discards. Purchases apply immediately.
-            Run upgrades reset on a new run.
+            Purchased upgrades persist between runs and reset when you transcend.
           </p>
         </div>
       </div>

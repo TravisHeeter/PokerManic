@@ -20,7 +20,7 @@ import {
   createPermanentProgress, startingUpgradeChips,
   transcendReward, transcendRun, PERMANENT_UPGRADES,
   permanentUpgradeCost, buyPermanentUpgrade, isRunUpgradeUnlocked,
-  CARD_MODIFIERS, purchaseCardModifier, applyCardModifiers,
+  CARD_MODIFIERS, purchaseCardModifier, applyCardModifiers, beginAnotherRun,
 } from '@pokermanic/engine';
 import type { RunState, ScoringOption, RunUpgradeId, RunProgress, HandSortMode, PermanentUpgradeId, CardModifier } from '@pokermanic/engine';
 
@@ -167,7 +167,7 @@ function nextRound() {
   lastAction.value = `Round ${run.value.round} started. Reach ${run.value.roundTarget} chips to survive.`;
 }
 
-function resetToFreshRun() {
+function resetToFreshRun(transcending = false) {
   profile.value = {
     ...profile.value,
     lifetimeRunsStarted: profile.value.lifetimeRunsStarted + 1,
@@ -175,18 +175,19 @@ function resetToFreshRun() {
   };
   savingBlocked.value = false;
   saveJsonDirty.value = false;
-  progress.value = { ...createRunProgress(), upgradeChips: startingUpgradeChips(profile.value) };
-  rules.value = { ...DEFAULT_ROUND_RULES };
-  run.value = startRun(rules.value);
+  const fresh = beginAnotherRun(run.value, progress.value, profile.value, transcending);
+  progress.value = fresh.progress;
+  rules.value = fresh.rules;
+  run.value = fresh.run;
   selectionMode.value = 'automatic';
   sortMode.value = 'rank';
   clearSelection();
   saveStatus.value = 'New run created. Autosaving in this browser.';
 }
 function restartRun() {
-  if (import.meta.client && !window.confirm('Start a new run? Temporary progress resets; permanent upgrades remain.')) return;
+  if (import.meta.client && !window.confirm('Start a new run? Earned upgrade chips and purchased card upgrades will carry over.')) return;
   resetToFreshRun();
-  lastAction.value = 'New run started. Prestige unlocks remain available in the shop.';
+  lastAction.value = 'New run started. Upgrade chips, card upgrades and prestige unlocks carried over.';
 }
 const earnedPrestige = computed(() => transcendReward(run.value));
 function transcend() {
@@ -195,8 +196,8 @@ function transcend() {
   if (import.meta.client && !window.confirm(`Transcend for ${reward} prestige chips and reset this run?`)) return;
   const permanent = transcendRun(run.value, profile.value);
   profile.value = { ...profile.value, ...permanent };
-  resetToFreshRun();
-  lastAction.value = `Transcended! Earned ${reward} prestige chips.`;
+  resetToFreshRun(true);
+  lastAction.value = `Transcended! Earned ${reward} prestige chips. Card upgrades and upgrade chips reset.`;
 }
 function purchasePermanent(id: PermanentUpgradeId) {
   profile.value = { ...profile.value, ...buyPermanentUpgrade(profile.value, id) };
@@ -210,7 +211,7 @@ function buyCardModifier(id: CardModifier) {
     const purchase = purchaseCardModifier(run.value, progress.value, selectedIndexes.value[0]!, id);
     run.value = purchase.run;
     progress.value = purchase.progress;
-    lastAction.value = `${card.rank} of ${card.suit} upgraded with ${id} for this run.`;
+    lastAction.value = `${card.rank} of ${card.suit} upgraded with ${id} until you transcend.`;
   } catch (error) {
     lastAction.value = error instanceof Error ? error.message : 'Modifier purchase failed.';
   }
@@ -436,7 +437,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
             </div>
             <p aria-live="polite" class="text-sm text-muted">{{ lastAction }}</p>
             <p class="text-xs text-muted">
-              Played and discarded cards are recycled when needed. Temporary perks take effect immediately. Prestige permanently unlocks perks; each run purchases their effects with upgrade chips.
+              Played and discarded cards are recycled when needed. Purchased perks and card modifiers persist across new runs until you transcend. Prestige permanently unlocks perks.
             </p>
           </div>
         </UCard>
