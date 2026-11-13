@@ -92,8 +92,31 @@ export function castMateria(state: Readonly<MateriaState>, hand: readonly Card[]
   const effects = Object.fromEntries(Object.entries(state.effects).map(([key,value])=>[key,{...value}])) as Record<string,CardMagic>;
   const key = materiaKey(hand[targetIndex]!);
   const existing = effects[key] ?? { chips: 0, mult: 0, frozen: false };
-  if (kind === 'fire') effects[key] = { ...existing, chips: existing.chips + fireValue(tier) };
-  if (kind === 'lightning') effects[key] = { ...existing, mult: existing.mult + lightningValue(tier) };
+  // A linked blue Materia expands the target without replacing the selected card.
+  const pair = Math.floor(slot / 2);
+  const partnerSlot = slot % 2 === 0 ? slot + 1 : slot - 1;
+  const support = linkedPairs.includes(pair)
+    ? state.collection.find(g => g.id === state.equipped[partnerSlot]) : undefined;
+  const selected = hand[targetIndex]!;
+  const targetIndices = new Set([targetIndex]);
+  if (support?.kind === 'rank') {
+    const ranks = [...new Set(hand.map(card => card.rank))].filter(rank => rank !== selected.rank);
+    const rankCount = [0,0,2,5][materiaLevel(support)] ?? 0;
+    const affected = new Set([selected.rank,...ranks.slice(0,rankCount)]);
+    hand.forEach((card,i) => { if (affected.has(card.rank)) targetIndices.add(i); });
+  }
+  if (support?.kind === 'suits') {
+    const suits = [...new Set(hand.map(card => card.suit))].filter(suit => suit !== selected.suit);
+    const affected = new Set([selected.suit,...suits.slice(0,materiaLevel(support)-1)]);
+    hand.forEach((card,i) => { if (affected.has(card.suit)) targetIndices.add(i); });
+  }
+  if (kind === 'fire' || kind === 'lightning') for (const i of targetIndices) {
+    const affectedKey = materiaKey(hand[i]!);
+    const current = effects[affectedKey] ?? { chips:0,mult:0,frozen:false };
+    effects[affectedKey] = kind === 'fire'
+      ? { ...current, chips:current.chips + fireValue(tier) }
+      : { ...current, mult:current.mult + lightningValue(tier) };
+  }
   if (kind === 'ice') {
     effects[key] = { ...existing, frozen: true };
     // Ice copies the target's magical bonuses, not its frozen status, to neighbors.
