@@ -109,7 +109,7 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /Transcendence/);
   assert.doesNotMatch(html, /Milestone 2[^]*?Current/);
   assert.match(html, /God Mode/);
-  assert.match(html, /Show save tools and JSON editor/);
+  assert.doesNotMatch(html, /Show save tools and JSON editor/);
   assert.match(html, /data-testid="draft-upgrade-chips"/);
   assert.match(html, /progress\.upgradeChips/);
   assert.match(html, /Import edited JSON/);
