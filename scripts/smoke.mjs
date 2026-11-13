@@ -123,6 +123,15 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /data-testid="settings-content"/);
   assert.match(html, /data-testid="suit-colors-themed"/);
   assert.match(html, /data-testid="suit-colors-standard"/);
+  assert.match(html, /data-testid="suit-palette-settings"/);
+  assert.match(html, /data-testid="custom-suit-spades"/);
+  assert.match(html, /data-testid="custom-suit-hearts"/);
+  assert.match(html, /data-testid="custom-suit-clubs"/);
+  assert.match(html, /data-testid="custom-suit-diamonds"/);
+  assert.match(html, /data-testid="suit-palette-e63946"/);
+  assert.match(html, /data-testid="suit-palette-2ec4b6"/);
+  assert.match(html, /data-testid="reset-selected-suit-color"/);
+  assert.match(html, /data-testid="reset-all-suit-colors"/);
   assert.match(html, /Standard red &amp; black|Standard red & black/);
   assert.match(html, /Card styles/);
   assert.match(html, /data-testid="transcendence-shop-content"/);
