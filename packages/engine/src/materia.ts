@@ -157,3 +157,14 @@ export function applyMateriaScore<T extends { score: number; baseChips: number; 
   if (!Number.isSafeInteger(score)) throw new RangeError('Materia score exceeds safe integer precision.');
   return { ...option, score };
 }
+
+/** Ordinary spells expire when their physical card is played or discarded.
+ * Ice copies are round-long, and a frozen card is not removed from the hand. */
+export function releasePlayedMagic(state: Readonly<MateriaState>, removed: readonly Card[]): MateriaState {
+  const effects = { ...state.effects };
+  for (const card of removed) {
+    const key = materiaKey(card);
+    if (effects[key] && !effects[key].frozen && !effects[key].persistent) delete effects[key];
+  }
+  return { ...state, effects };
+}
