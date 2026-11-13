@@ -39,11 +39,12 @@ const costFor = (id: number, tier: number) => {
           <p class="text-xs text-muted">{{ gem.xp }} XP</p>
         </div>
         <div class="flex flex-wrap gap-1">
-          <UButton v-for="(slot,i) in materia.equipped" :key="i" size="xs"
-            :color="slot === gem.id ? 'success' : 'neutral'" variant="outline"
-            :disabled="slot === gem.id" @click="emit('equip',gem.id,i)">
-            {{ slot === gem.id ? 'Equipped ' : 'Slot ' }}{{ i+1 }}
-          </UButton>
+          <template v-for="(slot,i) in materia.equipped" :key="i">
+            <UButton v-if="slot === gem.id" size="xs" color="success" variant="outline"
+              @click="emit('unequip',i)">Unequip slot {{ i+1 }}</UButton>
+            <UButton v-else size="xs" color="neutral" variant="outline"
+              @click="emit('equip',gem.id,i)">Equip slot {{ i+1 }}</UButton>
+          </template>
         </div>
       </div>
     </section>
