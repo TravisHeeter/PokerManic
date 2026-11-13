@@ -434,7 +434,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
             <MateriaBoard :materia="run.materia ?? createMateriaState()" :links="profile.materiaLinks ?? []" />
 
             <PlayingCardHand :hand="hand" 
-              :card-modifiers="{}" 
+              :card-modifiers="{}" :magic-effects="run.materia?.effects ?? {}" 
               :selected-indexes="selectedIndexes"
               :scoring-card-indexes="scoringCardIndexes"
               :cards-per-play="rules.cardsPerPlay" 
