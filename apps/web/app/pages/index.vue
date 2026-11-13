@@ -437,7 +437,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
             </div>
             <p aria-live="polite" class="text-sm text-muted">{{ lastAction }}</p>
             <p class="text-xs text-muted">
-              Played and discarded cards are recycled when needed. Temporary perks take effect immediately. Prestige permanently unlocks perks; each run purchases their effects with upgrade chips.
+              Played and discarded cards are recycled when needed. Purchased perks and card modifiers persist across new runs until you transcend. Prestige permanently unlocks perks.
             </p>
           </div>
         </UCard>
