@@ -20,7 +20,7 @@ import {
   createPermanentProgress, startingUpgradeChips,
   transcendReward, transcendRun, PERMANENT_UPGRADES,
   permanentUpgradeCost, buyPermanentUpgrade, isRunUpgradeUnlocked,
-  beginAnotherRun, createMateriaState, reconcileMateriaSlots, completeMateriaRound, claimMateria, equipMateria, unequipMateria, castMateria, breakMateriaFreeze, applyMateriaScore, buyMateriaBoardUpgrade,
+  sortHandForDisplay, beginAnotherRun, createMateriaState, reconcileMateriaSlots, completeMateriaRound, claimMateria, equipMateria, unequipMateria, castMateria, breakMateriaFreeze, applyMateriaScore, buyMateriaBoardUpgrade,
 } from '@pokermanic/engine';
 import type { RunState, ScoringOption, RunUpgradeId, RunProgress, HandSortMode, PermanentUpgradeId, MateriaKind, MateriaBoardPurchase } from '@pokermanic/engine';
 
@@ -231,7 +231,7 @@ function unequipGem(slot: number) {
 function castSpell(id: number, tier: number) {
   if (selectedIndexes.value.length !== 1 || !inRound.value) return;
   try {
-    run.value = { ...run.value, materia: castMateria(run.value.materia ?? createMateriaState(),run.value.hand,id,tier,selectedIndexes.value[0]!,profile.value.materiaLinks ?? []) };
+    run.value = { ...run.value, materia: castMateria(run.value.materia ?? createMateriaState(),run.value.hand,id,tier,selectedIndexes.value[0]!,profile.value.materiaLinks ?? [],sortHandForDisplay(run.value.hand,sortMode.value).map(entry => entry.originalIndex)) };
     lastAction.value = 'Spell cast! The magical effect lasts for this round.';
     clearSelection();
   } catch (error) { lastAction.value = error instanceof Error ? error.message : 'Spell failed.'; }
