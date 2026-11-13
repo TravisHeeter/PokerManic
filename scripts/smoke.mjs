@@ -123,7 +123,7 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /data-testid="god-mode-content"/);
   assert.doesNotMatch(html, /h-\\[25dvh\\]/);
   assert.doesNotMatch(html, /data-testid="close-dock"/);
-  assert.match(html, /data-testid="perk-shop-content"[^>]*style="display:none"|style="display:none"[^>]*data-testid="perk-shop-content"/);
+  assert.match(html, /data-testid="perk-shop-content"[^>]*style="display:none;?"|style="display:none;?"[^>]*data-testid="perk-shop-content"/);
   assert.doesNotMatch(html, /data-testid="hand-shop-content"/);
   assert.match(html, /role="tablist"/);
   assert.doesNotMatch(html, /Show upgrades|▲ Show|▼ Hide/);
