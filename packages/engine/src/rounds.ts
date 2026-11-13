@@ -194,8 +194,14 @@ function replaceCards(
     replacements.push(...draw.hand);
     drawPile = draw.remainingDeck;
   }
+  // Frozen cards stay in their exact held-hand positions across a play.
+  // Without freezes preserve the game's existing kept-then-draw ordering.
+  const frozenPresent = state.hand.some(card => state.materia?.effects[materiaKey(card)]?.frozen);
+  const nextHand = frozenPresent
+    ? state.hand.map((card, index) => selected.has(index) ? replacements.shift()! : card)
+    : [...kept, ...replacements];
   return {
-    hand: [...kept, ...replacements],
+    hand: nextHand,
     drawPile,
     playedCards,
     discardedCards,
