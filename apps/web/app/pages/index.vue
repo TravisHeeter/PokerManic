@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { GAME_SAVE_STORAGE_KEY, formatGameSave, parseGameSave } from '@pokermanic/contracts';
 import type { GameSaveV1, SavedProfile } from '@pokermanic/contracts';
+import { isSuitPaletteId, suitPaletteColors, type SuitPaletteId } from '~/utils/suitPalettes';
 import {
   DEFAULT_ROUND_RULES,
   advanceRound,
@@ -24,13 +25,24 @@ import {
 import type { RunState, ScoringOption, RunUpgradeId, RunProgress, HandSortMode, PermanentUpgradeId, CardModifier } from '@pokermanic/engine';
 
 useSeoMeta({
-  title: 'PokerManic | Milestone 8 — Card Modifiers',
+  title: 'PokerManic | Milestone 9 — Expanded Card Effects',
   description: 'Earn permanent prestige perks that survive every run.',
 });
 
 const progress = ref<RunProgress>(createRunProgress());
 const profile = ref<SavedProfile>({ lifetimeRunsStarted: 1, bestRound: 1, ...createPermanentProgress() });
 const sortMode = ref<HandSortMode>('rank');
+const cardStyle = ref('classic');
+const suitColors = ref<'themed' | 'standard'>('themed');
+const selectedPalette = ref<SuitPaletteId | null>(null);
+const customSuitColors = computed(() => suitPaletteColors(selectedPalette.value));
+const SUIT_PALETTE_STORAGE_KEY = 'pokermanic.suit-palette.v1';
+const SUIT_COLORS_STORAGE_KEY = 'pokermanic.suit-colors.v1';
+const CARD_STYLE_STORAGE_KEY = 'pokermanic.card-style.v1';
+const validCardStyles = new Set([
+  'classic', 'victorian', 'deco', 'cyber', 'bold-victorian',
+  'vivid-gothic', 'art-nouveau', 'cosmic-horror', 'medieval-illuminated',
+]);
 const hydrated = ref(false);
 const savingBlocked = ref(false);
 const saveStatus = ref('Loading browser save…');
@@ -69,7 +81,7 @@ const selectedInputIndexes = computed(() => hand.value.flatMap((_, i) =>
 const selectedCards = computed(() => selectedInputIndexes.value.map((i) => hand.value[i]!));
 const eligibleOptions = computed(() => selectedCards.value.length >= 1
   && selectedCards.value.length <= rules.value.cardsPerPlay
-  ? listEligiblePokerHands(selectedCards.value) : []);
+  ? listEligiblePokerHands(selectedCards.value, run.value.cardModifiers) : []);
 
 const manualUnlocked = computed(() =>
   isRunUpgradeUnlocked(profile.value, 'manual_selection') && manualSelectionUnlocked(progress.value));
@@ -80,7 +92,7 @@ const preview = computed(() => {
     manualSelectionUnlocked: manualUnlocked.value,
     selectionMode: selectionMode.value,
   }, manualOptionId.value);
-  return option ? applyCardModifiers(option, selectedCards.value, run.value.cardModifiers) : null;
+  return option ? applyCardModifiers(option, selectedCards.value, run.value.cardModifiers, run.value.cardGrowth) : null;
 });
 const scoringCardIndexes = computed(() => preview.value?.scoringCardIndices
   .map((i) => selectedInputIndexes.value[i]!) ?? []);
@@ -128,13 +140,14 @@ function scoreSelectedHand() {
   }, manualOptionId.value, rules.value);
   const scored = next.lastScored;
   run.value = next;
+  if (next.lastGoldReward) progress.value = { ...progress.value, upgradeChips: progress.value.upgradeChips + next.lastGoldReward };
   if (next.phase === 'round_won') {
     progress.value = awardRoundUpgradeChips(next, progress.value);
   }
   clearSelection();
   scoredHand.value = scored;
   lastAction.value = scored
-    ? `Scored ${scored.label}: +${scored.score} chips. ${next.roundChips} / ${next.roundTarget} this round.`
+    ? `Scored ${scored.label}: +${scored.score} chips.${next.lastGoldReward ? ` +${next.lastGoldReward} Gold upgrade chips.` : ''} ${next.roundChips} / ${next.roundTarget} this round.`
     : 'Hand scored.';
 }
 
@@ -271,6 +284,14 @@ function persistSave() {
 }
 onMounted(() => {
   try {
+    const savedStyle = localStorage.getItem(CARD_STYLE_STORAGE_KEY);
+    if (savedStyle && validCardStyles.has(savedStyle)) cardStyle.value = savedStyle;
+    const savedColors = localStorage.getItem(SUIT_COLORS_STORAGE_KEY);
+    if (savedColors === 'themed' || savedColors === 'standard') suitColors.value = savedColors;
+    const savedPalette = localStorage.getItem(SUIT_PALETTE_STORAGE_KEY);
+    if (isSuitPaletteId(savedPalette)) selectedPalette.value = savedPalette;
+  } catch { /* Appearance preference is optional when storage is blocked. */ }
+  try {
     const raw = localStorage.getItem(GAME_SAVE_STORAGE_KEY);
     if (raw) {
       installSave(parseGameSave(raw));
@@ -289,6 +310,21 @@ onMounted(() => {
     hydrated.value = true;
     persistSave();
   }
+});
+watch(selectedPalette, value => {
+  if (!import.meta.client) return;
+  try {
+    if (value) localStorage.setItem(SUIT_PALETTE_STORAGE_KEY, value);
+    else localStorage.removeItem(SUIT_PALETTE_STORAGE_KEY);
+  } catch { /* Optional preference. */ }
+});
+watch(suitColors, value => {
+  if (!import.meta.client) return;
+  try { localStorage.setItem(SUIT_COLORS_STORAGE_KEY, value); } catch { /* Optional preference. */ }
+});
+watch(cardStyle, value => {
+  if (!import.meta.client) return;
+  try { localStorage.setItem(CARD_STYLE_STORAGE_KEY, value); } catch { /* Optional preference. */ }
 });
 watch([run, rules, progress, profile, selectedIndexes, selectionMode, manualOptionId, sortMode],
   () => {
@@ -335,7 +371,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
     <div class="mx-auto max-w-6xl space-y-9">
       <header class="space-y-4">
         <div class="flex flex-wrap items-center gap-3">
-          <p class="uppercase tracking-[0.25em] text-sm text-amber-300">Milestone 8 / Card Modifiers</p>
+          <p class="uppercase tracking-[0.25em] text-sm text-amber-300">Milestone 9 / Expanded Card Effects</p>
           <UBadge color="primary" variant="subtle">Current milestone</UBadge>
         </div>
         <div class="space-y-2">
@@ -352,7 +388,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
             <div class="flex flex-wrap items-start justify-between gap-4">
               <div class="space-y-1">
                 <p class="text-xs font-semibold uppercase tracking-widest text-amber-300">
-                  Milestone 8 · Card modifiers
+                  Milestone 9 · Expanded card effects
                 </p>
                 <h2 id="hand-heading" class="text-3xl font-bold">Your hand</h2>
                 <p class="text-sm text-muted">
@@ -376,6 +412,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
               :round="run.round" 
               :hands-played="run.handsPlayed" 
               :in-round="inRound"
+              :card-style="cardStyle" :suit-colors="suitColors" :custom-suit-colors="customSuitColors"
               v-model:sort-mode="sortMode" 
               @toggle-card="toggleCard" />
 
@@ -405,14 +442,6 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
         </UCard>
       </section>
 
-      <TranscendencePanel :profile="profile" :earned-prestige="earnedPrestige"
-        :perks="PERMANENT_UPGRADES"
-        :prices="Object.fromEntries(PERMANENT_UPGRADES.map(perk => [perk.id, permanentUpgradeCost(profile, perk.id)]))"
-        @transcend="transcend" @purchase="purchasePermanent" />
-
-      <SaveManager :json="saveJson" @update:json="updateSaveJson" :status="saveStatus" :blocked="savingBlocked"
-        @export="exportSave" @import="importSave" @new-run="restartRun" />
-
       <DevelopmentProgress />
 
       <SystemStatus :health="health" :error="error" :status="status" @refresh="refresh" />
@@ -433,6 +462,20 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
         :manual-unlocked="manualUnlocked"
         :selection-mode="selectionMode" :cards-per-play="rules.cardsPerPlay"
         @set-selection-mode="setSelectionMode" @choose-scoring-option="chooseScoringOption" />
+    </template>
+    <template #transcendence>
+      <TranscendencePanel :profile="profile" :earned-prestige="earnedPrestige"
+        :perks="PERMANENT_UPGRADES"
+        :prices="Object.fromEntries(PERMANENT_UPGRADES.map(perk => [perk.id, permanentUpgradeCost(profile, perk.id)]))"
+        @transcend="transcend" @purchase="purchasePermanent" />
+    </template>
+    <template #god>
+      <SaveManager :json="saveJson" @update:json="updateSaveJson" :status="saveStatus" :blocked="savingBlocked"
+        @export="exportSave" @import="importSave" @new-run="restartRun" />
+    </template>
+    <template #settings>
+      <CardStyleSettings v-model:card-style="cardStyle" v-model:suit-colors="suitColors"
+        v-model:selected-palette="selectedPalette" />
     </template>
   </PerkShop>
 </template>

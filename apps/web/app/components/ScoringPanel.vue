@@ -37,7 +37,14 @@ const emit = defineEmits<{
                         = <strong>{{ preview.score }} chips</strong>
                       </p>
                     </template>
-                    <p v-else>— {{ preview.baseChips }} chips × {{ preview.multiplier }} multiplier
+                    <p v-if="preview.wildAssignments?.length" class="mt-2 text-xs text-amber-300">
+                      Wild interpretation: {{ preview.wildAssignments.map(w =>
+                        `${selectedCards[w.index]?.rank} of ${selectedCards[w.index]?.suit} → ${w.rank} of ${w.suit}`).join('; ') }}
+                    </p>
+                    <p v-if="preview.modifierBonusChips || preview.modifierMultiplier" class="text-xs text-muted">
+                      Modifiers: +{{ preview.modifierBonusChips ?? 0 }} base chips, ×{{ preview.modifierMultiplier ?? 1 }} effect
+                    </p>
+                    <p v-if="!preview.components">— {{ preview.baseChips }} chips × {{ preview.multiplier }} multiplier
                       = <strong>{{ preview.score }} chips</strong></p>
                   </div>
                   <p v-else class="text-sm text-muted">Choose 1 to {{ cardsPerPlay }} cards to see the hand type and score.</p>

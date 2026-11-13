@@ -3,11 +3,17 @@ import type { RunState } from './rounds.js';
 import type { RunProgress } from './progression.js';
 import type { ScoringOption } from './choices.js';
 
-export type CardModifier = 'bonus' | 'multiplier';
+export type CardModifier = 'bonus' | 'multiplier' | 'gold' | 'echo' | 'growing' | 'wild_suit' | 'wild_rank' | 'wild_full';
 export type CardModifierMap = Record<string, CardModifier>;
 export const CARD_MODIFIERS = [
   { id: 'bonus', label: 'Bonus card', description: '+10 base chips when this card scores.', cost: 100 },
   { id: 'multiplier', label: 'Multiplier card', description: 'Multiply the final score by 1.5 when this card scores.', cost: 180 },
+  { id: 'gold', label: 'Gold card', description: 'Earn 15 upgrade chips when this card contributes to scoring.', cost: 160 },
+  { id: 'echo', label: 'Echo card', description: 'Add this formation’s base chips again when the card scores.', cost: 220 },
+  { id: 'growing', label: 'Growing card', description: 'Gain +5 base chips per prior scoring use this run.', cost: 240 },
+  { id: 'wild_suit', label: 'Suit Wild', description: 'Counts as any suit while retaining its printed rank.', cost: 200 },
+  { id: 'wild_rank', label: 'Rank Wild', description: 'Counts as any rank while retaining its printed suit.', cost: 300 },
+  { id: 'wild_full', label: 'Full Wild', description: 'Counts as any rank and any suit.', cost: 500 },
 ] as const;
 export function cardIdentity(card: Pick<Card, 'suit' | 'rank'>): string {
   return card.suit + ':' + card.rank;
@@ -30,8 +36,14 @@ export function purchaseCardModifier(
   };
 }
 /** Applied once per contributing physical card, even for overlapping combinations. */
+/** Upgrade-chip payout from Gold cards is awarded on committed scoring only, never on preview. */
+export function goldCardReward(option: Readonly<ScoringOption>, committed: readonly Card[], modifiers: Readonly<CardModifierMap> = {}): number {
+  return option.scoringCardIndices.filter(index => modifiers[cardIdentity(committed[index]!)] === 'gold').length * 15;
+}
+
 export function applyCardModifiers(
   option: Readonly<ScoringOption>, committed: readonly Card[], modifiers: Readonly<CardModifierMap> = {},
+  growth: Readonly<Record<string, number>> = {},
 ): ScoringOption {
   let bonus = 0;
   let multipliers = 0;
@@ -43,6 +55,8 @@ export function applyCardModifiers(
     if (used.has(key)) continue;
     used.add(key);
     if (modifiers[key] === 'bonus') bonus += 10;
+    if (modifiers[key] === 'echo') bonus += option.baseChips;
+    if (modifiers[key] === 'growing') bonus += 5 * (growth[key] ?? 0);
     if (modifiers[key] === 'multiplier') multipliers++;
   }
   if (bonus === 0 && multipliers === 0) return { ...option };

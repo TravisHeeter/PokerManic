@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed } from 'vue';
 import type { Card, CardSuit } from '@pokermanic/contracts';
-import { sortHandForDisplay, cardIdentity, type HandSortMode, type CardModifierMap } from '@pokermanic/engine';
+import { sortHandForDisplay, cardIdentity, type HandSortMode, type CardModifierMap, type CardModifier } from '@pokermanic/engine';
 const props = defineProps<{
   hand: Card[];
   cardModifiers: CardModifierMap;
@@ -13,40 +13,22 @@ const props = defineProps<{
   handsPlayed: number;
   inRound: boolean;
   sortMode: HandSortMode;
+  cardStyle: string;
+  suitColors: 'themed' | 'standard';
+  customSuitColors: Partial<Record<CardSuit, string>>;
 }>();
 const emit = defineEmits<{
   'toggle-card': [index: number];
   'update:sortMode': [mode: HandSortMode];
 }>();
 const displayedCards = computed(() => sortHandForDisplay(props.hand, props.sortMode));
+const modifierBadges: Record<CardModifier, string> = {
+  bonus: '+10', multiplier: '×1.5', gold: 'GOLD', echo: 'ECHO', growing: 'GROW',
+  wild_suit: 'W-S', wild_rank: 'W-R', wild_full: 'W-★',
+};
 const SUIT_SYMBOLS: Record<CardSuit, string> = {
   hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠',
 };
-type CardStyle = 'classic' | 'victorian' | 'deco' | 'cyber'
-  | 'bold-victorian' | 'vivid-gothic' | 'art-nouveau'
-  | 'cosmic-horror' | 'medieval-illuminated';
-const STYLE_STORAGE_KEY = 'pokermanic.card-style.v1';
-const cardStyle = ref<CardStyle>('classic');
-const styles: { id: CardStyle; label: string }[] = [
-  { id: 'classic', label: 'Classic' },
-  { id: 'victorian', label: 'Victorian' },
-  { id: 'deco', label: 'Art Deco' },
-  { id: 'cyber', label: 'Cyber' },
-  { id: 'bold-victorian', label: 'Bold Victorian' },
-  { id: 'vivid-gothic', label: 'Vivid Gothic' },
-  { id: 'art-nouveau', label: 'Art Nouveau' },
-  { id: 'cosmic-horror', label: 'Cosmic Horror' },
-  { id: 'medieval-illuminated', label: 'Medieval Illuminated' },
-];
-onMounted(() => {
-  try {
-    const saved = localStorage.getItem(STYLE_STORAGE_KEY);
-    if (styles.some(style => style.id === saved)) cardStyle.value = saved as CardStyle;
-  } catch { /* Browser storage may be blocked; the Classic style still works. */ }
-});
-watch(cardStyle, value => {
-  try { localStorage.setItem(STYLE_STORAGE_KEY, value); } catch { /* Optional preference. */ }
-});
 </script>
 
 <template>
@@ -63,17 +45,7 @@ watch(cardStyle, value => {
                 :aria-pressed="props.sortMode === 'suit'" @click="emit('update:sortMode', 'suit')">♠</UButton>
             </div>
 
-            <div role="group" aria-label="Card appearance" class="flex flex-wrap items-center gap-2">
-              <span class="text-sm text-muted">Card style:</span>
-              <UButton v-for="style in styles" :key="style.id"
-                :data-testid="`card-style-${style.id}`"
-                size="sm" color="neutral"
-                :variant="cardStyle === style.id ? 'solid' : 'outline'"
-                :aria-pressed="cardStyle === style.id"
-                @click="cardStyle = style.id">{{ style.label }}</UButton>
-            </div>
-
-            <div data-testid="card-hand" :data-card-style="cardStyle" aria-label="Current card hand" class="grid grid-cols-4 gap-2 sm:grid-cols-8 sm:gap-3">
+            <div data-testid="card-hand" :data-card-style="props.cardStyle" :data-suit-colors="props.suitColors" aria-label="Current card hand" class="grid grid-cols-4 gap-2 sm:grid-cols-8 sm:gap-3">
               <button
                 v-for="entry in displayedCards"
                 type="button"
@@ -85,13 +57,16 @@ watch(cardStyle, value => {
                 @click="emit('toggle-card', entry.originalIndex)"
                 class="pm-card relative flex aspect-[5/7] select-none flex-col justify-between rounded-xl border p-2 text-left shadow-lg shadow-black/30 transition-all hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 disabled:cursor-not-allowed disabled:opacity-60 sm:p-3"
                 :data-suit="entry.card.suit"
+                :style="props.suitColors === 'themed' && props.customSuitColors[entry.card.suit] ? { color: props.customSuitColors[entry.card.suit] } : undefined"
                 :data-selected="selectedIndexes.includes(entry.originalIndex) ? 'true' : 'false'"
                 :data-scoring-card="scoringCardIndexes.includes(entry.originalIndex) ? 'true' : 'false'"
               >
                 <span v-if="cardModifiers[cardIdentity(entry.card)]" aria-hidden="true"
                   data-testid="card-modifier-badge"
-                  class="pm-card-modifier-badge absolute bottom-2 left-1 z-20 rounded px-1 py-0.5 text-[10px] font-bold leading-none text-white shadow-sm sm:left-2">
-                  {{ cardModifiers[cardIdentity(entry.card)] === 'bonus' ? '+10' : '×1.5' }}
+                  :data-card-modifier="cardModifiers[cardIdentity(entry.card)]"
+                  class="pm-card-modifier-badge absolute bottom-2 left-1 z-20 rounded px-1 py-0.5 text-[10px] font-bold leading-none text-white shadow-sm sm:left-2"
+                  :title="cardModifiers[cardIdentity(entry.card)]?.replaceAll('_', ' ')">
+                  {{ modifierBadges[cardModifiers[cardIdentity(entry.card)]!] }}
                 </span>
                 <span v-if="selectedIndexes.includes(entry.originalIndex)"
                   aria-hidden="true" data-testid="selected-card-check"

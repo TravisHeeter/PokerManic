@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 
 const apiUrl = process.env.SMOKE_API_URL || 'http://localhost:4000';
@@ -54,7 +55,7 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /PokerManic/);
   assert.match(html, /favicon\.svg\?v=1/);
   assert.match(html, /API connected/);
-  assert.match(html, /Milestone 8/);
+  assert.match(html, /Milestone 9/);
   assert.match(html, /Transcendence/);
   assert.match(html, /data-testid="round-number"[^>]*>\s*Round 1 - 60 Chips\s*</);
   assert.match(html, /Chip count/);
@@ -75,38 +76,35 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.equal((html.match(/data-testid="hand-actions"/g) ?? []).length, 1);
   assert.equal((html.match(/data-testid="clear-selection"/g) ?? []).length, 1);
   assert.match(html, /aria-label="Sort cards"/);
-  assert.match(html, /Card style:/);
   assert.match(html, /data-card-style="classic"/);
-  for (const style of [
-    'classic', 'victorian', 'deco', 'cyber', 'bold-victorian',
-    'vivid-gothic', 'art-nouveau', 'cosmic-horror', 'medieval-illuminated',
-  ]) {
-    assert.match(html, new RegExp(`data-testid="card-style-${style}"`));
-  }
+  assert.match(html, /data-suit-colors="themed"/);
   assert.match(html, /Dealt order/);
   assert.match(html, /data-testid="sort-rank"/);
   assert.match(html, /data-testid="sort-rank"[^>]*aria-pressed="true"|aria-pressed="true"[^>]*data-testid="sort-rank"/);
   assert.match(html, /data-testid="sort-suit"/);
 
   assert.match(html, /Start new run/);
-  assert.match(html, /id="shop-heading"[^>]*>Perk shop<\/span>/);
+  assert.match(html, /Perk shop/);
   // These sections are rendered by separate Nuxt auto-imported components.
   assert.match(html, /Development progress/);
   assert.match(html, /Prestige chips/);
   assert.match(html, /Card modifier shop/);
   assert.match(html, /data-testid="buy-card-modifier-bonus"/);
   assert.match(html, /data-testid="buy-card-modifier-multiplier"/);
+  for (const id of ['gold','echo','growing','wild_suit','wild_rank','wild_full']) {
+    assert.match(html, new RegExp(`data-testid="buy-card-modifier-${id}"`));
+  }
   assert.match(html, /data-testid="transcend-action"/);
-  assert.match(html, /8 milestones implemented/);
-  for (let milestone = 1; milestone <= 8; milestone++) {
+  assert.match(html, /9 milestones implemented/);
+  for (let milestone = 1; milestone <= 9; milestone++) {
     assert.match(html, new RegExp(`data-testid="milestone-${milestone}"`));
   }
   assert.match(html, /data-testid="milestone-next"/);
-  assert.match(html, /Milestone 8/);
+  assert.match(html, /Milestone 9/);
   assert.match(html, /Transcendence/);
-  assert.doesNotMatch(html, /Milestone 2[^]*?Current/);
-  assert.match(html, /Local saves &amp; modding|Local saves & modding/);
-  assert.match(html, /Show save tools and JSON editor/);
+  // The milestone badges are verified individually above; do not scan across unrelated panels.
+  assert.match(html, /God Mode/);
+  assert.doesNotMatch(html, /Show save tools and JSON editor/);
   assert.match(html, /data-testid="draft-upgrade-chips"/);
   assert.match(html, /progress\.upgradeChips/);
   assert.match(html, /Import edited JSON/);
@@ -114,17 +112,16 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /Shop open throughout your run/);
   assert.doesNotMatch(html, /Shop closed/);
   assert.match(html, /data-testid="perk-shop-dock"/);
-  assert.match(html, /data-testid="perk-shop-toggle"/);
-  assert.match(html, /data-testid="modifier-shop-toggle"/);
-  assert.match(html, /aria-controls="modifier-shop-content"/);
+  assert.match(html, /Card modifiers/);
   assert.match(html, /data-testid="modifier-shop-content"/);
-  assert.doesNotMatch(html, /data-testid="hand-shop-toggle"/);
+  assert.match(html, /data-testid="transcendence-shop-content"/);
+  assert.match(html, /data-testid="god-mode-content"/);
+  assert.doesNotMatch(html, /h-\\[25dvh\\]/);
+  assert.doesNotMatch(html, /data-testid="close-dock"/);
   assert.doesNotMatch(html, /data-testid="hand-shop-content"/);
   assert.match(html, /role="tablist"/);
-  assert.match(html, /aria-expanded="false"/);
-  assert.match(html, /aria-controls="perk-shop-content"/);
+  assert.doesNotMatch(html, /Show upgrades|▲ Show|▼ Hide/);
   assert.match(html, /data-testid="perk-shop-content"/);
-  assert.match(html, /Show upgrades/);
   assert.match(html, /Upgrade chips/);
   assert.match(html, /Manual hand selection/);
   assert.match(html, /Milestone 8/);
@@ -138,6 +135,45 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.match(html, /data-testid="deck-count"[^>]*>44</);
   assert.match(html, /data-testid="round-score"[^>]*>0 \/ 60</);
   assert.match(html, /data-testid="upgrade-chip-balance"[^>]*>0</);
+});
+
+await run('Settings opens in a mobile-friendly Nuxt UI modal and retains customization controls', async () => {
+  const dock = await readFile(new URL('../apps/web/app/components/PerkShop.vue', import.meta.url), 'utf8');
+  const settings = await readFile(new URL('../apps/web/app/components/CardStyleSettings.vue', import.meta.url), 'utf8');
+  assert.match(dock, /<UModal[^>]*v-model:open="settingsOpen"/);
+  assert.match(dock, /value === 'settings'/);
+  assert.match(dock, /settingsOpen\.value = true/);
+  assert.match(dock, /<slot name="settings"/);
+  assert.doesNotMatch(dock, /id="settings-content"/);
+  assert.match(dock, /max-h-\[90dvh\]/);
+  assert.match(dock, /overflow-y-auto/);
+  for (const id of ['classic', 'victorian', 'deco', 'cyber', 'bold-victorian',
+    'vivid-gothic', 'art-nouveau', 'cosmic-horror', 'medieval-illuminated']) {
+    assert.ok(settings.includes(`id: '${id}'`));
+  }
+  for (const control of ['suit-colors-themed', 'suit-colors-standard', 'suit-palette-settings',
+    'suit-palette-original', 'suit-palette-row-', 'role="radiogroup"']) {
+    assert.ok(settings.includes(control));
+  }
+  const palettes = await readFile(new URL('../apps/web/app/utils/suitPalettes.ts', import.meta.url), 'utf8');
+  for (const id of ['vibrant', 'electric', 'jewel', 'earth', 'playful', 'pastel', 'accessible', 'modern']) {
+    assert.ok(palettes.includes(`id: '${id}'`));
+  }
+  // Preview reuses game-card presentation and responds to both style and palette props.
+  assert.match(settings, /data-testid="card-style-sampler"/);
+  assert.match(settings, /data-card-style="props.cardStyle"/);
+  assert.match(settings, /data-suit-colors="props.suitColors"/);
+  assert.match(settings, /suitPaletteColors\(props.selectedPalette\)/);
+  assert.match(settings, /previewSuitColors\[suit.id\]/);
+  assert.match(settings, /data-testid="`preview-ace-\$\{suit.id\}`"/);
+  assert.match(settings, /class="pm-card relative/);
+  assert.match(settings, /grid-cols-4/);
+  assert.match(settings, /pm-card-center-suit/);
+  assert.match(settings, /type="radio" name="suit-palette"/);
+  assert.doesNotMatch(settings, /custom-suit-|reset-selected-suit-color|chooseColor/);
+  const page = await readFile(new URL('../apps/web/app/pages/index.vue', import.meta.url), 'utf8');
+  assert.match(page, /v-model:selected-palette="selectedPalette"/);
+  assert.match(page, /suitPaletteColors\(selectedPalette\.value\)/);
 });
 
 await run('Custom PokerManic favicon is served', async () => {

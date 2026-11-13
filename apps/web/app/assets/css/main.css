@@ -146,6 +146,20 @@ body {
   letter-spacing: -0.035em;
 }
 
+/* Traditional two-color suit palette overrides card-style defaults.
+   The light paper override ensures genuine black suits stay legible on dark themes. */
+[data-suit-colors="standard"] {
+  --pm-spades: #171717;
+  --pm-clubs: #171717;
+  --pm-hearts: #b91c1c;
+  --pm-diamonds: #b91c1c;
+}
+[data-suit-colors="standard"][data-card-style="cyber"],
+[data-suit-colors="standard"][data-card-style="vivid-gothic"],
+[data-suit-colors="standard"][data-card-style="cosmic-horror"] {
+  --pm-card-paper: #faf8f1;
+}
+
 /* The central rank and suit are prominent without covering the corner indexes. */
 .pm-card-center-suit {
   font-family: var(--pm-card-center-font);
@@ -179,3 +193,7 @@ body {
 }
 
 .pm-card-modifier-badge { background: #166534; color: white; font-family: ui-sans-serif, system-ui, sans-serif; }
+.pm-card-modifier-badge[data-card-modifier="gold"] { background: #a16207; }
+.pm-card-modifier-badge[data-card-modifier="echo"] { background: #1d4ed8; }
+.pm-card-modifier-badge[data-card-modifier="growing"] { background: #047857; }
+.pm-card-modifier-badge[data-card-modifier^="wild_"] { background: #6d28d9; }
