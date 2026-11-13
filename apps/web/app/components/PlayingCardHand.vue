@@ -15,6 +15,7 @@ const props = defineProps<{
   sortMode: HandSortMode;
   cardStyle: string;
   suitColors: 'themed' | 'standard';
+  customSuitColors: Partial<Record<CardSuit, string>>;
 }>();
 const emit = defineEmits<{
   'toggle-card': [index: number];
@@ -56,6 +57,7 @@ const SUIT_SYMBOLS: Record<CardSuit, string> = {
                 @click="emit('toggle-card', entry.originalIndex)"
                 class="pm-card relative flex aspect-[5/7] select-none flex-col justify-between rounded-xl border p-2 text-left shadow-lg shadow-black/30 transition-all hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 disabled:cursor-not-allowed disabled:opacity-60 sm:p-3"
                 :data-suit="entry.card.suit"
+                :style="props.suitColors === 'themed' && props.customSuitColors[entry.card.suit] ? { color: props.customSuitColors[entry.card.suit] } : undefined"
                 :data-selected="selectedIndexes.includes(entry.originalIndex) ? 'true' : 'false'"
                 :data-scoring-card="scoringCardIndexes.includes(entry.originalIndex) ? 'true' : 'false'"
               >
