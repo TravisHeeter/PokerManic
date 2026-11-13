@@ -159,6 +159,16 @@ await run('Settings opens in a mobile-friendly Nuxt UI modal and retains customi
   for (const id of ['vibrant', 'electric', 'jewel', 'earth', 'playful', 'pastel', 'accessible', 'modern']) {
     assert.ok(palettes.includes(`id: '${id}'`));
   }
+  // Preview reuses game-card presentation and responds to both style and palette props.
+  assert.match(settings, /data-testid="card-style-sampler"/);
+  assert.match(settings, /data-card-style="props.cardStyle"/);
+  assert.match(settings, /data-suit-colors="props.suitColors"/);
+  assert.match(settings, /suitPaletteColors\(props.selectedPalette\)/);
+  assert.match(settings, /previewSuitColors\[suit.id\]/);
+  assert.match(settings, /data-testid="`preview-ace-\$\{suit.id\}`"/);
+  assert.match(settings, /class="pm-card relative/);
+  assert.match(settings, /grid-cols-4/);
+  assert.match(settings, /pm-card-center-suit/);
   assert.match(settings, /type="radio" name="suit-palette"/);
   assert.doesNotMatch(settings, /custom-suit-|reset-selected-suit-color|chooseColor/);
   const page = await readFile(new URL('../apps/web/app/pages/index.vue', import.meta.url), 'utf8');
