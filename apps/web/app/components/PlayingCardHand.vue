@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed } from 'vue';
 import type { Card, CardSuit } from '@pokermanic/contracts';
 import { sortHandForDisplay, cardIdentity, type HandSortMode, type CardModifierMap, type CardModifier } from '@pokermanic/engine';
 const props = defineProps<{
@@ -13,6 +13,7 @@ const props = defineProps<{
   handsPlayed: number;
   inRound: boolean;
   sortMode: HandSortMode;
+  cardStyle: string;
 }>();
 const emit = defineEmits<{
   'toggle-card': [index: number];
@@ -26,31 +27,6 @@ const modifierBadges: Record<CardModifier, string> = {
 const SUIT_SYMBOLS: Record<CardSuit, string> = {
   hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠',
 };
-type CardStyle = 'classic' | 'victorian' | 'deco' | 'cyber'
-  | 'bold-victorian' | 'vivid-gothic' | 'art-nouveau'
-  | 'cosmic-horror' | 'medieval-illuminated';
-const STYLE_STORAGE_KEY = 'pokermanic.card-style.v1';
-const cardStyle = ref<CardStyle>('classic');
-const styles: { id: CardStyle; label: string }[] = [
-  { id: 'classic', label: 'Classic' },
-  { id: 'victorian', label: 'Victorian' },
-  { id: 'deco', label: 'Art Deco' },
-  { id: 'cyber', label: 'Cyber' },
-  { id: 'bold-victorian', label: 'Bold Victorian' },
-  { id: 'vivid-gothic', label: 'Vivid Gothic' },
-  { id: 'art-nouveau', label: 'Art Nouveau' },
-  { id: 'cosmic-horror', label: 'Cosmic Horror' },
-  { id: 'medieval-illuminated', label: 'Medieval Illuminated' },
-];
-onMounted(() => {
-  try {
-    const saved = localStorage.getItem(STYLE_STORAGE_KEY);
-    if (styles.some(style => style.id === saved)) cardStyle.value = saved as CardStyle;
-  } catch { /* Browser storage may be blocked; the Classic style still works. */ }
-});
-watch(cardStyle, value => {
-  try { localStorage.setItem(STYLE_STORAGE_KEY, value); } catch { /* Optional preference. */ }
-});
 </script>
 
 <template>
@@ -67,17 +43,7 @@ watch(cardStyle, value => {
                 :aria-pressed="props.sortMode === 'suit'" @click="emit('update:sortMode', 'suit')">♠</UButton>
             </div>
 
-            <div role="group" aria-label="Card appearance" class="flex flex-wrap items-center gap-2">
-              <span class="text-sm text-muted">Card style:</span>
-              <UButton v-for="style in styles" :key="style.id"
-                :data-testid="`card-style-${style.id}`"
-                size="sm" color="neutral"
-                :variant="cardStyle === style.id ? 'solid' : 'outline'"
-                :aria-pressed="cardStyle === style.id"
-                @click="cardStyle = style.id">{{ style.label }}</UButton>
-            </div>
-
-            <div data-testid="card-hand" :data-card-style="cardStyle" aria-label="Current card hand" class="grid grid-cols-4 gap-2 sm:grid-cols-8 sm:gap-3">
+            <div data-testid="card-hand" :data-card-style="props.cardStyle" aria-label="Current card hand" class="grid grid-cols-4 gap-2 sm:grid-cols-8 sm:gap-3">
               <button
                 v-for="entry in displayedCards"
                 type="button"
