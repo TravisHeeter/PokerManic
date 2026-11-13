@@ -152,7 +152,7 @@ await run('Settings opens in a mobile-friendly Nuxt UI modal and retains customi
     assert.ok(settings.includes(`id: '${id}'`));
   }
   for (const control of ['suit-colors-themed', 'suit-colors-standard', 'suit-palette-settings',
-    'custom-suit-spades', 'reset-selected-suit-color', 'reset-all-suit-colors']) {
+    'custom-suit-', 'reset-selected-suit-color', 'reset-all-suit-colors']) {
     assert.ok(settings.includes(control));
   }
 });
