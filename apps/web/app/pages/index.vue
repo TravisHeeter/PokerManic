@@ -406,14 +406,6 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
         </UCard>
       </section>
 
-      <TranscendencePanel :profile="profile" :earned-prestige="earnedPrestige"
-        :perks="PERMANENT_UPGRADES"
-        :prices="Object.fromEntries(PERMANENT_UPGRADES.map(perk => [perk.id, permanentUpgradeCost(profile, perk.id)]))"
-        @transcend="transcend" @purchase="purchasePermanent" />
-
-      <SaveManager :json="saveJson" @update:json="updateSaveJson" :status="saveStatus" :blocked="savingBlocked"
-        @export="exportSave" @import="importSave" @new-run="restartRun" />
-
       <DevelopmentProgress />
 
       <SystemStatus :health="health" :error="error" :status="status" @refresh="refresh" />
@@ -434,6 +426,16 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
         :manual-unlocked="manualUnlocked"
         :selection-mode="selectionMode" :cards-per-play="rules.cardsPerPlay"
         @set-selection-mode="setSelectionMode" @choose-scoring-option="chooseScoringOption" />
+    </template>
+    <template #transcendence>
+      <TranscendencePanel :profile="profile" :earned-prestige="earnedPrestige"
+        :perks="PERMANENT_UPGRADES"
+        :prices="Object.fromEntries(PERMANENT_UPGRADES.map(perk => [perk.id, permanentUpgradeCost(profile, perk.id)]))"
+        @transcend="transcend" @purchase="purchasePermanent" />
+    </template>
+    <template #god>
+      <SaveManager :json="saveJson" @update:json="updateSaveJson" :status="saveStatus" :blocked="savingBlocked"
+        @export="exportSave" @import="importSave" @new-run="restartRun" />
     </template>
   </PerkShop>
 </template>
