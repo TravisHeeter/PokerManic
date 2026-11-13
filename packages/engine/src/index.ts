@@ -29,3 +29,6 @@ export { MATERIA_KINDS, MAX_MP, XP_LEVELS, materiaLevel, materiaKey, createMater
 export type { MateriaKind, MateriaGem, MateriaState, CardMagic } from './materia.js';
 export { beginAnotherRun } from './run-lifecycle.js';
 export type { NewRunState } from './run-lifecycle.js';
+
+export { MATERIA_SLOT_COSTS, MATERIA_LINK_COSTS, materiaBoardPrice, buyMateriaBoardUpgrade } from './materia-board.js';
+export type { MateriaBoardPurchase } from './materia-board.js';
