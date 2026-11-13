@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { GAME_SAVE_STORAGE_KEY, formatGameSave, parseGameSave } from '@pokermanic/contracts';
-import type { GameSaveV1, SavedProfile } from '@pokermanic/contracts';
+import type { GameSaveV1, SavedProfile, CardSuit } from '@pokermanic/contracts';
 import {
   DEFAULT_ROUND_RULES,
   advanceRound,
@@ -33,6 +33,8 @@ const profile = ref<SavedProfile>({ lifetimeRunsStarted: 1, bestRound: 1, ...cre
 const sortMode = ref<HandSortMode>('rank');
 const cardStyle = ref('classic');
 const suitColors = ref<'themed' | 'standard'>('themed');
+const customSuitColors = ref<Partial<Record<CardSuit, string>>>({});
+const CUSTOM_SUIT_COLORS_STORAGE_KEY = 'pokermanic.custom-suit-colors.v1';
 const SUIT_COLORS_STORAGE_KEY = 'pokermanic.suit-colors.v1';
 const CARD_STYLE_STORAGE_KEY = 'pokermanic.card-style.v1';
 const validCardStyles = new Set([
@@ -284,6 +286,18 @@ onMounted(() => {
     if (savedStyle && validCardStyles.has(savedStyle)) cardStyle.value = savedStyle;
     const savedColors = localStorage.getItem(SUIT_COLORS_STORAGE_KEY);
     if (savedColors === 'themed' || savedColors === 'standard') suitColors.value = savedColors;
+    const storedPalette = localStorage.getItem(CUSTOM_SUIT_COLORS_STORAGE_KEY);
+    if (storedPalette) {
+      const parsed: unknown = JSON.parse(storedPalette);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        const safe: Partial<Record<CardSuit, string>> = {};
+        for (const suit of ['spades', 'hearts', 'clubs', 'diamonds'] as const) {
+          const value = (parsed as Record<string, unknown>)[suit];
+          if (typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value)) safe[suit] = value;
+        }
+        customSuitColors.value = safe;
+      }
+    }
   } catch { /* Appearance preference is optional when storage is blocked. */ }
   try {
     const raw = localStorage.getItem(GAME_SAVE_STORAGE_KEY);
@@ -305,6 +319,10 @@ onMounted(() => {
     persistSave();
   }
 });
+watch(customSuitColors, value => {
+  if (!import.meta.client) return;
+  try { localStorage.setItem(CUSTOM_SUIT_COLORS_STORAGE_KEY, JSON.stringify(value)); } catch { /* Optional preference. */ }
+}, { deep: true });
 watch(suitColors, value => {
   if (!import.meta.client) return;
   try { localStorage.setItem(SUIT_COLORS_STORAGE_KEY, value); } catch { /* Optional preference. */ }
@@ -399,7 +417,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
               :round="run.round" 
               :hands-played="run.handsPlayed" 
               :in-round="inRound"
-              :card-style="cardStyle" :suit-colors="suitColors"
+              :card-style="cardStyle" :suit-colors="suitColors" :custom-suit-colors="customSuitColors"
               v-model:sort-mode="sortMode" 
               @toggle-card="toggleCard" />
 
@@ -461,7 +479,8 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
         @export="exportSave" @import="importSave" @new-run="restartRun" />
     </template>
     <template #settings>
-      <CardStyleSettings v-model:card-style="cardStyle" v-model:suit-colors="suitColors" />
+      <CardStyleSettings v-model:card-style="cardStyle" v-model:suit-colors="suitColors"
+        v-model:custom-suit-colors="customSuitColors" />
     </template>
   </PerkShop>
 </template>
