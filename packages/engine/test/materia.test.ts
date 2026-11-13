@@ -3,7 +3,7 @@ import {
   createMateriaState, completeMateriaRound, claimMateria, equipMateria,
   materiaLevel, castMateria, applyMateriaScore, newMateriaRound,
   materiaBoardPrice, buyMateriaBoardUpgrade, createPermanentProgress,
-  breakMateriaFreeze, spellCost,
+  breakMateriaFreeze, spellCost, releasePlayedMagic,
 } from '../src/index.js';
 import type { Card } from '@pokermanic/contracts';
 const hand: Card[] = [
@@ -33,6 +33,7 @@ describe('Materia discovery and spellcasting', () => {
     const base = { score:5, baseChips:5, multiplier:1, scoringCardIndices:[0] };
     expect(applyMateriaScore(base,hand,cast).score).toBe(15);
     expect(applyMateriaScore({ ...base, scoringCardIndices:[2] },hand,cast).score).toBe(5);
+    expect(releasePlayedMagic(cast,[hand[0]!]).effects['hearts:K']).toBeUndefined();
     const refreshed = newMateriaRound(cast);
     expect(refreshed.effects).toEqual({});
     expect(refreshed.castThisRound).toEqual([]);
@@ -57,6 +58,7 @@ describe('Materia discovery and spellcasting', () => {
     state = castMateria(state,hand,2,2,0);
     expect(state.effects['hearts:K']?.frozen).toBe(true);
     expect(state.effects['spades:K']?.chips).toBe(10);
+    expect(releasePlayedMagic(state,[hand[1]!]).effects['spades:K']?.chips).toBe(10);
     expect(breakMateriaFreeze(state,hand[0]!).effects['hearts:K']?.frozen).toBe(false);
   });
 });
