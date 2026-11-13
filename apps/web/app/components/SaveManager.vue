@@ -46,9 +46,8 @@ function change(event: Event) {
           edit its JSON freely, then import it to change your game.
           Corrupted or unsupported saves are not automatically overwritten.
         </p>
-        <details class="rounded-lg border border-default p-3">
-          <summary class="cursor-pointer font-semibold">Show save tools and JSON editor</summary>
-          <div class="mt-3 space-y-3">
+        <div class="rounded-lg border border-default p-3">
+          <div class="space-y-3">
             <div class="flex flex-wrap gap-2">
               <UButton data-testid="export-save" color="neutral" variant="outline"
                 @click="emit('export')">Export JSON</UButton>
@@ -75,7 +74,7 @@ function change(event: Event) {
               Saving is paused to protect your existing invalid save. Import valid JSON or start a new run.
             </p>
           </div>
-        </details>
+        </div>
       </div>
     </UCard>
   </section>
