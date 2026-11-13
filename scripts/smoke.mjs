@@ -75,7 +75,7 @@ await run('Nuxt SSR renders current milestone and connected home page', async ()
   assert.equal((html.match(/data-testid="hand-actions"/g) ?? []).length, 1);
   assert.equal((html.match(/data-testid="clear-selection"/g) ?? []).length, 1);
   assert.match(html, /aria-label="Sort cards"/);
-  assert.match(html, /Card style:/);
+  assert.match(html, /Card styles/);
   assert.match(html, /data-card-style="classic"/);
   for (const style of [
     'classic', 'victorian', 'deco', 'cyber', 'bold-victorian',
