@@ -32,6 +32,8 @@ const progress = ref<RunProgress>(createRunProgress());
 const profile = ref<SavedProfile>({ lifetimeRunsStarted: 1, bestRound: 1, ...createPermanentProgress() });
 const sortMode = ref<HandSortMode>('rank');
 const cardStyle = ref('classic');
+const suitColors = ref<'themed' | 'standard'>('themed');
+const SUIT_COLORS_STORAGE_KEY = 'pokermanic.suit-colors.v1';
 const CARD_STYLE_STORAGE_KEY = 'pokermanic.card-style.v1';
 const validCardStyles = new Set([
   'classic', 'victorian', 'deco', 'cyber', 'bold-victorian',
@@ -280,6 +282,8 @@ onMounted(() => {
   try {
     const savedStyle = localStorage.getItem(CARD_STYLE_STORAGE_KEY);
     if (savedStyle && validCardStyles.has(savedStyle)) cardStyle.value = savedStyle;
+    const savedColors = localStorage.getItem(SUIT_COLORS_STORAGE_KEY);
+    if (savedColors === 'themed' || savedColors === 'standard') suitColors.value = savedColors;
   } catch { /* Appearance preference is optional when storage is blocked. */ }
   try {
     const raw = localStorage.getItem(GAME_SAVE_STORAGE_KEY);
@@ -300,6 +304,10 @@ onMounted(() => {
     hydrated.value = true;
     persistSave();
   }
+});
+watch(suitColors, value => {
+  if (!import.meta.client) return;
+  try { localStorage.setItem(SUIT_COLORS_STORAGE_KEY, value); } catch { /* Optional preference. */ }
 });
 watch(cardStyle, value => {
   if (!import.meta.client) return;
@@ -391,7 +399,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
               :round="run.round" 
               :hands-played="run.handsPlayed" 
               :in-round="inRound"
-              :card-style="cardStyle"
+              :card-style="cardStyle" :suit-colors="suitColors"
               v-model:sort-mode="sortMode" 
               @toggle-card="toggleCard" />
 
@@ -453,7 +461,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
         @export="exportSave" @import="importSave" @new-run="restartRun" />
     </template>
     <template #settings>
-      <CardStyleSettings v-model:card-style="cardStyle" />
+      <CardStyleSettings v-model:card-style="cardStyle" v-model:suit-colors="suitColors" />
     </template>
   </PerkShop>
 </template>
