@@ -11,6 +11,7 @@ const props = defineProps<{
   rules: RoundRules;
   nextRoundRules: RoundRules;
   manualSelectionAvailable: boolean;
+  earnedPrestige: number;
 }>();
 const emit = defineEmits<{ 'buy-perk': [id: RunUpgradeId] }>();
 const perkCatalog = RUN_UPGRADES;
@@ -26,7 +27,8 @@ const tabs = computed(() => [
   ...(handTabAvailable.value
     ? [{ label: 'Hand selection', icon: 'i-lucide-layers-3', value: 'hand' }]
     : []),
-  { label: 'Transcendence', icon: 'i-lucide-orbit', value: 'transcendence' },
+  { label: 'Transcendence', icon: 'i-lucide-orbit', value: 'transcendence',
+    ...(props.earnedPrestige > 0 ? { badge: { label: `+${props.earnedPrestige}`, color: 'warning' as const, variant: 'solid' as const, size: 'sm' as const } } : {}) },
   // A Lucide skull keeps the God Mode icon stylistically consistent with the other tabs.
   { label: 'God Mode', icon: 'i-lucide-skull', value: 'god' },
   { label: 'Settings', icon: 'i-lucide-settings', value: 'settings' },
