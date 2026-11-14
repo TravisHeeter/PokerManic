@@ -213,12 +213,7 @@ function buyMateriaBoard(id: MateriaBoardPurchase) {
     lastAction.value = id === 'slot' ? 'Materia slot permanently unlocked.' : 'Materia link permanently unlocked.';
   } catch (error) { lastAction.value = error instanceof Error ? error.message : 'Prestige purchase failed.'; }
 }
-function claimOfferedMateria(kind: MateriaKind) {
-  try {
-    run.value = { ...run.value, materia: claimMateria(run.value.materia ?? createMateriaState(),kind) };
-    lastAction.value = `Discovered ${kind} Materia! Equip it in the Materia tab.`;
-  } catch (error) { lastAction.value = error instanceof Error ? error.message : 'Discovery failed.'; }
-}
+
 // Acquisition and optional equipment are committed together. An occupied slot's
 // previous gem stays in the collection (storage), never lost.
 function acquireDiscoveredMateria(kind: MateriaKind, slot: number | null) {
@@ -502,11 +497,11 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
     :next-round-rules="nextRoundRules" :manual-selection-available="manualUnlocked" @buy-perk="buyPerk">
     <template #materia>
       <MateriaPanel mode="inventory" :materia="run.materia ?? createMateriaState()" :target-ready="selectedIndexes.length === 1" :phase="run.phase"
-        @equip="equipGem" @unequip="unequipGem" @claim="claimOfferedMateria" @cast="castSpell" @break-freeze="breakFreeze" />
+        @equip="equipGem" @unequip="unequipGem" @cast="castSpell" @break-freeze="breakFreeze" />
     </template>
     <template #spells>
       <MateriaPanel mode="spells" :materia="run.materia ?? createMateriaState()" :target-ready="selectedIndexes.length === 1" :phase="run.phase"
-        @equip="equipGem" @unequip="unequipGem" @claim="claimOfferedMateria" @cast="castSpell" @break-freeze="breakFreeze" />
+        @equip="equipGem" @unequip="unequipGem" @cast="castSpell" @break-freeze="breakFreeze" />
     </template>
     <template #hand>
       <ScoringPanel :preview="preview" :scored-hand="scoredHand"
