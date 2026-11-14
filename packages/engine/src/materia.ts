@@ -157,7 +157,9 @@ export function applyMateriaScore<T extends { score: number; baseChips: number; 
   if (!chips && !mult) return option;
   const score = Math.round(option.score + chips * option.multiplier + (option.baseChips + chips) * mult);
   if (!Number.isSafeInteger(score)) throw new RangeError('Materia score exceeds safe integer precision.');
-  return { ...option, score };
+  // Preserve the calculated score while exposing the boosted factors to the
+  // live Chips / Mult readout and hand preview. Do not apply bonuses twice.
+  return { ...option, baseChips: option.baseChips + chips, multiplier: option.multiplier + mult, score };
 }
 
 /** Ordinary spells expire when their physical card is played or discarded.
