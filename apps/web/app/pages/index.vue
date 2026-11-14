@@ -20,7 +20,7 @@ import {
   createPermanentProgress, startingUpgradeChips,
   transcendReward, transcendRun, PERMANENT_UPGRADES,
   permanentUpgradeCost, buyPermanentUpgrade, isRunUpgradeUnlocked,
-  materiaLevel, sortHandForDisplay, beginAnotherRun, createMateriaState, reconcileMateriaSlots, completeMateriaRound, claimMateria, equipMateria, unequipMateria, castMateria, breakMateriaFreeze, applyMateriaScore, buyMateriaBoardUpgrade,
+  MATERIA_KINDS, XP_LEVELS, materiaLevel, sortHandForDisplay, beginAnotherRun, createMateriaState, reconcileMateriaSlots, completeMateriaRound, claimMateria, equipMateria, unequipMateria, castMateria, breakMateriaFreeze, applyMateriaScore, buyMateriaBoardUpgrade,
 } from '@pokermanic/engine';
 import type { RunState, ScoringOption, RunUpgradeId, RunProgress, HandSortMode, PermanentUpgradeId, MateriaKind, MateriaBoardPurchase } from '@pokermanic/engine';
 
@@ -253,6 +253,53 @@ function acquireDiscoveredMateria(kind: MateriaKind, slot: number | null) {
   } catch (error) {
     lastAction.value = error instanceof Error ? error.message : 'Materia acquisition failed.';
   }
+}
+
+// God Mode changes use the same live state as the board, inventory, spells and
+// browser save. Keep IDs unique and always use the canonical XP thresholds.
+function godMateriaXp(kind: MateriaKind, level: number): number {
+  if (!Number.isInteger(level) || level < 1 || level > MATERIA_KINDS[kind].maxLevel) {
+    throw new RangeError('Invalid Materia level.');
+  }
+  return XP_LEVELS[level - 1] ?? 0;
+}
+function godAddMateria(kind: MateriaKind, level: number) {
+  const xp = godMateriaXp(kind, level);
+  const current = run.value.materia ?? createMateriaState(profile.value.materiaSlots ?? 1);
+  const nextId = Math.max(current.nextId, ...current.collection.map(gem => gem.id + 1), 1);
+  run.value = { ...run.value, materia: { ...current,
+    collection: [...current.collection, { id: nextId, kind, xp }], nextId: nextId + 1 } };
+  lastAction.value = `God Mode: Added ${MATERIA_KINDS[kind].name} level ${level} to inventory.`;
+}
+function godSetMateriaLevel(id: number, level: number) {
+  const current = run.value.materia;
+  if (!current) return;
+  const gem = current.collection.find(item => item.id === id);
+  if (!gem) return;
+  const xp = godMateriaXp(gem.kind, level);
+  run.value = { ...run.value, materia: { ...current,
+    collection: current.collection.map(item => item.id === id ? { ...item, xp } : item) } };
+  lastAction.value = `God Mode: ${MATERIA_KINDS[gem.kind].name} set to level ${level}.`;
+}
+function godSetMateriaKind(id: number, kind: MateriaKind) {
+  const current = run.value.materia;
+  if (!current) return;
+  const gem = current.collection.find(item => item.id === id);
+  if (!gem || !MATERIA_KINDS[kind]) return;
+  const level = Math.min(materiaLevel(gem), MATERIA_KINDS[kind].maxLevel);
+  run.value = { ...run.value, materia: { ...current,
+    collection: current.collection.map(item => item.id === id ? { ...item, kind, xp: godMateriaXp(kind, level) } : item) } };
+  lastAction.value = `God Mode: Changed Materia to ${MATERIA_KINDS[kind].name} level ${level}.`;
+}
+function godRemoveMateria(id: number) {
+  const current = run.value.materia;
+  if (!current || !current.collection.some(gem => gem.id === id)) return;
+  run.value = { ...run.value, materia: { ...current,
+    collection: current.collection.filter(gem => gem.id !== id),
+    equipped: current.equipped.map(value => value === id ? null : value),
+    castThisRound: current.castThisRound.filter(value => value !== id) } };
+  if (selectedMateriaInfoId.value === id) selectedMateriaInfoId.value = null;
+  lastAction.value = 'God Mode: Materia removed.';
 }
 
 function equipGem(id: number, slot: number) {
@@ -556,6 +603,9 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
         @transcend="transcend" @purchase="purchasePermanent" @buy-board="buyMateriaBoard" />
     </template>
     <template #god>
+      <GodMateriaEditor :materia="run.materia ?? createMateriaState(profile.materiaSlots ?? 1)"
+        @add="godAddMateria" @set-kind="godSetMateriaKind" @set-level="godSetMateriaLevel"
+        @equip="equipGem" @unequip="unequipGem" @remove="godRemoveMateria" />
       <SaveManager :json="saveJson" @update:json="updateSaveJson" :status="saveStatus" :blocked="savingBlocked"
         @export="exportSave" @import="importSave" @new-run="restartRun" />
     </template>
