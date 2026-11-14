@@ -15,6 +15,7 @@ const props = defineProps<{
   inRound: boolean;
   sortMode: HandSortMode;
   cardStyle: string;
+  suitFont: string;
   suitColors: 'themed' | 'standard';
   customSuitColors: Partial<Record<CardSuit, string>>;
 }>();
@@ -51,7 +52,7 @@ const SUIT_SYMBOLS: Record<CardSuit, string> = {
                 :aria-pressed="props.sortMode === 'suit'" @click="emit('update:sortMode', 'suit')">♠</UButton>
             </div>
 
-            <div data-testid="card-hand" :data-card-style="props.cardStyle" :data-suit-colors="props.suitColors" aria-label="Current card hand"
+            <div data-testid="card-hand" :data-card-style="props.cardStyle" :data-suit-font="props.suitFont" :data-suit-colors="props.suitColors" aria-label="Current card hand"
               class="relative grid w-full items-start pt-4 [--card-width:clamp(5rem,23vw,9rem)] sm:[--card-width:clamp(6rem,12vw,9rem)]"
               :style="{ gridTemplateColumns: handColumns }">
               <button
@@ -90,14 +91,14 @@ const SUIT_SYMBOLS: Record<CardSuit, string> = {
                   aria-hidden="true" class="pm-card-scoring-marker absolute bottom-2 right-2 z-20 rounded bg-amber-300 px-1.5 py-0.5 text-[10px] font-black uppercase leading-tight text-slate-950">Scores</span>
                 <div class="relative z-10 flex flex-col items-start leading-none">
                   <span class="pm-card-rank text-lg font-bold sm:text-2xl">{{ entry.card.rank }}</span>
-                  <span class="mt-1 text-lg sm:text-xl">{{ SUIT_SYMBOLS[entry.card.suit] }}</span>
+                  <span class="pm-card-suit mt-1 text-lg sm:text-xl">{{ SUIT_SYMBOLS[entry.card.suit] }}</span>
                 </div>
                 <div aria-hidden="true" class="pm-card-center absolute inset-0 flex flex-col items-center justify-center leading-none pointer-events-none">
                   <span data-testid="card-center-suit" class="pm-card-center-suit text-4xl sm:text-6xl">{{ SUIT_SYMBOLS[entry.card.suit] }}</span>
                 </div>
                 <div aria-hidden="true" class="relative z-10 flex rotate-180 flex-col items-start leading-none">
                   <span class="text-lg font-bold sm:text-2xl">{{ entry.card.rank }}</span>
-                  <span class="mt-1 text-lg sm:text-xl">{{ SUIT_SYMBOLS[entry.card.suit] }}</span>
+                  <span class="pm-card-suit mt-1 text-lg sm:text-xl">{{ SUIT_SYMBOLS[entry.card.suit] }}</span>
                 </div>
               </button>
             </div>
