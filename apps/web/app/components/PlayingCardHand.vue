@@ -23,6 +23,11 @@ const emit = defineEmits<{
   'update:sortMode': [mode: HandSortMode];
 }>();
 const displayedCards = computed(() => sortHandForDisplay(props.hand, props.sortMode));
+// One fixed-width final grid column anchors the last card to the right edge;
+// preceding narrow columns create an overlapping fan without clipping any card.
+const handColumns = computed(() => displayedCards.value.length > 1
+  ? `repeat(${displayedCards.value.length - 1}, minmax(0, 1fr)) var(--card-width)`
+  : 'var(--card-width)');
 const modifierBadges: Record<CardModifier, string> = {
   bonus: '+10', multiplier: '×1.5', gold: 'GOLD', echo: 'ECHO', growing: 'GROW',
   wild_suit: 'W-S', wild_rank: 'W-R', wild_full: 'W-★',
@@ -46,9 +51,11 @@ const SUIT_SYMBOLS: Record<CardSuit, string> = {
                 :aria-pressed="props.sortMode === 'suit'" @click="emit('update:sortMode', 'suit')">♠</UButton>
             </div>
 
-            <div data-testid="card-hand" :data-card-style="props.cardStyle" :data-suit-colors="props.suitColors" aria-label="Current card hand" class="grid grid-cols-4 gap-2 sm:grid-cols-8 sm:gap-3">
+            <div data-testid="card-hand" :data-card-style="props.cardStyle" :data-suit-colors="props.suitColors" aria-label="Current card hand"
+              class="relative grid w-full items-start pt-4 [--card-width:clamp(5rem,23vw,9rem)] sm:[--card-width:clamp(6rem,12vw,9rem)]"
+              :style="{ gridTemplateColumns: handColumns }">
               <button
-                v-for="entry in displayedCards"
+                v-for="(entry, displayIndex) in displayedCards"
                 type="button"
                 :key="`${round}-${handsPlayed}-${entry.originalIndex}-${entry.card.suit}-${entry.card.rank}`"
                 data-testid="playing-card"
@@ -56,9 +63,10 @@ const SUIT_SYMBOLS: Record<CardSuit, string> = {
                 :aria-pressed="selectedIndexes.includes(entry.originalIndex)"
                 :disabled="!inRound || (selectedIndexes.length === Math.max(cardsPerPlay, maxCardsPerDiscard) && !selectedIndexes.includes(entry.originalIndex))"
                 @click="emit('toggle-card', entry.originalIndex)"
-                class="pm-card relative flex aspect-[5/7] select-none flex-col justify-between rounded-xl border p-2 text-left shadow-lg shadow-black/30 transition-all hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 disabled:cursor-not-allowed disabled:opacity-60 sm:p-3"
+                class="pm-card relative flex w-[var(--card-width)] aspect-[5/7] select-none flex-col justify-between rounded-xl border p-2 text-left shadow-lg shadow-black/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 disabled:cursor-not-allowed disabled:opacity-60 sm:p-3"
+                :class="selectedIndexes.includes(entry.originalIndex) ? '-translate-y-3' : 'hover:-translate-y-1'"
                 :data-suit="entry.card.suit"
-                :style="props.suitColors === 'themed' && props.customSuitColors[entry.card.suit] ? { color: props.customSuitColors[entry.card.suit] } : undefined"
+                :style="{ ...(props.suitColors === 'themed' && props.customSuitColors[entry.card.suit] ? { color: props.customSuitColors[entry.card.suit] } : {}), zIndex: selectedIndexes.includes(entry.originalIndex) ? 100 + displayIndex : displayIndex + 1 }"
                 :data-selected="selectedIndexes.includes(entry.originalIndex) ? 'true' : 'false'"
                 :data-scoring-card="scoringCardIndexes.includes(entry.originalIndex) ? 'true' : 'false'"
                 :data-frozen="magicEffects[cardIdentity(entry.card)]?.frozen ? 'true' : 'false'"
