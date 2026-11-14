@@ -29,14 +29,13 @@ const settingsOpen = ref(false);
 const prestigeOpen = ref(false);
 const handTabAvailable = computed(() => props.manualSelectionAvailable);
 const tabs = computed(() => [
-  { label: 'Perk shop', icon: 'i-lucide-shopping-bag', value: 'perks', badge: { label: String(props.progress.upgradeChips), color: 'warning' as const, variant: 'solid' as const, size: 'sm' as const } },
+  { label: 'Perks', icon: 'i-lucide-shopping-bag', value: 'perks' },
   { label: 'Materia', icon: 'i-lucide-gem', value: 'materia' },
   { label: 'Spells', icon: 'i-lucide-wand-sparkles', value: 'spells' },
   ...(handTabAvailable.value
     ? [{ label: 'Hand selection', icon: 'i-lucide-layers-3', value: 'hand' }]
     : []),
-  { label: 'Transcendence', icon: 'i-lucide-orbit', value: 'transcendence',
-    ...(props.earnedPrestige > 0 ? { badge: { label: `+${props.earnedPrestige}`, color: 'warning' as const, variant: 'solid' as const, size: 'sm' as const } } : {}) },
+  { label: 'Transcendence', icon: 'i-lucide-orbit', value: 'transcendence' },
   // A Lucide skull keeps the God Mode icon stylistically consistent with the other tabs.
   { label: 'God Mode', icon: 'i-lucide-skull', value: 'god' },
   { label: 'Settings', icon: 'i-lucide-settings', value: 'settings' },
@@ -86,7 +85,18 @@ const canBuy = (id: RunUpgradeId) => {
             label: 'text-[10px]/3 text-center leading-tight'
           }"
           class="w-full"
-        />
+        >
+          <template #leading="{ item }">
+            <span class="relative inline-flex items-center justify-center">
+              <UIcon :name="item.icon" class="size-5" />
+              <span v-if="item.value === 'perks' || (item.value === 'transcendence' && earnedPrestige > 0)"
+                :data-testid="item.value === 'perks' ? 'upgrade-chip-balance' : 'prestige-balance'"
+                class="absolute -right-2 -top-2 min-w-4 rounded-full bg-amber-200 px-1 text-center text-[10px] font-bold leading-4 text-slate-950">
+                {{ item.value === 'perks' ? progress.upgradeChips : earnedPrestige }}
+              </span>
+            </span>
+          </template>
+        </UTabs>
         <div v-if="activeTab" class="flex justify-end items-center gap-2 px-2 pt-2">
           <UButton data-testid="close-dock" icon="i-lucide-x"
             color="neutral" variant="ghost" size="xs" aria-label="Close dock"
