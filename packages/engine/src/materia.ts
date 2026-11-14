@@ -13,14 +13,16 @@ export interface MateriaState {
   offers: MateriaKind[];
   discoveries: number;
 }
-export const MATERIA_KINDS: Readonly<Record<MateriaKind, { name: string; color: string; maxLevel: number }>> = {
-  fire: { name: 'Fire', color: 'green', maxLevel: 3 },
-  ice: { name: 'Ice', color: 'green', maxLevel: 4 },
-  lightning: { name: 'Lightning', color: 'green', maxLevel: 3 },
-  rank: { name: 'Rank', color: 'blue', maxLevel: 3 },
-  hand: { name: 'Hand', color: 'blue', maxLevel: 3 },
-  suits: { name: 'Suits', color: 'blue', maxLevel: 3 },
-  fortune: { name: 'Fortune', color: 'purple', maxLevel: 5 },
+export const MATERIA_KINDS: Readonly<Record<MateriaKind, {
+  name: string; color: string; maxLevel: number; icon: string; description: string;
+}>> = {
+  fire: { name: 'Fire', color: 'green', maxLevel: 3, icon: 'i-lucide-flame', description: 'Adds bonus Chips to the target card when it scores.' },
+  ice: { name: 'Ice', color: 'green', maxLevel: 4, icon: 'i-lucide-snowflake', description: 'Freezes a card in your hand. Higher levels can copy magical bonuses to other cards.' },
+  lightning: { name: 'Lightning', color: 'green', maxLevel: 3, icon: 'i-lucide-zap', description: 'Adds bonus Multiplier to the target card when it scores.' },
+  rank: { name: 'Rank', color: 'blue', maxLevel: 3, icon: 'i-lucide-list-ordered', description: 'When linked, spreads spells to matching ranks and additional ranks as it levels up.' },
+  hand: { name: 'Hand', color: 'blue', maxLevel: 3, icon: 'i-lucide-hand', description: 'Support for spells affecting poker-hand formations (effect coming soon).' },
+  suits: { name: 'Suits', color: 'blue', maxLevel: 3, icon: 'i-lucide-clover', description: 'When linked, spreads spells to matching suits and additional suits as it levels up.' },
+  fortune: { name: 'Fortune', color: 'purple', maxLevel: 5, icon: 'i-lucide-sparkles', description: 'When equipped, improves the chances of finding Lightning Materia in discovery rewards.' },
 };
 export const MAX_MP = 50;
 export const XP_LEVELS = [0, 20, 100, 350]; // 20 XP: first-run level 2
