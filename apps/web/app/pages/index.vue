@@ -315,8 +315,8 @@ function castSpell(id: number, tier: number) {
   if (selectedIndexes.value.length !== 1 || !inRound.value) return;
   try {
     run.value = { ...run.value, materia: castMateria(run.value.materia ?? createMateriaState(),run.value.hand,id,tier,selectedIndexes.value[0]!,profile.value.materiaLinks ?? [],sortHandForDisplay(run.value.hand,sortMode.value).map(entry => entry.originalIndex)) };
-    lastAction.value = 'Spell cast! The magical effect lasts for this round.';
-    clearSelection();
+    lastAction.value = 'Spell cast! The selected card stays selected so Chips, Mult and the hand preview update immediately.';
+    scoredHand.value = null;
   } catch (error) { lastAction.value = error instanceof Error ? error.message : 'Spell failed.'; }
 }
 function breakFreeze() {
