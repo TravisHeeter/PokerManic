@@ -45,14 +45,16 @@ const occupiedName = (id: number | null) =>
             @click="choose(kind,index)">
             <span class="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-bold text-white"
               :class="MATERIA_KINDS[kind].color === 'blue' ? 'border-blue-400 bg-blue-800' : MATERIA_KINDS[kind].color === 'purple' ? 'border-purple-400 bg-purple-800' : 'border-green-400 bg-green-800'">
-              {{ MATERIA_KINDS[kind].name.slice(0, 2) }}
+              <UIcon :name="MATERIA_KINDS[kind].icon" class="h-5 w-5" aria-hidden="true" />
             </span>
             <span class="block break-words text-sm font-medium">{{ MATERIA_KINDS[kind].name }}</span>
-            <span class="block text-xs text-muted">Level 1</span>
+            <span class="block text-xs text-muted">{{ MATERIA_KINDS[kind].description }}</span>
+            <span class="mt-1 block text-xs text-amber-300">Level 1</span>
           </button>
         </div>
         <div v-if="selected !== null" class="space-y-3 border-t border-default pt-3">
           <p class="text-sm font-semibold">What would you like to do with {{ MATERIA_KINDS[selected].name }}?</p>
+          <p class="text-xs text-muted">{{ MATERIA_KINDS[selected].description }}</p>
           <UButton data-testid="discovery-store" block color="neutral" variant="outline" @click="acquire(null)">
             Send to storage
           </UButton>
