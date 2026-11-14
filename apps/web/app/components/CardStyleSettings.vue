@@ -2,6 +2,13 @@
 import { computed } from 'vue';
 import { SUIT_PALETTES, suitPaletteColors, type SuitPaletteId } from '~/utils/suitPalettes';
 
+const SUIT_FONTS = [
+  { id: 'symbol', label: 'Symbol', description: 'Dedicated symbol glyphs (recommended)' },
+  { id: 'theme', label: 'Theme', description: 'Original card-style font' },
+  { id: 'georgia', label: 'Georgia', description: 'Traditional serif look' },
+  { id: 'sans', label: 'Sans', description: 'Bold, clear shapes' },
+] as const;
+
 const CARD_STYLES = [
   { id: 'classic', label: 'Classic' },
   { id: 'victorian', label: 'Victorian' },
@@ -15,11 +22,13 @@ const CARD_STYLES = [
 ] as const;
 const props = defineProps<{
   cardStyle: string;
+  suitFont: string;
   suitColors: 'themed' | 'standard';
   selectedPalette: SuitPaletteId | null;
 }>();
 const emit = defineEmits<{
   'update:cardStyle': [style: string];
+  'update:suitFont': [font: string];
   'update:suitColors': [value: 'themed' | 'standard'];
   'update:selectedPalette': [value: SuitPaletteId | null];
 }>();
@@ -49,7 +58,7 @@ function contrast(hex: string) {
       <h3 class="text-sm font-semibold">Live card preview</h3>
       <p class="text-xs text-muted">See how all four aces look as you change settings.</p>
       <div class="mx-auto grid max-w-md grid-cols-4 gap-2 sm:gap-3"
-        :data-card-style="props.cardStyle" :data-suit-colors="props.suitColors"
+        :data-card-style="props.cardStyle" :data-suit-font="props.suitFont" :data-suit-colors="props.suitColors"
         aria-label="Preview of the four aces">
         <div v-for="suit in SUIT_ORDER" :key="suit.id"
           class="pm-card relative flex aspect-[5/7] min-w-0 select-none flex-col justify-between rounded-xl border p-1.5 text-left shadow-lg shadow-black/30 sm:p-3"
@@ -58,16 +67,33 @@ function contrast(hex: string) {
           :style="props.suitColors === 'themed' && previewSuitColors[suit.id] ? { color: previewSuitColors[suit.id] } : undefined">
           <div class="relative z-10 flex flex-col items-start leading-none">
             <span class="pm-card-rank text-lg font-bold sm:text-2xl">A</span>
-            <span class="mt-1 text-lg sm:text-xl">{{ suit.symbol }}</span>
+            <span class="pm-card-suit mt-1 text-lg sm:text-xl">{{ suit.symbol }}</span>
           </div>
           <div aria-hidden="true" class="pm-card-center pointer-events-none absolute inset-0 flex items-center justify-center">
             <span class="pm-card-center-suit text-3xl sm:text-6xl">{{ suit.symbol }}</span>
           </div>
           <div aria-hidden="true" class="relative z-10 flex rotate-180 flex-col items-start leading-none">
             <span class="text-lg font-bold sm:text-2xl">A</span>
-            <span class="mt-1 text-lg sm:text-xl">{{ suit.symbol }}</span>
+            <span class="pm-card-suit mt-1 text-lg sm:text-xl">{{ suit.symbol }}</span>
           </div>
         </div>
+      </div>
+    </div>
+    <div class="space-y-2 border-t border-default pt-3" data-testid="suit-font-settings">
+      <h3 class="text-lg font-semibold">Suit symbol fonts</h3>
+      <p class="text-xs text-muted">Try different shapes for hearts, spades, clubs and diamonds. Only the suit symbols change; ranks keep their card-style font. Your selection is saved on this device.</p>
+      <div class="grid grid-cols-2 gap-2 sm:grid-cols-4" role="group" aria-label="Suit symbol font">
+        <button v-for="font in SUIT_FONTS" :key="font.id" type="button"
+          :data-testid="`suit-font-${font.id}`" :data-suit-font="font.id" :data-card-style="props.cardStyle"
+          :aria-pressed="props.suitFont === font.id"
+          class="min-w-0 space-y-1 rounded-lg border p-2 text-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
+          :class="props.suitFont === font.id ? 'border-amber-300 bg-amber-300/10' : 'border-default bg-elevated/30'"
+          @click="emit('update:suitFont', font.id)">
+          <span class="pm-suit-font-sample block text-2xl leading-tight">♥ ♠</span>
+          <span class="pm-suit-font-sample block text-2xl leading-tight">♦ ♣</span>
+          <span class="block text-sm font-semibold">{{ font.label }}</span>
+          <span class="block text-[10px] text-muted">{{ font.description }}</span>
+        </button>
       </div>
     </div>
     <h3 id="card-settings-heading" class="text-lg font-semibold">Card styles</h3>
