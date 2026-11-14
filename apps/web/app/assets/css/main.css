@@ -57,6 +57,20 @@ body {
 }
 .pm-card-rank { font-family: var(--pm-card-font); }
 .pm-card-center { font-family: var(--pm-card-center-font); }
+
+/* Suit glyphs use a font independent of rank lettering. These are selectable
+   local font stacks so a missing face never prevents cards from rendering. */
+[data-suit-font="theme"] { --pm-suit-font: var(--pm-card-center-font); }
+[data-suit-font="symbol"] { --pm-suit-font: "Segoe UI Symbol", "Apple Symbols", "Noto Sans Symbols 2", "DejaVu Sans", sans-serif; }
+[data-suit-font="georgia"] { --pm-suit-font: Georgia, "Times New Roman", serif; }
+[data-suit-font="sans"] { --pm-suit-font: "DejaVu Sans", Arial, "Helvetica Neue", sans-serif; }
+.pm-card-suit, .pm-card-center-suit, .pm-suit-font-sample {
+  font-family: var(--pm-suit-font, "Segoe UI Symbol", "Apple Symbols", "Noto Sans Symbols 2", "DejaVu Sans", sans-serif);
+  font-style: normal;
+  font-weight: 400;
+  font-variant-emoji: text;
+}
+
 .pm-card[data-suit="spades"] { color: var(--pm-spades); }
 .pm-card[data-suit="hearts"] { color: var(--pm-hearts); }
 .pm-card[data-suit="clubs"] { color: var(--pm-clubs); }
@@ -162,7 +176,6 @@ body {
 
 /* The central rank and suit are prominent without covering the corner indexes. */
 .pm-card-center-suit {
-  font-family: var(--pm-card-center-font);
   line-height: 0.92;
   text-align: center;
 }
