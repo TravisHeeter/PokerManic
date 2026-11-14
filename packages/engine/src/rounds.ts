@@ -151,7 +151,7 @@ export function advanceRound(
   if (state.phase !== 'round_won') {
     throw new Error('The next round is available only after meeting the chip target.');
   }
-  return { ...freshRound(state.round + 1, state.totalChips, rules, random, {}, {}), materia: newMateriaRound(state.materia ?? createMateriaState()) };
+  return { ...freshRound(state.round + 1, state.totalChips, rules, random, {}, {}), materia: newMateriaRound(state.materia ?? createMateriaState()), potentialPrestige: state.potentialPrestige };
 }
 
 function activeRound(state: Readonly<RunState>): void {
