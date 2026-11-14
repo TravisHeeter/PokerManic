@@ -53,7 +53,7 @@ export const savedRulesSchema = z.strictObject({
 }).refine(r => r.cardsPerPlay <= r.handSize && r.maxCardsPerDiscard <= r.handSize,
   'Card play/discard limits cannot exceed hand size');
 
-const materiaKindSchema = z.enum(['fire','ice','lightning','rank','hand','suits','fortune']);
+const materiaKindSchema = z.enum(['fire','ice','lightning','rank','hand','suits','fortune','prestige']);
 const savedMateriaSchema = z.strictObject({
   collection: z.array(z.strictObject({ id: positiveInt, kind: materiaKindSchema, xp: safeInt })),
   equipped: z.array(positiveInt.nullable()).max(6),
