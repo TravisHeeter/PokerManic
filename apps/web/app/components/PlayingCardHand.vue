@@ -66,7 +66,7 @@ const SUIT_SYMBOLS: Record<CardSuit, string> = {
                 class="pm-card relative flex w-[var(--card-width)] aspect-[5/7] select-none flex-col justify-between rounded-xl border p-2 text-left shadow-lg shadow-black/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 disabled:cursor-not-allowed disabled:opacity-60 sm:p-3"
                 :class="selectedIndexes.includes(entry.originalIndex) ? '-translate-y-3' : 'hover:-translate-y-1'"
                 :data-suit="entry.card.suit"
-                :style="{ ...(props.suitColors === 'themed' && props.customSuitColors[entry.card.suit] ? { color: props.customSuitColors[entry.card.suit] } : {}), zIndex: selectedIndexes.includes(entry.originalIndex) ? 100 + displayIndex : displayIndex + 1 }"
+                :style="{ ...(props.suitColors === 'themed' && props.customSuitColors[entry.card.suit] ? { color: props.customSuitColors[entry.card.suit] } : {}), zIndex: displayIndex + 1 }"
                 :data-selected="selectedIndexes.includes(entry.originalIndex) ? 'true' : 'false'"
                 :data-scoring-card="scoringCardIndexes.includes(entry.originalIndex) ? 'true' : 'false'"
                 :data-frozen="magicEffects[cardIdentity(entry.card)]?.frozen ? 'true' : 'false'"
