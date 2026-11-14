@@ -61,7 +61,7 @@ const canBuy = (id: RunUpgradeId) => {
   <section aria-label="Upgrade shops"
     data-testid="perk-shop-dock"
     class="fixed inset-x-0 bottom-0 z-50 border-t border-default bg-default shadow-2xl shadow-black/40"
-    :class="activeTab ? 'h-[25dvh]' : ''">
+    :class="activeTab ? 'h-[46dvh] sm:h-[36dvh]' : ''">
     <div class="mx-auto max-w-6xl" :class="activeTab ? 'flex h-full min-h-0 flex-col' : ''">
       <div class="shrink-0 border-b border-default px-3 py-2 sm:px-6">
         <UTabs
@@ -118,11 +118,15 @@ const canBuy = (id: RunUpgradeId) => {
           </p>
         </div>
       </div>
-      <div v-for="tab in ['materia','spells']" :key="tab" role="tabpanel"
-        :aria-label="tab === 'materia' ? 'Materia' : 'Spells'"
-        v-show="activeTab === tab"
+      <div v-show="activeTab === 'materia'" role="tabpanel" aria-label="Materia"
+        data-testid="materia-dock-content"
         class="min-h-0 flex-1 overflow-y-auto overscroll-contain border-t border-default px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-6">
-        <slot :name="tab" />
+        <slot name="materia" />
+      </div>
+      <div v-show="activeTab === 'spells'" role="tabpanel" aria-label="Spells"
+        data-testid="spells-dock-content"
+        class="min-h-0 flex-1 overflow-y-auto overscroll-contain border-t border-default px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-6">
+        <slot name="spells" />
       </div>
       <div v-if="handTabAvailable" id="hand-shop-content" role="tabpanel" aria-label="Hand selection"
         v-show="activeTab === 'hand'" data-testid="hand-shop-content"
