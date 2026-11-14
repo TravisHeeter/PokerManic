@@ -1,4 +1,4 @@
-import { createMateriaState, newMateriaRound, applyMateriaScore, materiaKey, releasePlayedMagic, type MateriaState } from './materia.js';
+import { createMateriaState, newMateriaRound, applyMateriaScore, materiaKey, releasePlayedMagic, materiaLevel, type MateriaState } from './materia.js';
 import type { Card } from '@pokermanic/contracts';
 import { applyCardModifiers, goldCardReward, cardIdentity, type CardModifierMap } from './modifiers.js';
 import { createStandardDeck, dealCards, shuffleDeck } from './deck.js';
@@ -54,6 +54,8 @@ export interface RunState {
   cardGrowth?: Record<string, number>;
   lastGoldReward?: number;
   materia?: MateriaState;
+  /** Cumulative potential PP earned at even-round completion; absent in legacy saves. */
+  potentialPrestige?: number;
 }
 
 function validateRuleInteger(value: number, name: string, minimum: number): void {
@@ -127,6 +129,7 @@ function freshRound(round: number, totalChips: number, rules: Readonly<RoundRule
     cardGrowth,
     lastGoldReward: 0,
     materia: createMateriaState(),
+    potentialPrestige: 0,
   };
 }
 
@@ -148,7 +151,7 @@ export function advanceRound(
   if (state.phase !== 'round_won') {
     throw new Error('The next round is available only after meeting the chip target.');
   }
-  return { ...freshRound(state.round + 1, state.totalChips, rules, random, {}, {}), materia: newMateriaRound(state.materia ?? createMateriaState()) };
+  return { ...freshRound(state.round + 1, state.totalChips, rules, random, {}, {}), materia: newMateriaRound(state.materia ?? createMateriaState()), potentialPrestige: state.potentialPrestige };
 }
 
 function activeRound(state: Readonly<RunState>): void {
@@ -323,6 +326,10 @@ export function playScoringHand(
     playedCards: next.playedCards,
     discardedCards: next.discardedCards,
     phase: won ? 'round_won' : lost ? 'game_over' : 'playing',
+    potentialPrestige: won && state.round % 2 === 0
+      ? (state.potentialPrestige ?? Math.floor((state.round - 1) / 2)) + 1
+        + (state.materia?.collection.reduce((sum, gem) => sum + (gem.kind === 'prestige' && state.materia?.equipped.includes(gem.id) ? materiaLevel(gem) : 0), 0) ?? 0)
+      : state.potentialPrestige,
     roundChips: updatedChips,
     totalChips: updatedTotal,
     handsRemaining,

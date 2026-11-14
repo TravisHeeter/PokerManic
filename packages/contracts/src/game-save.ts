@@ -82,6 +82,7 @@ export const savedRunSchema = z.strictObject({
   cardModifiers: z.record(z.string(), z.enum(['bonus', 'multiplier', 'gold', 'echo', 'growing', 'wild_suit', 'wild_rank', 'wild_full'])).optional(),
   cardGrowth: z.record(z.string(), safeInt).optional(),
   lastGoldReward: safeInt.optional(),
+  potentialPrestige: safeInt.optional(),
   materia: savedMateriaSchema.optional(),
 });
 
