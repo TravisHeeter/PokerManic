@@ -60,23 +60,11 @@ function contrast(hex: string) {
       <div class="mx-auto grid max-w-md grid-cols-4 gap-2 sm:gap-3"
         :data-card-style="props.cardStyle" :data-suit-font="props.suitFont" :data-suit-colors="props.suitColors"
         aria-label="Preview of the four aces">
-        <div v-for="suit in SUIT_ORDER" :key="suit.id"
-          class="pm-card relative flex aspect-[5/7] min-w-0 select-none flex-col justify-between rounded-xl border p-1.5 text-left shadow-lg shadow-black/30 sm:p-3"
-          :data-suit="suit.id" :data-testid="`preview-ace-${suit.id}`"
-          :aria-label="`Ace of ${suit.id}`"
-          :style="props.suitColors === 'themed' && previewSuitColors[suit.id] ? { color: previewSuitColors[suit.id] } : undefined">
-          <div class="relative z-10 flex flex-col items-start leading-none">
-            <span class="pm-card-rank text-lg font-bold sm:text-2xl">A</span>
-            <span class="pm-card-suit mt-1 text-lg sm:text-xl">{{ suit.symbol }}</span>
-          </div>
-          <div aria-hidden="true" class="pm-card-center pointer-events-none absolute inset-0 flex items-center justify-center">
-            <span class="pm-card-center-suit text-3xl sm:text-6xl">{{ suit.symbol }}</span>
-          </div>
-          <div aria-hidden="true" class="relative z-10 flex rotate-180 flex-col items-start leading-none">
-            <span class="text-lg font-bold sm:text-2xl">A</span>
-            <span class="pm-card-suit mt-1 text-lg sm:text-xl">{{ suit.symbol }}</span>
-          </div>
-        </div>
+        <PokerCard v-for="suit in SUIT_ORDER" :key="suit.id"
+          variant="preview"
+          :card="{ rank: 'A', suit: suit.id }"
+          :custom-color="props.suitColors === 'themed' ? previewSuitColors[suit.id] : undefined"
+        />
       </div>
     </div>
     <div class="space-y-2 border-t border-default pt-3" data-testid="suit-font-settings">

@@ -181,10 +181,30 @@ body {
 }
 .pm-card-center-suit { line-height: 1; }
 
+/* Shared PokerCard index blocks: close to the edges, ranks and suit centered
+   on the same axis. Flip the bottom-right block as one unit. */
+.pm-card-corner {
+  position: absolute;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  min-width: 1.2rem;
+  line-height: 0.85;
+  text-align: center;
+  pointer-events: none;
+}
+.pm-card-corner-top { top: 0.22rem; left: 0.22rem; }
+.pm-card-corner-bottom { right: 0.22rem; bottom: 0.22rem; transform: rotate(180deg); }
+.pm-card-corner-rank { font-size: clamp(1.05rem, 2vw, 1.5rem); font-weight: 700; line-height: 0.9; }
+.pm-card-corner-suit { font-size: clamp(0.95rem, 1.7vw, 1.25rem); line-height: 0.86; margin-top: -0.03rem; }
+
+
 /* Selection is intentionally theme-independent: cyan outline, elevation, and a check.
    A separate amber "Scores" marker identifies which selected cards contribute. */
 .pm-card[data-selected="true"] {
-  z-index: 10;
   transform: translateY(-10px);
   outline: 4px solid #38bdf8;
   outline-offset: 2px;
