@@ -97,6 +97,7 @@ const preview = computed(() => {
 const scoringCardIndexes = computed(() => preview.value?.scoringCardIndices
   .map((i) => selectedInputIndexes.value[i]!) ?? []);
 const scoredHand = ref<ScoringOption | null>(null);
+const roundSummaryOpen = ref(false);
 const lastAction = ref('Run started. Earn upgrade chips by clearing rounds. The perk shop is always open.');
 const canDiscardSelection = computed(() => inRound.value
   && run.value.discardsRemaining > 0
@@ -144,6 +145,7 @@ function scoreSelectedHand() {
   if (next.phase === 'round_won') {
     progress.value = awardRoundUpgradeChips(next, progress.value);
     run.value = { ...run.value, materia: completeMateriaRound(run.value.materia ?? createMateriaState(),next.round,(profile.value.materiaLinks ?? []).length > 0) };
+    roundSummaryOpen.value = true;
   }
   clearSelection();
   scoredHand.value = scored;
@@ -161,15 +163,17 @@ function discardSelectedCards() {
 }
 
 function nextRound() {
-  if (run.value.phase !== 'round_won') return;
+  if (run.value.phase !== 'round_won' || roundSummaryOpen.value) return;
   rules.value = nextRoundRules.value;
   if (run.value.materia?.offers.length) { lastAction.value = 'Choose your Materia reward before advancing.'; return; }
   run.value = advanceRound(run.value, rules.value);
+  roundSummaryOpen.value = false;
   clearSelection();
   lastAction.value = `Round ${run.value.round} started. Reach ${run.value.roundTarget} chips to survive.`;
 }
 
 function resetToFreshRun(transcending = false) {
+  roundSummaryOpen.value = false;
   profile.value = {
     ...profile.value,
     lifetimeRunsStarted: profile.value.lifetimeRunsStarted + 1,
@@ -299,6 +303,7 @@ function snapshot(): GameSaveV1 {
 }
 function installSave(save: GameSaveV1) {
   run.value = { ...save.run, cardModifiers: {}, cardGrowth: {}, materia: reconcileMateriaSlots(save.run.materia ?? createMateriaState(),save.profile.materiaSlots ?? 1) };
+  roundSummaryOpen.value = save.run.phase === 'round_won';
   rules.value = save.rules;
   progress.value = save.progress;
   profile.value = save.profile;
@@ -490,7 +495,11 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
   </UContainer>
 
   <!-- The viewport dock must not inherit the centered page container's layout. -->
-  <MateriaDiscoveryModal :materia="run.materia ?? createMateriaState(profile.materiaSlots ?? 1)"
+  <RoundCompleteModal :open="roundSummaryOpen" :round="run.round" :score="run.roundChips"
+    :required="run.roundTarget" :materia="run.materia ?? createMateriaState(profile.materiaSlots ?? 1)"
+    @continue="roundSummaryOpen = false" />
+
+  <MateriaDiscoveryModal :enabled="!roundSummaryOpen" :materia="run.materia ?? createMateriaState(profile.materiaSlots ?? 1)"
     @acquire="acquireDiscoveredMateria" />
 
   <PerkShop :phase="run.phase" :progress="progress" :profile="profile" :rules="rules"
