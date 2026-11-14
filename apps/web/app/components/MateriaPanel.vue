@@ -5,6 +5,7 @@ const props = defineProps<{ materia: MateriaState; targetReady: boolean; phase: 
 const emit = defineEmits<{
   equip: [id: number, slot: number]; unequip: [slot: number];
   cast: [id: number, tier: number]; breakFreeze: [];
+  'show-info': [id: number];
 }>();
 const expanded = ref<number | null>(null);
 const selectedTier = ref<Record<number,number>>({});
@@ -27,12 +28,12 @@ const costFor = (id: number, tier: number) => {
       <div v-for="gem in materia.collection" :key="gem.id" class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-default p-2">
         <div class="flex min-w-0 items-center gap-3">
           <UTooltip :text="MATERIA_KINDS[gem.kind].name + ' · ' + MATERIA_KINDS[gem.kind].description">
-            <span class="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2"
+            <button type="button" class="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
               :class="MATERIA_KINDS[gem.kind].color === 'blue' ? 'border-blue-400 bg-blue-800' : MATERIA_KINDS[gem.kind].color === 'purple' ? 'border-purple-400 bg-purple-800' : 'border-green-400 bg-green-800'"
-              :aria-label="MATERIA_KINDS[gem.kind].name + ', level ' + materiaLevel(gem) + '. ' + MATERIA_KINDS[gem.kind].description" tabindex="0">
+              :aria-label="'View details for ' + MATERIA_KINDS[gem.kind].name + ' Materia, level ' + materiaLevel(gem)" @click="emit('show-info', gem.id)">
               <UIcon :name="MATERIA_KINDS[gem.kind].icon" class="h-5 w-5 text-white" aria-hidden="true" />
               <span class="absolute -right-1 -top-1 rounded-full bg-amber-200 px-1 text-[10px] font-bold leading-4 text-slate-950">{{ materiaLevel(gem) }}</span>
-            </span>
+            </button>
           </UTooltip>
           <div class="min-w-0">
             <p class="font-medium">{{ MATERIA_KINDS[gem.kind].name }}</p>
