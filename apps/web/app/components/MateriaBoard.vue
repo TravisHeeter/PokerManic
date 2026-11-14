@@ -23,7 +23,7 @@ const slots = computed(() => props.materia.equipped.map((id,index) => ({
             <span v-else class="text-muted">+</span>
           </div>
           <span class="text-[10px] text-muted">{{ slot.gem ? 'Lv ' + materiaLevel(slot.gem) : 'Slot ' + (i+1) }}</span>
-          <span v-if="slot.gem && materia.castThisRound.includes(slot.gem.id)" class="text-[10px] text-amber-300">Used</span>
+          <span v-if="slot.gem && materia.castThisRound.includes(slot.gem.id)" class="text-[10px] text-amber-300">Cast ×{{ materia.castThisRound.filter(id => id === slot.gem.id).length }}</span>
         </div>
       </template>
     </div>
