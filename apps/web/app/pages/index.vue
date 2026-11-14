@@ -213,12 +213,23 @@ function buyMateriaBoard(id: MateriaBoardPurchase) {
     lastAction.value = id === 'slot' ? 'Materia slot permanently unlocked.' : 'Materia link permanently unlocked.';
   } catch (error) { lastAction.value = error instanceof Error ? error.message : 'Prestige purchase failed.'; }
 }
-function claimOfferedMateria(kind: MateriaKind) {
+
+// Acquisition and optional equipment are committed together. An occupied slot's
+// previous gem stays in the collection (storage), never lost.
+function acquireDiscoveredMateria(kind: MateriaKind, slot: number | null) {
   try {
-    run.value = { ...run.value, materia: claimMateria(run.value.materia ?? createMateriaState(),kind) };
-    lastAction.value = `Discovered ${kind} Materia! Equip it in the Materia tab.`;
-  } catch (error) { lastAction.value = error instanceof Error ? error.message : 'Discovery failed.'; }
+    const current = run.value.materia ?? createMateriaState(profile.value.materiaSlots ?? 1);
+    const claimed = claimMateria(current, kind);
+    const updated = slot === null ? claimed : equipMateria(claimed, claimed.nextId - 1, slot);
+    run.value = { ...run.value, materia: updated };
+    lastAction.value = slot === null
+      ? `${kind} Materia sent to storage.`
+      : `${kind} Materia equipped in slot ${slot + 1}. Replaced gems remain in storage.`;
+  } catch (error) {
+    lastAction.value = error instanceof Error ? error.message : 'Materia acquisition failed.';
+  }
 }
+
 function equipGem(id: number, slot: number) {
   try {
     run.value = { ...run.value, materia: equipMateria(run.value.materia ?? createMateriaState(),id,slot) };
@@ -479,15 +490,18 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
   </UContainer>
 
   <!-- The viewport dock must not inherit the centered page container's layout. -->
+  <MateriaDiscoveryModal :materia="run.materia ?? createMateriaState(profile.materiaSlots ?? 1)"
+    @acquire="acquireDiscoveredMateria" />
+
   <PerkShop :phase="run.phase" :progress="progress" :profile="profile" :rules="rules"
     :next-round-rules="nextRoundRules" :manual-selection-available="manualUnlocked" @buy-perk="buyPerk">
     <template #materia>
       <MateriaPanel mode="inventory" :materia="run.materia ?? createMateriaState()" :target-ready="selectedIndexes.length === 1" :phase="run.phase"
-        @equip="equipGem" @unequip="unequipGem" @claim="claimOfferedMateria" @cast="castSpell" @break-freeze="breakFreeze" />
+        @equip="equipGem" @unequip="unequipGem" @cast="castSpell" @break-freeze="breakFreeze" />
     </template>
     <template #spells>
       <MateriaPanel mode="spells" :materia="run.materia ?? createMateriaState()" :target-ready="selectedIndexes.length === 1" :phase="run.phase"
-        @equip="equipGem" @unequip="unequipGem" @claim="claimOfferedMateria" @cast="castSpell" @break-freeze="breakFreeze" />
+        @equip="equipGem" @unequip="unequipGem" @cast="castSpell" @break-freeze="breakFreeze" />
     </template>
     <template #hand>
       <ScoringPanel :preview="preview" :scored-hand="scoredHand"
