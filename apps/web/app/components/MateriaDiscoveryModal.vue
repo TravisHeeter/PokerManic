@@ -2,9 +2,9 @@
 import { computed, ref, watch } from 'vue';
 import { MATERIA_KINDS, type MateriaKind, type MateriaState } from '@pokermanic/engine';
 
-const props = defineProps<{ materia: MateriaState }>();
+const props = defineProps<{ materia: MateriaState; enabled?: boolean }>();
 const emit = defineEmits<{ acquire: [kind: MateriaKind, slot: number | null] }>();
-const open = computed(() => props.materia.offers.length > 0);
+const open = computed(() => props.enabled !== false && props.materia.offers.length > 0);
 const selected = ref<MateriaKind | null>(null);
 const selectedIndex = ref<number | null>(null);
 watch(() => props.materia.offers, offers => {
