@@ -175,6 +175,18 @@ await run('Settings opens in a mobile-friendly Nuxt UI modal and retains customi
   assert.match(page, /suitPaletteColors\(selectedPalette\.value\)/);
 });
 
+await run('Materia discovery presents modal for equip or storage', async () => {
+  const page = await readFile(new URL('../apps/web/app/pages/index.vue', import.meta.url), 'utf8');
+  const modal = await readFile(new URL('../apps/web/app/components/MateriaDiscoveryModal.vue', import.meta.url), 'utf8');
+  assert.match(page, /<MateriaDiscoveryModal/);
+  assert.match(page, /@acquire="acquireDiscoveredMateria"/);
+  assert.match(modal, /data-testid="materia-discovery-modal"/);
+  assert.match(modal, /data-testid="discovery-store"/);
+  assert.match(modal, /discovery-equip-/);
+  assert.match(modal, /:dismissible="false"/);
+  assert.match(modal, /materia\.offers\.length > 0/);
+});
+
 await run('Custom PokerManic favicon is served', async () => {
   const response = await fetch(`${webUrl}/favicon.svg`);
   assert.equal(response.status, 200);
