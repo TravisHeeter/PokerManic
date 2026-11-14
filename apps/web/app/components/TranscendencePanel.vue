@@ -5,6 +5,7 @@ import type { PermanentUpgradeId } from '@pokermanic/engine';
 defineProps<{
   profile: SavedProfile;
   earnedPrestige: number;
+  prestigeMateriaBonus: number;
   perks: readonly { id: PermanentUpgradeId; label: string; description: string; baseCost: number; maxLevel: number }[];
   prices: Record<string, number | null>;
 }>();
@@ -23,7 +24,7 @@ const emit = defineEmits<{ transcend: []; purchase: [id: PermanentUpgradeId]; 'b
         </div>
         <p class="text-sm text-muted">
           Reset your run for permanent currency after at least two completed rounds.
-          Current reward: {{ earnedPrestige }} prestige. Total transcendences: {{ profile.transcends }}.
+          Current reward: {{ earnedPrestige }} prestige ({{ Math.max(0, earnedPrestige - prestigeMateriaBonus) }} base<span v-if="prestigeMateriaBonus > 0"> + {{ prestigeMateriaBonus }} from Prestige Materia</span>). Total transcendences: {{ profile.transcends }}.
         </p>
         <UButton data-testid="transcend-action" color="warning" :disabled="earnedPrestige === 0"
           @click="emit('transcend')">Transcend (+{{ earnedPrestige }} prestige)</UButton>

@@ -1,5 +1,6 @@
 import type { RunState } from './rounds.js';
 import type { RunUpgradeId } from './progression.js';
+import { materiaLevel } from './materia.js';
 
 /** Prestige unlocks shop availability, never gives free run upgrades. */
 export type PermanentUpgradeId = 'starting_discard' | 'held_card' | 'discard_batch'
@@ -78,7 +79,16 @@ export function startingUpgradeChips(profile: Readonly<PermanentProgress>): numb
 /** Prestige is earned from completed rounds, never from wallet purchases. */
 export function transcendReward(run: Readonly<RunState>): number {
   const completed = run.phase === 'round_won' ? run.round : run.round - 1;
-  return completed >= 2 ? Math.floor(completed / 2) : 0;
+  if (completed < 2) return 0;
+  const base = Math.floor(completed / 2);
+  const materia = run.materia;
+  const equipped = new Set(materia?.equipped.filter((id): id is number => id !== null) ?? []);
+  // Each equipped Prestige Materia grants +1 chip per level on transcendence.
+  const bonus = materia?.collection.reduce((sum, gem) =>
+    sum + (gem.kind === 'prestige' && equipped.has(gem.id) ? materiaLevel(gem) : 0), 0) ?? 0;
+  const reward = base + bonus;
+  if (!Number.isSafeInteger(reward)) throw new RangeError('Prestige reward exceeds safe integer precision.');
+  return reward;
 }
 
 export function transcendRun(run: Readonly<RunState>, profile: Readonly<PermanentProgress>): PermanentProgress {

@@ -20,7 +20,7 @@ import {
   createPermanentProgress, startingUpgradeChips,
   transcendReward, transcendRun, PERMANENT_UPGRADES,
   permanentUpgradeCost, buyPermanentUpgrade, isRunUpgradeUnlocked,
-  sortHandForDisplay, beginAnotherRun, createMateriaState, reconcileMateriaSlots, completeMateriaRound, claimMateria, equipMateria, unequipMateria, castMateria, breakMateriaFreeze, applyMateriaScore, buyMateriaBoardUpgrade,
+  materiaLevel, sortHandForDisplay, beginAnotherRun, createMateriaState, reconcileMateriaSlots, completeMateriaRound, claimMateria, equipMateria, unequipMateria, castMateria, breakMateriaFreeze, applyMateriaScore, buyMateriaBoardUpgrade,
 } from '@pokermanic/engine';
 import type { RunState, ScoringOption, RunUpgradeId, RunProgress, HandSortMode, PermanentUpgradeId, MateriaKind, MateriaBoardPurchase } from '@pokermanic/engine';
 
@@ -204,6 +204,13 @@ function restartRun() {
   lastAction.value = 'New run started. Upgrade chips, card upgrades and prestige unlocks carried over.';
 }
 const earnedPrestige = computed(() => transcendReward(run.value));
+const prestigeMateriaBonus = computed(() => {
+  const materia = run.value.materia;
+  if (!materia) return 0;
+  const equipped = new Set(materia.equipped.filter((id): id is number => id !== null));
+  return materia.collection.reduce((sum, gem) =>
+    sum + (gem.kind === 'prestige' && equipped.has(gem.id) ? materiaLevel(gem) : 0), 0);
+});
 function transcend() {
   const reward = earnedPrestige.value;
   if (!reward) return;
@@ -530,7 +537,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
         @set-selection-mode="setSelectionMode" @choose-scoring-option="chooseScoringOption" />
     </template>
     <template #transcendence>
-      <TranscendencePanel :profile="profile" :earned-prestige="earnedPrestige"
+      <TranscendencePanel :profile="profile" :earned-prestige="earnedPrestige" :prestige-materia-bonus="prestigeMateriaBonus"
         :perks="PERMANENT_UPGRADES"
         :prices="Object.fromEntries(PERMANENT_UPGRADES.map(perk => [perk.id, permanentUpgradeCost(profile, perk.id)]))"
         @transcend="transcend" @purchase="purchasePermanent" @buy-board="buyMateriaBoard" />

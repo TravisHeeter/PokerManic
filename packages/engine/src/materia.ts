@@ -1,6 +1,6 @@
 import type { Card } from '@pokermanic/contracts';
 
-export type MateriaKind = 'fire' | 'ice' | 'lightning' | 'rank' | 'hand' | 'suits' | 'fortune';
+export type MateriaKind = 'fire' | 'ice' | 'lightning' | 'rank' | 'hand' | 'suits' | 'fortune' | 'prestige';
 export interface MateriaGem { id: number; kind: MateriaKind; xp: number }
 export interface CardMagic { chips: number; mult: number; frozen: boolean; persistent?: boolean }
 export interface MateriaState {
@@ -23,6 +23,7 @@ export const MATERIA_KINDS: Readonly<Record<MateriaKind, {
   hand: { name: 'Hand', color: 'blue', maxLevel: 3, icon: 'i-lucide-hand', description: 'Support for spells affecting poker-hand formations (effect coming soon).' },
   suits: { name: 'Suits', color: 'blue', maxLevel: 3, icon: 'i-lucide-clover', description: 'When linked, spreads spells to matching suits and additional suits as it levels up.' },
   fortune: { name: 'Fortune', color: 'purple', maxLevel: 5, icon: 'i-lucide-sparkles', description: 'When equipped, improves the chances of finding Lightning Materia in discovery rewards.' },
+  prestige: { name: 'Prestige', color: 'purple', maxLevel: 4, icon: 'i-lucide-crown', description: 'When equipped, earns bonus Prestige chips on transcendence: +1 chip per Materia level.' },
 };
 export const MAX_MP = 50;
 export const XP_LEVELS = [0, 20, 100, 350]; // 20 XP: first-run level 2
@@ -54,7 +55,7 @@ export function unequipMateria(state: Readonly<MateriaState>, slot: number): Mat
 export function completeMateriaRound(state: Readonly<MateriaState>, round: number, linksUnlocked: boolean, random: () => number = Math.random): MateriaState {
   const equippedIds = new Set(state.equipped.filter((id): id is number => id !== null));
   const collection = state.collection.map(g => equippedIds.has(g.id) ? { ...g, xp: g.xp + 20 } : g);
-  const pool: MateriaKind[] = linksUnlocked ? ['fire','fire','ice','ice','lightning','rank','rank','hand','suits','fortune'] : ['fire','fire','ice','ice','lightning'];
+  const pool: MateriaKind[] = linksUnlocked ? ['fire','fire','ice','ice','lightning','rank','rank','hand','suits','fortune','prestige'] : ['fire','fire','ice','ice','lightning','prestige'];
   const fortune = collection.find(g => g.kind === 'fortune' && equippedIds.has(g.id));
   const chance = state.discoveries === 0 ? (round === 1 ? .65 : round === 2 ? .9 : 1) : .35;
   const offers: MateriaKind[] = [];
