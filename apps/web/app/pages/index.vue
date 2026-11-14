@@ -172,6 +172,14 @@ function nextRound() {
   lastAction.value = `Round ${run.value.round} started. Reach ${run.value.roundTarget} chips to survive.`;
 }
 
+// The results modal is the sole advancement control. If a reward was found,
+// the discovery modal opens first; claiming it completes the advancement.
+function advanceFromRoundSummary() {
+  if (run.value.phase !== 'round_won') return;
+  roundSummaryOpen.value = false;
+  if (!run.value.materia?.offers.length) nextRound();
+}
+
 function resetToFreshRun(transcending = false) {
   roundSummaryOpen.value = false;
   profile.value = {
@@ -229,6 +237,7 @@ function acquireDiscoveredMateria(kind: MateriaKind, slot: number | null) {
     lastAction.value = slot === null
       ? `${kind} Materia sent to storage.`
       : `${kind} Materia equipped in slot ${slot + 1}. Replaced gems remain in storage.`;
+    if (run.value.phase === 'round_won' && !roundSummaryOpen.value) nextRound();
   } catch (error) {
     lastAction.value = error instanceof Error ? error.message : 'Materia acquisition failed.';
   }
@@ -445,7 +454,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
 
 
             <RoundStatus :run="run" :hand="hand" :remaining-deck="remainingDeck"
-              @next-round="nextRound" @restart-run="restartRun" />
+              @restart-run="restartRun" />
 
             <MateriaBoard :materia="run.materia ?? createMateriaState()" :links="profile.materiaLinks ?? []" />
 
@@ -497,7 +506,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
   <!-- The viewport dock must not inherit the centered page container's layout. -->
   <RoundCompleteModal :open="roundSummaryOpen" :round="run.round" :score="run.roundChips"
     :required="run.roundTarget" :materia="run.materia ?? createMateriaState(profile.materiaSlots ?? 1)"
-    @continue="roundSummaryOpen = false" />
+    @continue="advanceFromRoundSummary" />
 
   <MateriaDiscoveryModal :enabled="!roundSummaryOpen" :materia="run.materia ?? createMateriaState(profile.materiaSlots ?? 1)"
     @acquire="acquireDiscoveredMateria" />
