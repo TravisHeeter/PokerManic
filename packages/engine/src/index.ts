@@ -32,3 +32,6 @@ export type { NewRunState } from './run-lifecycle.js';
 
 export { MATERIA_SLOT_COSTS, MATERIA_LINK_COSTS, materiaBoardPrice, buyMateriaBoardUpgrade } from './materia-board.js';
 export type { MateriaBoardPurchase } from './materia-board.js';
+
+export { materiaXpThreshold, materiaProgress } from './materia-progression.js';
+export type { MateriaProgress } from './materia-progression.js';
