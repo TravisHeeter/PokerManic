@@ -50,7 +50,7 @@ const costFor = (id: number, tier: number) => {
     </section>
     <section v-if="mode === 'spells'" aria-label="Spells" class="space-y-2">
       <h3 class="font-semibold">Spells · {{ materia.mp }} MP</h3>
-      <p class="text-xs text-muted">Select exactly one card in your hand before casting. Each Materia may cast once per round.</p>
+      <p class="text-xs text-muted">Select exactly one card before casting. You can cast any spell repeatedly while you have enough MP.</p>
       <div v-for="gem in spells" :key="gem.id" class="rounded-lg border border-default overflow-hidden">
         <button class="flex w-full items-center justify-between p-3 text-left font-medium"
           :aria-expanded="expanded===gem.id" @click="expanded=expanded===gem.id?null:gem.id">
@@ -61,9 +61,9 @@ const costFor = (id: number, tier: number) => {
             <input type="radio" :name="'spell-'+gem.id" :checked="(selectedTier[gem.id] ?? 1)===tier" @change="selectedTier[gem.id]=tier" />
             {{ MATERIA_KINDS[gem.kind].name }} {{ ['I','II','III','IV'][tier-1] }} — {{ costFor(gem.id,tier) }} MP
           </label>
-          <UButton size="sm" :disabled="phase!=='playing'||!targetReady||materia.castThisRound.includes(gem.id)||materia.mp<costFor(gem.id,selectedTier[gem.id]??1)"
+          <UButton size="sm" :disabled="phase!=='playing'||!targetReady||materia.mp<costFor(gem.id,selectedTier[gem.id]??1)"
             @click="emit('cast',gem.id,selectedTier[gem.id]??1)">Cast on selected card</UButton>
-          <p v-if="materia.castThisRound.includes(gem.id)" class="text-xs text-amber-300">Already cast this round</p>
+          <p v-if="materia.mp < costFor(gem.id,selectedTier[gem.id]??1)" class="text-xs text-amber-300">Not enough MP</p>
         </div>
       </div>
       <p v-if="!spells.length" class="text-xs text-muted">Equip Fire, Ice or Lightning to unlock spells.</p>
