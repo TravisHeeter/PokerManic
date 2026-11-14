@@ -25,11 +25,18 @@ describe('Materia discovery and spellcasting', () => {
     expect(spellCost('fire',2,1)).toBe(5);
     expect(spellCost('fire',2,2)).toBe(20);
   });
-  it('casts once per round and changes only scoring cards', () => {
+  it('allows repeated casts while MP is available and changes only scoring cards', () => {
     const state = equipMateria(claimMateria({ ...createMateriaState(),offers:['fire'] },'fire'),1,0);
     const cast = castMateria(state,hand,1,1,0);
     expect(cast.mp).toBe(40);
-    expect(() => castMateria(cast,hand,1,1,0)).toThrow('already been cast');
+    const twice = castMateria(cast,hand,1,1,0);
+    expect(twice.mp).toBe(30);
+    expect(twice.effects['hearts:K']?.chips).toBe(20);
+    expect(twice.castThisRound).toEqual([1,1]);
+    let drained = twice;
+    while (drained.mp >= 10) drained = castMateria(drained,hand,1,1,0);
+    expect(drained.mp).toBe(0);
+    expect(() => castMateria(drained,hand,1,1,0)).toThrow('Not enough MP.');
     const base = { score:5, baseChips:5, multiplier:1, scoringCardIndices:[0] };
     expect(applyMateriaScore(base,hand,cast).score).toBe(15);
     expect(applyMateriaScore({ ...base, scoringCardIndices:[2] },hand,cast).score).toBe(5);
