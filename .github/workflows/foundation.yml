@@ -1,11 +1,9 @@
 name: Foundation verification
 
+# Temporarily manual-only during rapid game development.
+# Restore push / pull_request triggers when the game stabilizes.
 on:
-  push:
-    branches:
-      - main
-      - "feat/**"
-  pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
