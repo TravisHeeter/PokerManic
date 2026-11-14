@@ -17,6 +17,23 @@ const emit = defineEmits<{
 
 <template>
   <div data-testid="hand-actions" class="space-y-2" aria-label="Card actions">
+    <div data-testid="hand-score-summary" aria-live="polite" class="grid grid-cols-3 gap-2 rounded-lg border border-default bg-elevated/40 p-2 text-center">
+      <div class="min-w-0 rounded-md bg-default/50 px-2 py-2">
+        <p class="text-[10px] font-semibold uppercase tracking-wide text-muted">Chips</p>
+        <p data-testid="hand-chips" class="text-lg font-bold tabular-nums text-sky-300">{{ preview?.baseChips ?? 0 }}</p>
+      </div>
+      <div class="min-w-0 rounded-md bg-default/50 px-2 py-2">
+        <p class="text-[10px] font-semibold uppercase tracking-wide text-muted">Mult</p>
+        <p data-testid="hand-mult" class="text-lg font-bold tabular-nums text-red-300">×{{ preview?.multiplier ?? 1 }}</p>
+      </div>
+      <div class="min-w-0 rounded-md bg-default/50 px-2 py-2">
+        <p class="text-[10px] font-semibold uppercase tracking-wide text-muted">Hand</p>
+        <p data-testid="hand-type" class="break-words text-sm font-bold">{{ preview?.label ?? 'Select cards' }}</p>
+      </div>
+    </div>
+    <p v-if="preview" data-testid="hand-total-score" class="text-center text-xs text-muted">
+      Estimated score: <strong class="text-amber-300">{{ preview.score.toLocaleString('en-US') }} chips</strong>
+    </p>
               <div  role="group" 
                     aria-label="Play or discard selected cards"
                     class="grid rounded-lg border border-default bg-elevated/50 p-3">
