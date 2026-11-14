@@ -14,9 +14,10 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{ 'buy-perk': [id: RunUpgradeId] }>();
 const perkCatalog = RUN_UPGRADES;
-type DockTab = 'perks' | 'materia' | 'spells' | 'hand' | 'transcendence' | 'god' | 'settings';
+type DockTab = 'perks' | 'materia' | 'spells' | 'hand' | 'god' | 'settings';
 const activeTab = ref<DockTab | ''>('');
 const settingsOpen = ref(false);
+const prestigeOpen = ref(false);
 const handTabAvailable = computed(() => props.manualSelectionAvailable);
 const tabs = computed(() => [
   { label: 'Perk shop', icon: 'i-lucide-shopping-bag', value: 'perks' },
@@ -31,6 +32,11 @@ const tabs = computed(() => [
   { label: 'Settings', icon: 'i-lucide-settings', value: 'settings' },
 ]);
 function selectTab(value: string | number) {
+  if (value === 'transcendence') {
+    activeTab.value = '';
+    prestigeOpen.value = true;
+    return;
+  }
   if (value === 'settings') {
     activeTab.value = '';
     settingsOpen.value = true;
@@ -57,7 +63,7 @@ const canBuy = (id: RunUpgradeId) => {
     <div class="mx-auto max-w-6xl" :class="activeTab ? 'flex h-full min-h-0 flex-col' : ''">
       <div class="shrink-0 border-b border-default px-3 py-2 sm:px-6">
         <UTabs
-          :model-value="settingsOpen ? 'settings' : activeTab"
+          :model-value="prestigeOpen ? 'transcendence' : settingsOpen ? 'settings' : activeTab"
           @update:model-value="selectTab"
           :items="tabs"
           :content="false"
@@ -123,11 +129,6 @@ const canBuy = (id: RunUpgradeId) => {
           <slot name="hand" />
         </div>
       </div>
-      <div id="transcendence-shop-content" role="tabpanel" aria-label="Transcendence"
-        v-show="activeTab === 'transcendence'" data-testid="transcendence-shop-content"
-        class="min-h-0 flex-1 overflow-y-auto overscroll-contain border-t border-default px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-6">
-        <slot name="transcendence" />
-      </div>
       <div id="god-mode-content" role="tabpanel" aria-label="God Mode"
         v-show="activeTab === 'god'" data-testid="god-mode-content"
         class="min-h-0 flex-1 overflow-y-auto overscroll-contain border-t border-default px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-6">
@@ -135,6 +136,18 @@ const canBuy = (id: RunUpgradeId) => {
       </div>
 
     </div>
+    <UModal v-model:open="prestigeOpen" title="Prestige & Transcendence"
+      description="Use prestige chips for permanent upgrades, or transcend to earn more."
+      :ui="{
+        content: 'w-[calc(100vw-1rem)] sm:max-w-3xl max-h-[90dvh] flex flex-col',
+        body: 'min-h-0 overflow-y-auto overscroll-contain'
+      }">
+      <template #body>
+        <div data-testid="transcendence-shop-content">
+          <slot name="transcendence" />
+        </div>
+      </template>
+    </UModal>
     <UModal v-model:open="settingsOpen" title="Settings"
       description="Customize your playing cards and suit colors."
       :ui="{
