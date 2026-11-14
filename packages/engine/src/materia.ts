@@ -84,7 +84,6 @@ export function castMateria(state: Readonly<MateriaState>, hand: readonly Card[]
   const slot = state.equipped.indexOf(id);
   const gem = state.collection.find(g => g.id === id);
   if (slot < 0 || !gem || !['fire','ice','lightning'].includes(gem.kind)) throw new Error('Equip a castable Materia first.');
-  if (state.castThisRound.includes(id)) throw new Error('This Materia has already been cast this round.');
   const kind = gem.kind as 'fire'|'ice'|'lightning';
   const level = materiaLevel(gem);
   const cost = spellCost(kind, level, tier);
