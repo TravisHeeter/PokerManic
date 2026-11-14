@@ -29,7 +29,7 @@ const settingsOpen = ref(false);
 const prestigeOpen = ref(false);
 const handTabAvailable = computed(() => props.manualSelectionAvailable);
 const tabs = computed(() => [
-  { label: 'Perk shop', icon: 'i-lucide-shopping-bag', value: 'perks' },
+  { label: 'Perk shop', icon: 'i-lucide-shopping-bag', value: 'perks', badge: { label: String(props.progress.upgradeChips), color: 'warning' as const, variant: 'solid' as const, size: 'sm' as const } },
   { label: 'Materia', icon: 'i-lucide-gem', value: 'materia' },
   { label: 'Spells', icon: 'i-lucide-wand-sparkles', value: 'spells' },
   ...(handTabAvailable.value
@@ -87,10 +87,8 @@ const canBuy = (id: RunUpgradeId) => {
           }"
           class="w-full"
         />
-        <div class="flex justify-end items-center gap-2 px-2 pt-2">
-          <span class="text-xs text-muted">Upgrade chips</span>
-          <strong data-testid="upgrade-chip-balance" class="text-lg tabular-nums">{{ progress.upgradeChips }}</strong>
-          <UButton v-if="activeTab" data-testid="close-dock" icon="i-lucide-x"
+        <div v-if="activeTab" class="flex justify-end items-center gap-2 px-2 pt-2">
+          <UButton data-testid="close-dock" icon="i-lucide-x"
             color="neutral" variant="ghost" size="xs" aria-label="Close dock"
             @click="activeTab = ''" />
         </div>
