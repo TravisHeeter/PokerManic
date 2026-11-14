@@ -98,6 +98,8 @@ const scoringCardIndexes = computed(() => preview.value?.scoringCardIndices
   .map((i) => selectedInputIndexes.value[i]!) ?? []);
 const scoredHand = ref<ScoringOption | null>(null);
 const roundSummaryOpen = ref(false);
+const selectedMateriaInfoId = ref<number | null>(null);
+const selectedMateriaInfo = computed(() => (run.value.materia?.collection ?? []).find(gem => gem.id === selectedMateriaInfoId.value) ?? null);
 const lastAction = ref('Run started. Earn upgrade chips by clearing rounds. The perk shop is always open.');
 const canDiscardSelection = computed(() => inRound.value
   && run.value.discardsRemaining > 0
@@ -463,7 +465,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
             <RoundStatus :run="run" :hand="hand" :remaining-deck="remainingDeck"
               @restart-run="restartRun" />
 
-            <MateriaBoard :materia="run.materia ?? createMateriaState()" :links="profile.materiaLinks ?? []" />
+            <MateriaBoard :materia="run.materia ?? createMateriaState()" :links="profile.materiaLinks ?? []" @show-info="selectedMateriaInfoId = $event" />
 
             <PlayingCardHand :hand="hand" 
               :card-modifiers="{}" :magic-effects="run.materia?.effects ?? {}" 
@@ -511,6 +513,8 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
   </UContainer>
 
   <!-- The viewport dock must not inherit the centered page container's layout. -->
+  <MateriaDetailsModal :open="selectedMateriaInfo !== null" :gem="selectedMateriaInfo" @close="selectedMateriaInfoId = null" />
+
   <RoundCompleteModal :open="roundSummaryOpen" :round="run.round" :score="run.roundChips"
     :required="run.roundTarget" :materia="run.materia ?? createMateriaState(profile.materiaSlots ?? 1)"
     @continue="advanceFromRoundSummary" />
@@ -523,11 +527,11 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
     :earned-prestige="earnedPrestige" @buy-perk="buyPerk">
     <template #materia>
       <MateriaPanel mode="inventory" :materia="run.materia ?? createMateriaState()" :target-ready="selectedIndexes.length === 1" :phase="run.phase"
-        @equip="equipGem" @unequip="unequipGem" @cast="castSpell" @break-freeze="breakFreeze" />
+        @equip="equipGem" @unequip="unequipGem" @cast="castSpell" @break-freeze="breakFreeze" @show-info="selectedMateriaInfoId = $event" />
     </template>
     <template #spells>
       <MateriaPanel mode="spells" :materia="run.materia ?? createMateriaState()" :target-ready="selectedIndexes.length === 1" :phase="run.phase"
-        @equip="equipGem" @unequip="unequipGem" @cast="castSpell" @break-freeze="breakFreeze" />
+        @equip="equipGem" @unequip="unequipGem" @cast="castSpell" @break-freeze="breakFreeze" @show-info="selectedMateriaInfoId = $event" />
     </template>
     <template #hand>
       <ScoringPanel :preview="preview" :scored-hand="scoredHand"
