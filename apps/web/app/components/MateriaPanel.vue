@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { MATERIA_KINDS, materiaLevel, spellCost, type MateriaKind, type MateriaState } from '@pokermanic/engine';
+import { MATERIA_KINDS, materiaLevel, spellCost, type MateriaState } from '@pokermanic/engine';
 const props = defineProps<{ materia: MateriaState; targetReady: boolean; phase: string; mode: 'inventory' | 'spells' }>();
 const emit = defineEmits<{
   equip: [id: number, slot: number]; unequip: [slot: number];
-  cast: [id: number, tier: number]; claim: [kind: MateriaKind]; breakFreeze: [];
+  cast: [id: number, tier: number]; breakFreeze: [];
 }>();
 const expanded = ref<number | null>(null);
 const selectedTier = ref<Record<number,number>>({});
@@ -21,15 +21,6 @@ const costFor = (id: number, tier: number) => {
 </script>
 <template>
   <div class="space-y-3">
-    <div v-if="mode === 'inventory' && materia.offers.length" class="rounded-lg border border-amber-400/50 p-3 space-y-2">
-      <h3 class="font-semibold text-amber-300">Round cleared — discover Materia</h3>
-      <p class="text-xs text-muted">Choose one reward:</p>
-      <div class="flex flex-wrap gap-2">
-        <UButton v-for="(kind,i) in materia.offers" :key="i" size="sm" color="success" variant="outline" @click="emit('claim',kind)">
-          {{ MATERIA_KINDS[kind].name }}
-        </UButton>
-      </div>
-    </div>
     <section v-if="mode === 'inventory'" aria-label="Materia inventory" class="space-y-2">
       <h3 class="font-semibold">Materia Inventory</h3>
       <p v-if="!materia.collection.length" class="text-sm text-muted">Win rounds to discover Materia. Equip it here after discovery.</p>
