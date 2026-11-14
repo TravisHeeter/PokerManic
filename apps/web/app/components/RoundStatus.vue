@@ -2,7 +2,7 @@
 import type { Card } from '@pokermanic/contracts';
 import type { RunState } from '@pokermanic/engine';
 defineProps<{ run: RunState; hand: Card[]; remainingDeck: Card[] }>();
-const emit = defineEmits<{ 'next-round': []; 'restart-run': [] }>();
+const emit = defineEmits<{ 'restart-run': [] }>();
 </script>
 
 <template>
@@ -34,11 +34,7 @@ const emit = defineEmits<{ 'next-round': []; 'restart-run': [] }>();
                   <p data-testid="deck-count" class="mt-1 text-xl font-bold">{{ remainingDeck.length }}</p>
                 </div>
               </div>
-              <div v-if="run.phase === 'round_won'" class="space-y-3">
-                <p class="text-sm text-green-400">Target reached! Continue when ready. The next round has a higher chip target.</p>
-                <UButton data-testid="next-round" icon="i-lucide-arrow-right" @click="emit('next-round')">Next round</UButton>
-              </div>
-              <div v-else-if="run.phase === 'game_over'" class="space-y-2">
+              <div v-if="run.phase === 'game_over'" class="space-y-2">
                 <p class="text-sm text-red-400">
                   Run over — you needed {{ run.roundTarget }} chips but earned {{ run.roundChips }}.
                   You survived through Round {{ run.round }}.

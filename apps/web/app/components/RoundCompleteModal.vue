@@ -55,8 +55,8 @@ const mpRefill = computed(() => Math.max(0, MAX_MP - props.materia.mp));
           </div>
         </div>
         <p v-else class="text-xs text-muted">Equip Materia to earn XP on future round victories.</p>
-        <UButton data-testid="round-complete-continue" block color="success" size="lg" @click="emit('continue')">
-          Continue
+        <UButton data-testid="next-round" block color="success" size="lg" @click="emit('continue')">
+          Next round
         </UButton>
       </section>
     </template>
