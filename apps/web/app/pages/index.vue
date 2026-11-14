@@ -512,7 +512,8 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
     @acquire="acquireDiscoveredMateria" />
 
   <PerkShop :phase="run.phase" :progress="progress" :profile="profile" :rules="rules"
-    :next-round-rules="nextRoundRules" :manual-selection-available="manualUnlocked" @buy-perk="buyPerk">
+    :next-round-rules="nextRoundRules" :manual-selection-available="manualUnlocked"
+    :earned-prestige="earnedPrestige" @buy-perk="buyPerk">
     <template #materia>
       <MateriaPanel mode="inventory" :materia="run.materia ?? createMateriaState()" :target-ready="selectedIndexes.length === 1" :phase="run.phase"
         @equip="equipGem" @unequip="unequipGem" @cast="castSpell" @break-freeze="breakFreeze" />
