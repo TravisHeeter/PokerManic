@@ -23,7 +23,7 @@ export const MATERIA_KINDS: Readonly<Record<MateriaKind, { name: string; color: 
   fortune: { name: 'Fortune', color: 'purple', maxLevel: 5 },
 };
 export const MAX_MP = 50;
-export const XP_LEVELS = [0, 20, 100, 350]; // 20 XP: first-run level 2
+export const XP_LEVELS = [0, 20, 100, 350, 800]; // cumulative XP; 20 XP reaches level 2
 export function materiaLevel(gem: Readonly<MateriaGem>): number {
   const max = MATERIA_KINDS[gem.kind].maxLevel;
   return Math.min(max, 1 + XP_LEVELS.slice(1).filter(threshold => gem.xp >= threshold).length);
