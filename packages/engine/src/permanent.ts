@@ -80,13 +80,13 @@ export function startingUpgradeChips(profile: Readonly<PermanentProgress>): numb
 export function transcendReward(run: Readonly<RunState>): number {
   const completed = run.phase === 'round_won' ? run.round : run.round - 1;
   if (completed < 2) return 0;
-  const base = Math.floor(completed / 2);
+  // New runs bank each even-round reward at the level equipped when that round was won.
+  // Legacy saves without the accumulator retain their previously displayed reward.
   const materia = run.materia;
   const equipped = new Set(materia?.equipped.filter((id): id is number => id !== null) ?? []);
-  // Each equipped Prestige Materia grants +1 chip per level on transcendence.
-  const bonus = materia?.collection.reduce((sum, gem) =>
+  const legacyBonus = materia?.collection.reduce((sum, gem) =>
     sum + (gem.kind === 'prestige' && equipped.has(gem.id) ? materiaLevel(gem) : 0), 0) ?? 0;
-  const reward = base + bonus;
+  const reward = run.potentialPrestige ?? Math.floor(completed / 2) + legacyBonus;
   if (!Number.isSafeInteger(reward)) throw new RangeError('Prestige reward exceeds safe integer precision.');
   return reward;
 }
