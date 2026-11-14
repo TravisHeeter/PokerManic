@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { MATERIA_KINDS, materiaLevel, spellCost, type MateriaState } from '@pokermanic/engine';
+import { MATERIA_KINDS, materiaLevel, materiaProgress, spellCost, type MateriaState } from '@pokermanic/engine';
 const props = defineProps<{ materia: MateriaState; targetReady: boolean; phase: string; mode: 'inventory' | 'spells' }>();
 const emit = defineEmits<{
   equip: [id: number, slot: number]; unequip: [slot: number];
@@ -38,7 +38,17 @@ const costFor = (id: number, tier: number) => {
           <div class="min-w-0">
             <p class="font-medium">{{ MATERIA_KINDS[gem.kind].name }}</p>
             <p class="text-xs text-muted">{{ MATERIA_KINDS[gem.kind].description }}</p>
-            <p class="text-xs text-muted">{{ gem.xp }} XP</p>
+            <p class="text-xs text-muted">Level {{ materiaProgress(gem).level }} / {{ materiaProgress(gem).maxLevel }} · {{ materiaProgress(gem).xp }} XP</p>
+            <template v-if="!materiaProgress(gem).isMaxLevel">
+              <div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-gray-700" role="progressbar"
+                :aria-label="MATERIA_KINDS[gem.kind].name + ' XP progress'"
+                :aria-valuenow="materiaProgress(gem).xpIntoLevel"
+                :aria-valuemax="materiaProgress(gem).nextLevelXp! - materiaProgress(gem).levelStartXp">
+                <div class="h-full rounded-full bg-amber-400" :style="{ width: (materiaProgress(gem).progress * 100) + '%' }" />
+              </div>
+              <p class="text-xs text-muted">{{ materiaProgress(gem).xpToNextLevel }} XP to level {{ materiaProgress(gem).level + 1 }}<span v-if="materiaProgress(gem).nextUnlock"> · Unlocks {{ materiaProgress(gem).nextUnlock }}</span></p>
+            </template>
+            <p v-else class="text-xs text-amber-300">Max level reached</p>
           </div>
         </div>
         <div class="flex flex-wrap gap-1">
