@@ -18,6 +18,15 @@ const selectedKind = (event: Event) => (event.target as HTMLSelectElement).value
 const selectedLevel = (event: Event) => Number((event.target as HTMLSelectElement).value);
 const selectedSlot = (event: Event) => Number((event.target as HTMLSelectElement).value);
 const slotFor = (id: number) => props.materia.equipped.indexOf(id);
+function chooseSlot(id: number, event: Event) {
+  const slot = selectedSlot(event);
+  if (slot < 0) {
+    const current = slotFor(id);
+    if (current >= 0) emit('unequip', current);
+  } else {
+    emit('equip', id, slot);
+  }
+}
 </script>
 
 <template>
@@ -73,7 +82,7 @@ const slotFor = (id: number) => props.materia.equipped.indexOf(id);
         <label class="min-w-32 flex-1 space-y-1 text-xs">
           <span>Equipped slot</span>
           <select :data-testid="`god-materia-slot-${gem.id}`" :value="slotFor(gem.id)"
-            @change="emit(selectedSlot($event) < 0 ? 'unequip' : 'equip', ...(selectedSlot($event) < 0 ? [slotFor(gem.id)] : [gem.id, selectedSlot($event)]) as never)"
+            @change="chooseSlot(gem.id, $event)"
             class="w-full rounded-md border border-default bg-default px-2 py-2 text-sm">
             <option :value="-1">Storage / Unequipped</option>
             <option v-for="(_, index) in materia.equipped" :key="index" :value="index">Slot {{ index + 1 }}</option>
