@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue';
 import type { RunPhase, RunProgress, RoundRules, RunUpgradeId } from '@pokermanic/engine';
 import { RUN_UPGRADES, upgradeCost, isRunUpgradeUnlocked } from '@pokermanic/engine';
 import type { SavedProfile } from '@pokermanic/contracts';
+import type { MateriaState } from '@pokermanic/engine';
 
 const props = defineProps<{
   phase: RunPhase;
@@ -12,8 +13,15 @@ const props = defineProps<{
   nextRoundRules: RoundRules;
   manualSelectionAvailable: boolean;
   earnedPrestige: number;
+  materia: MateriaState;
+  targetReady: boolean;
 }>();
-const emit = defineEmits<{ 'buy-perk': [id: RunUpgradeId] }>();
+const emit = defineEmits<{
+  'buy-perk': [id: RunUpgradeId];
+  'cast-spell': [id: number, tier: number];
+  'break-freeze': [];
+  'show-materia-info': [id: number];
+}>();
 const perkCatalog = RUN_UPGRADES;
 type DockTab = 'perks' | 'materia' | 'spells' | 'hand' | 'god' | 'settings';
 const activeTab = ref<DockTab | ''>('');
@@ -123,10 +131,15 @@ const canBuy = (id: RunUpgradeId) => {
         class="min-h-0 flex-1 overflow-y-auto overscroll-contain border-t border-default px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-6">
         <slot name="materia" />
       </div>
-      <div v-show="activeTab === 'spells'" role="tabpanel" aria-label="Spells"
+      <div v-if="activeTab === 'spells'" role="tabpanel" aria-label="Spells"
         data-testid="spells-dock-content"
         class="min-h-0 flex-1 overflow-y-auto overscroll-contain border-t border-default px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-6">
-        <slot name="spells" />
+        <!-- Render directly rather than forwarding the nested named slot;
+             this guarantees spell controls mount when the Spells tab opens. -->
+        <MateriaPanel mode="spells" :materia="materia" :target-ready="targetReady" :phase="phase"
+          @cast="(id, tier) => emit('cast-spell', id, tier)"
+          @break-freeze="emit('break-freeze')"
+          @show-info="id => emit('show-materia-info', id)" />
       </div>
       <div v-if="handTabAvailable" id="hand-shop-content" role="tabpanel" aria-label="Hand selection"
         v-show="activeTab === 'hand'" data-testid="hand-shop-content"
