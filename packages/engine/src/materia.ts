@@ -31,6 +31,22 @@ export function materiaLevel(gem: Readonly<MateriaGem>): number {
   const max = MATERIA_KINDS[gem.kind].maxLevel;
   return Math.min(max, 1 + XP_LEVELS.slice(1).filter(threshold => gem.xp >= threshold).length);
 }
+/** Prestige points granted immediately when selling a Materia. */
+export function materiaSaleValue(gem: Readonly<MateriaGem>): number {
+  const level = materiaLevel(gem);
+  return level * (level + 1) / 2;
+}
+export function sellMateria(state: Readonly<MateriaState>, id: number): { materia: MateriaState; prestigePoints: number } {
+  const gem = state.collection.find(item => item.id === id);
+  if (!gem) throw new Error('Materia not owned.');
+  return {
+    materia: { ...state,
+      collection: state.collection.filter(item => item.id !== id),
+      equipped: state.equipped.map(value => value === id ? null : value),
+      castThisRound: state.castThisRound.filter(value => value !== id) },
+    prestigePoints: materiaSaleValue(gem),
+  };
+}
 export function materiaKey(card: Pick<Card, 'rank' | 'suit'>): string {
   return `${card.suit}:${card.rank}`;
 }
