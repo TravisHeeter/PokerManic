@@ -20,7 +20,7 @@ import {
   createPermanentProgress, startingUpgradeChips,
   transcendReward, transcendRun, PERMANENT_UPGRADES,
   permanentUpgradeCost, buyPermanentUpgrade, isRunUpgradeUnlocked,
-  MATERIA_KINDS, XP_LEVELS, materiaLevel, sortHandForDisplay, beginAnotherRun, createMateriaState, reconcileMateriaSlots, completeMateriaRound, claimMateria, equipMateria, unequipMateria, castMateria, breakMateriaFreeze, applyMateriaScore, buyMateriaBoardUpgrade,
+  MATERIA_KINDS, XP_LEVELS, materiaLevel, sortHandForDisplay, beginAnotherRun, createMateriaState, reconcileMateriaSlots, completeMateriaRound, claimMateria, equipMateria, unequipMateria, sellMateria, materiaSaleValue, castMateria, breakMateriaFreeze, applyMateriaScore, buyMateriaBoardUpgrade,
 } from '@pokermanic/engine';
 import type { RunState, ScoringOption, RunUpgradeId, RunProgress, HandSortMode, PermanentUpgradeId, MateriaKind, MateriaBoardPurchase } from '@pokermanic/engine';
 
@@ -302,6 +302,26 @@ function godRemoveMateria(id: number) {
   lastAction.value = 'God Mode: Materia removed.';
 }
 
+function sellGem(id: number) {
+  const current = run.value.materia;
+  const gem = current?.collection.find(item => item.id === id);
+  if (!current || !gem) return;
+  const price = materiaSaleValue(gem);
+  if (!import.meta.client || !window.confirm(
+    `Sell level ${materiaLevel(gem)} ${MATERIA_KINDS[gem.kind].name} Materia for ${price} PP? This permanently removes it from inventory and equipment.`
+  )) return;
+  try {
+    const result = sellMateria(current, id);
+    const balance = profile.value.prestigeChips + result.prestigePoints;
+    if (!Number.isSafeInteger(balance)) throw new RangeError('Prestige balance exceeds safe integer precision.');
+    run.value = { ...run.value, materia: result.materia };
+    profile.value = { ...profile.value, prestigeChips: balance };
+    if (selectedMateriaInfoId.value === id) selectedMateriaInfoId.value = null;
+    lastAction.value = `Sold ${MATERIA_KINDS[gem.kind].name} Materia for ${price} PP.`;
+  } catch (error) {
+    lastAction.value = error instanceof Error ? error.message : 'Materia sale failed.';
+  }
+}
 function equipGem(id: number, slot: number) {
   try {
     run.value = { ...run.value, materia: equipMateria(run.value.materia ?? createMateriaState(),id,slot) };
@@ -587,7 +607,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
     @show-materia-info="selectedMateriaInfoId = $event">
     <template #materia>
       <MateriaPanel mode="inventory" :materia="run.materia ?? createMateriaState()" :target-ready="selectedIndexes.length === 1" :phase="run.phase"
-        @equip="equipGem" @unequip="unequipGem" @cast="castSpell" @break-freeze="breakFreeze" @show-info="selectedMateriaInfoId = $event" />
+        @equip="equipGem" @unequip="unequipGem" @sell="sellGem" @cast="castSpell" @break-freeze="breakFreeze" @show-info="selectedMateriaInfoId = $event" />
     </template>
     <template #hand>
       <ScoringPanel :preview="preview" :scored-hand="scoredHand"
