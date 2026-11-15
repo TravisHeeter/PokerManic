@@ -86,7 +86,7 @@ const canBuy = (id: RunUpgradeId) => {
           }"
           class="w-full"
         >
-          <template #leading="{ item }">
+          <template #default="{ item }">
             <span class="relative inline-flex items-center justify-center">
               <UIcon :name="item.icon" class="size-5" />
               <span v-if="item.value === 'perks' || (item.value === 'transcendence' && earnedPrestige > 0)"
@@ -95,6 +95,7 @@ const canBuy = (id: RunUpgradeId) => {
                 {{ item.value === 'perks' ? progress.upgradeChips : earnedPrestige }}
               </span>
             </span>
+            <span class="text-[10px]/3 text-center leading-tight">{{ item.label }}</span>
           </template>
         </UTabs>
         <div v-if="activeTab" class="flex justify-end items-center gap-2 px-2 pt-2">
