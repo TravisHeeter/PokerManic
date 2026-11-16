@@ -11,7 +11,11 @@ function chooseSpell(id: number, tier: number) {
   opened.value = null;
 }
 function dragTier(id: number): number | null {
-  return armed.value?.id === id ? armed.value.tier : null;
+  if (armed.value?.id !== id) return null;
+  const gem = props.materia.collection.find(item => item.id === id);
+  if (!gem || !castable(gem.kind) || props.phase !== 'playing') return null;
+  const tier = armed.value.tier;
+  return tier <= materiaLevel(gem) && props.materia.mp >= spellCost(gem.kind as 'fire'|'ice'|'lightning', materiaLevel(gem), tier) ? tier : null;
 }
 let touchDrag: { id: number; x: number; y: number } | null = null;
 let suppressClick = false;
