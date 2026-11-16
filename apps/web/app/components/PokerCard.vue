@@ -10,6 +10,8 @@ const props = withDefaults(defineProps<{
   scoring?: boolean;
   disabled?: boolean;
   stackIndex?: number;
+  materiaCardIndex?: number;
+  materiaDropEnabled?: boolean;
   customColor?: string;
   magicEffect?: { chips: number; mult: number; frozen: boolean } | null;
   modifier?: CardModifier | null;
@@ -22,7 +24,14 @@ const props = withDefaults(defineProps<{
   magicEffect: null,
   modifier: null,
 });
-const emit = defineEmits<{ toggle: [] }>();
+const emit = defineEmits<{ toggle: []; 'materia-drop': [id: number] }>();
+function dropMateria(event: DragEvent) {
+  if (props.variant !== 'hand' || !props.materiaDropEnabled) return;
+  const value = event.dataTransfer?.getData('application/x-pokermanic-materia');
+  if (!value) return;
+  const id = Number(value);
+  if (Number.isInteger(id) && id > 0) emit('materia-drop', id);
+}
 const SUIT_SYMBOLS: Record<CardSuit, string> = {
   hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠',
 };
@@ -46,6 +55,7 @@ const title = computed(() => `${props.card.rank} of ${props.card.suit}`);
       : 'w-full min-w-0'"
     :data-testid="variant === 'hand' ? 'playing-card' : `preview-ace-${card.suit}`"
     :data-suit="card.suit"
+    :data-materia-card-index="variant === 'hand' ? materiaCardIndex : undefined"
     :data-selected="variant === 'hand' && selected ? 'true' : 'false'"
     :data-scoring-card="variant === 'hand' && scoring ? 'true' : 'false'"
     :data-frozen="magicEffect?.frozen ? 'true' : 'false'"
@@ -54,6 +64,8 @@ const title = computed(() => `${props.card.rank} of ${props.card.suit}`);
     :disabled="variant === 'hand' ? disabled : undefined"
     :style="{ ...(customColor ? { color: customColor } : {}), zIndex: stackIndex }"
     @click="variant === 'hand' && emit('toggle')"
+    @dragover="variant === 'hand' && materiaDropEnabled && $event.preventDefault()"
+    @drop.prevent="dropMateria"
   >
     <span v-if="variant === 'hand' && magicEffect" data-testid="card-magic-badge"
       class="absolute bottom-2 left-1 z-20 rounded bg-sky-900 px-1 py-0.5 text-[10px] font-bold text-white shadow-sm sm:left-2"
