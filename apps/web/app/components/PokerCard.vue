@@ -110,11 +110,12 @@ const title = computed(() => `${props.card.rank} of ${props.card.suit}`);
 </template>
 
 <style scoped>
-.pm-card[data-materia-hover="true"] {
+.pm-card[data-materia-hover="true"],
+.pm-card[data-materia-drop-hover="true"] {
   z-index: 100 !important;
   outline: 4px solid #fcd34d;
   outline-offset: 2px;
   filter: brightness(1.22);
-  box-shadow: 0 0 28px rgba(251,191,36,.9);
+  box-shadow: 0 0 28px rgba(251, 191, 36, 0.9);
 }
 </style>
