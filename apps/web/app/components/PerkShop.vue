@@ -71,23 +71,14 @@ const canBuy = (id: RunUpgradeId) => {
     :class="activeTab ? 'h-[46dvh] sm:h-[36dvh]' : ''">
     <div class="mx-auto max-w-6xl" :class="activeTab ? 'flex h-full min-h-0 flex-col' : ''">
       <div class="shrink-0 border-b border-default px-3 py-2 sm:px-6">
-        <UTabs
-          :model-value="prestigeOpen ? 'transcendence' : settingsOpen ? 'settings' : activeTab"
-          @update:model-value="selectTab"
-          :items="tabs"
-          :content="false"
-          color="success"
-          variant="pill"
-          aria-label="Game controls"
-          :ui="{
-            list: 'justify-around w-full',
-            trigger: 'grow min-w-0 flex-col gap-1 py-1 px-1',
-            label: 'text-[10px]/3 text-center leading-tight'
-          }"
-          class="w-full"
-        >
-          <template #leading="{ item }">
-            <span class="relative inline-flex items-center justify-center">
+        <div role="tablist" aria-label="Game controls" class="flex w-full items-stretch justify-around gap-0.5">
+          <button v-for="item in tabs" :key="item.value" type="button" role="tab"
+            :aria-selected="(prestigeOpen ? 'transcendence' : settingsOpen ? 'settings' : activeTab) === item.value"
+            :data-testid="`dock-tab-${item.value}`"
+            class="flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-md px-0.5 py-1.5 text-muted transition-colors hover:bg-elevated hover:text-default"
+            :class="(prestigeOpen ? 'transcendence' : settingsOpen ? 'settings' : activeTab) === item.value ? 'bg-elevated text-default' : ''"
+            @click="selectTab(item.value)">
+            <span class="relative inline-flex size-6 items-center justify-center">
               <UIcon :name="item.icon" class="size-5" />
               <span v-if="item.value === 'perks' || (item.value === 'transcendence' && earnedPrestige > 0)"
                 :data-testid="item.value === 'perks' ? 'upgrade-chip-balance' : 'prestige-balance'"
@@ -95,8 +86,9 @@ const canBuy = (id: RunUpgradeId) => {
                 {{ item.value === 'perks' ? progress.upgradeChips : earnedPrestige }}
               </span>
             </span>
-          </template>
-        </UTabs>
+            <span class="max-w-full text-center text-[10px] leading-3">{{ item.label }}</span>
+          </button>
+        </div>
         <div v-if="activeTab" class="flex justify-end items-center gap-2 px-2 pt-2">
           <UButton data-testid="close-dock" icon="i-lucide-x"
             color="neutral" variant="ghost" size="xs" aria-label="Close dock"

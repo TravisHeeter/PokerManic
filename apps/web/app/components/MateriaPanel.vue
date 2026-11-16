@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { MATERIA_KINDS, materiaLevel, materiaProgress, spellCost, type MateriaState } from '@pokermanic/engine';
+import { MATERIA_KINDS, materiaLevel, materiaProgress, materiaSaleValue, spellCost, type MateriaState } from '@pokermanic/engine';
 const props = defineProps<{ materia: MateriaState; targetReady: boolean; phase: string; mode: 'inventory' | 'spells' }>();
 const emit = defineEmits<{
   equip: [id: number, slot: number]; unequip: [slot: number];
   cast: [id: number, tier: number]; breakFreeze: [];
-  'show-info': [id: number];
+  'show-info': [id: number]; sell: [id: number];
 }>();
 const expanded = ref<number | null>(null);
 const selectedTier = ref<Record<number,number>>({});
@@ -51,7 +51,9 @@ const costFor = (id: number, tier: number) => {
             <p v-else class="text-xs text-amber-300">Max level reached</p>
           </div>
         </div>
-        <div class="flex flex-wrap gap-1">
+        <div class="flex flex-wrap items-center gap-1">
+          <UButton size="xs" color="warning" variant="outline" :data-testid="`sell-materia-${gem.id}`"
+            @click="emit('sell', gem.id)">Sell · {{ materiaSaleValue(gem) }} PP</UButton>
           <template v-for="(slot,i) in materia.equipped" :key="i">
             <UButton v-if="slot === gem.id" size="xs" color="success" variant="outline"
               @click="emit('unequip',i)">Unequip slot {{ i+1 }}</UButton>

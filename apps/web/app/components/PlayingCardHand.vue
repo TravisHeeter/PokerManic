@@ -21,6 +21,7 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{
   'toggle-card': [index: number];
+  'materia-drop': [id: number, index: number];
   'update:sortMode': [mode: HandSortMode];
 }>();
 const displayedCards = computed(() => sortHandForDisplay(props.hand, props.sortMode));
@@ -57,10 +58,13 @@ const handColumns = computed(() => displayedCards.value.length > 1
                 :scoring="scoringCardIndexes.includes(entry.originalIndex)"
                 :disabled="!inRound || (selectedIndexes.length === Math.max(cardsPerPlay, maxCardsPerDiscard) && !selectedIndexes.includes(entry.originalIndex))"
                 :stack-index="displayIndex + 1"
+                :materia-card-index="entry.originalIndex"
+                :materia-drop-enabled="inRound"
                 :custom-color="props.suitColors === 'themed' ? props.customSuitColors[entry.card.suit] : undefined"
                 :magic-effect="magicEffects[cardIdentity(entry.card)]"
                 :modifier="cardModifiers[cardIdentity(entry.card)]"
                 @toggle="emit('toggle-card', entry.originalIndex)"
+                @materia-drop="id => emit('materia-drop', id, entry.originalIndex)"
               />
             </div>
 </template>

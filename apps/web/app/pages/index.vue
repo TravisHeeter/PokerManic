@@ -20,7 +20,7 @@ import {
   createPermanentProgress, startingUpgradeChips,
   transcendReward, transcendRun, PERMANENT_UPGRADES,
   permanentUpgradeCost, buyPermanentUpgrade, isRunUpgradeUnlocked,
-  MATERIA_KINDS, XP_LEVELS, materiaLevel, sortHandForDisplay, beginAnotherRun, createMateriaState, reconcileMateriaSlots, completeMateriaRound, claimMateria, equipMateria, unequipMateria, castMateria, breakMateriaFreeze, applyMateriaScore, buyMateriaBoardUpgrade,
+  MATERIA_KINDS, XP_LEVELS, materiaLevel, sortHandForDisplay, beginAnotherRun, createMateriaState, reconcileMateriaSlots, completeMateriaRound, claimMateria, equipMateria, unequipMateria, sellMateria, materiaSaleValue, castMateria, breakMateriaFreeze, applyMateriaScore, buyMateriaBoardUpgrade,
 } from '@pokermanic/engine';
 import type { RunState, ScoringOption, RunUpgradeId, RunProgress, HandSortMode, PermanentUpgradeId, MateriaKind, MateriaBoardPurchase } from '@pokermanic/engine';
 
@@ -302,6 +302,26 @@ function godRemoveMateria(id: number) {
   lastAction.value = 'God Mode: Materia removed.';
 }
 
+function sellGem(id: number) {
+  const current = run.value.materia;
+  const gem = current?.collection.find(item => item.id === id);
+  if (!current || !gem) return;
+  const price = materiaSaleValue(gem);
+  if (!import.meta.client || !window.confirm(
+    `Sell level ${materiaLevel(gem)} ${MATERIA_KINDS[gem.kind].name} Materia for ${price} PP? This permanently removes it from inventory and equipment.`
+  )) return;
+  try {
+    const result = sellMateria(current, id);
+    const balance = profile.value.prestigeChips + result.prestigePoints;
+    if (!Number.isSafeInteger(balance)) throw new RangeError('Prestige balance exceeds safe integer precision.');
+    run.value = { ...run.value, materia: result.materia };
+    profile.value = { ...profile.value, prestigeChips: balance };
+    if (selectedMateriaInfoId.value === id) selectedMateriaInfoId.value = null;
+    lastAction.value = `Sold ${MATERIA_KINDS[gem.kind].name} Materia for ${price} PP.`;
+  } catch (error) {
+    lastAction.value = error instanceof Error ? error.message : 'Materia sale failed.';
+  }
+}
 function equipGem(id: number, slot: number) {
   try {
     run.value = { ...run.value, materia: equipMateria(run.value.materia ?? createMateriaState(),id,slot) };
@@ -311,13 +331,23 @@ function equipGem(id: number, slot: number) {
 function unequipGem(slot: number) {
   run.value = { ...run.value, materia: unequipMateria(run.value.materia ?? createMateriaState(),slot) };
 }
-function castSpell(id: number, tier: number) {
-  if (selectedIndexes.value.length !== 1 || !inRound.value) return;
+function castSpellOnCard(id: number, tier: number, index: number) {
+  if (!inRound.value || !Number.isInteger(index) || index < 0 || index >= run.value.hand.length) return;
   try {
-    run.value = { ...run.value, materia: castMateria(run.value.materia ?? createMateriaState(),run.value.hand,id,tier,selectedIndexes.value[0]!,profile.value.materiaLinks ?? [],sortHandForDisplay(run.value.hand,sortMode.value).map(entry => entry.originalIndex)) };
-    lastAction.value = 'Spell cast! The selected card stays selected so Chips, Mult and the hand preview update immediately.';
+    run.value = { ...run.value, materia: castMateria(
+      run.value.materia ?? createMateriaState(), run.value.hand, id, tier, index,
+      profile.value.materiaLinks ?? [],
+      sortHandForDisplay(run.value.hand, sortMode.value).map(entry => entry.originalIndex)
+    ) };
     scoredHand.value = null;
-  } catch (error) { lastAction.value = error instanceof Error ? error.message : 'Spell failed.'; }
+    lastAction.value = 'Spell cast on target card! Chips, Mult and hand preview updated.';
+  } catch (error) {
+    lastAction.value = error instanceof Error ? error.message : 'Spell failed.';
+  }
+}
+function castSpell(id: number, tier: number) {
+  if (selectedIndexes.value.length !== 1) return;
+  castSpellOnCard(id, tier, selectedIndexes.value[0]!);
 }
 function breakFreeze() {
   if (selectedIndexes.value.length !== 1) return;
@@ -501,7 +531,9 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
             <RoundStatus :run="run" :hand="hand" :remaining-deck="remainingDeck"
               @restart-run="restartRun" />
 
-            <MateriaBoard :materia="run.materia ?? createMateriaState()" :links="profile.materiaLinks ?? []" @show-info="selectedMateriaInfoId = $event" />
+            <MateriaBoard :materia="run.materia ?? createMateriaState()" :links="profile.materiaLinks ?? []" @show-info="selectedMateriaInfoId = $event"
+              :target-ready="selectedIndexes.length === 1" :phase="run.phase"
+              @cast="castSpell" @drop-cast="castSpellOnCard" />
 
             <PlayingCardHand :hand="hand" 
               :card-modifiers="{}" :magic-effects="run.materia?.effects ?? {}" 
@@ -514,7 +546,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
               :in-round="inRound"
               :card-style="cardStyle" :suit-font="suitFont" :suit-colors="suitColors" :custom-suit-colors="customSuitColors"
               v-model:sort-mode="sortMode" 
-              @toggle-card="toggleCard" />
+              @toggle-card="toggleCard" @materia-drop="(id, index) => castSpellOnCard(id, 1, index)" />
 
             <HandActions
               :preview="preview"
@@ -566,7 +598,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
     @show-materia-info="selectedMateriaInfoId = $event">
     <template #materia>
       <MateriaPanel mode="inventory" :materia="run.materia ?? createMateriaState()" :target-ready="selectedIndexes.length === 1" :phase="run.phase"
-        @equip="equipGem" @unequip="unequipGem" @cast="castSpell" @break-freeze="breakFreeze" @show-info="selectedMateriaInfoId = $event" />
+        @equip="equipGem" @unequip="unequipGem" @sell="sellGem" @cast="castSpell" @break-freeze="breakFreeze" @show-info="selectedMateriaInfoId = $event" />
     </template>
     <template #hand>
       <ScoringPanel :preview="preview" :scored-hand="scoredHand"
