@@ -111,11 +111,11 @@ const slots = computed(() => props.materia.equipped.map((id,index) => ({
         <div class="flex flex-col items-center gap-1">
           <div v-if="slot.gem" class="relative">
             <button type="button" class="relative flex h-11 w-11 items-center justify-center rounded-full border-2 shadow-inner cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
-              :class="MATERIA_KINDS[slot.gem.kind].color === 'blue' ? 'bg-blue-800 border-blue-400' : MATERIA_KINDS[slot.gem.kind].color === 'purple' ? 'bg-purple-800 border-purple-400' : 'bg-green-800 border-green-400'"
               :aria-label="MATERIA_KINDS[slot.gem.kind].name + ', level ' + materiaLevel(slot.gem) + '. ' + MATERIA_KINDS[slot.gem.kind].description"
               :draggable="dragTier(slot.gem.id) !== null && phase === 'playing'"
               :data-materia-source="slot.gem.id"
               :data-spell-armed="dragTier(slot.gem.id) !== null ? 'true' : undefined"
+              :class="[MATERIA_KINDS[slot.gem.kind].color === 'blue' ? 'bg-blue-800 border-blue-400' : MATERIA_KINDS[slot.gem.kind].color === 'purple' ? 'bg-purple-800 border-purple-400' : 'bg-green-800 border-green-400', dragTier(slot.gem.id) !== null ? 'ring-2 ring-amber-300 ring-offset-2 ring-offset-slate-900' : '']"
               @dragend="endDrag"
               @dragstart="startDrag($event, slot.gem.id)"
               :style="dragTier(slot.gem.id) !== null ? { touchAction: 'none' } : undefined"
