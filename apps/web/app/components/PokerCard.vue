@@ -34,14 +34,20 @@ function dragOver(event: DragEvent) {
 function dragLeave(event: DragEvent) {
   if (!(event.currentTarget as HTMLElement).contains(event.relatedTarget as Node | null)) dragHover.value = false;
 }
-const emit = defineEmits<{ toggle: []; 'materia-drop': [id: number] }>();
+const emit = defineEmits<{ toggle: []; 'materia-drop': [id: number, tier: number] }>();
 function dropMateria(event: DragEvent) {
   dragHover.value = false;
   if (props.variant !== 'hand' || !props.materiaDropEnabled) return;
   const value = event.dataTransfer?.getData('application/x-pokermanic-materia');
   if (!value) return;
-  const id = Number(value);
-  if (Number.isInteger(id) && id > 0) emit('materia-drop', id);
+  try {
+    const payload: unknown = JSON.parse(value);
+    if (!payload || typeof payload !== 'object') return;
+    const { id, tier } = payload as { id?: unknown; tier?: unknown };
+    if (typeof id === 'number' && Number.isSafeInteger(id) && id > 0 &&
+        typeof tier === 'number' && Number.isInteger(tier) && tier >= 1 && tier <= 4)
+      emit('materia-drop', id, tier);
+  } catch { /* Ignore non-Materia drops. */ }
 }
 const SUIT_SYMBOLS: Record<CardSuit, string> = {
   hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠',
