@@ -21,7 +21,7 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{
   'toggle-card': [index: number];
-  'materia-drop': [id: number, index: number];
+  'materia-drop': [id: number, tier: number, index: number];
   'update:sortMode': [mode: HandSortMode];
 }>();
 const displayedCards = computed(() => sortHandForDisplay(props.hand, props.sortMode));
@@ -64,7 +64,7 @@ const handColumns = computed(() => displayedCards.value.length > 1
                 :magic-effect="magicEffects[cardIdentity(entry.card)]"
                 :modifier="cardModifiers[cardIdentity(entry.card)]"
                 @toggle="emit('toggle-card', entry.originalIndex)"
-                @materia-drop="id => emit('materia-drop', id, entry.originalIndex)"
+                @materia-drop="(id, tier) => emit('materia-drop', id, tier, entry.originalIndex)"
               />
             </div>
 </template>
