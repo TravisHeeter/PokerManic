@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import type { Card, CardSuit } from '@pokermanic/contracts';
 import { cardIdentity, type CardModifier } from '@pokermanic/engine';
 
@@ -24,8 +24,19 @@ const props = withDefaults(defineProps<{
   magicEffect: null,
   modifier: null,
 });
+const dragHover = ref(false);
+function dragOver(event: DragEvent) {
+  if (props.variant !== 'hand' || !props.materiaDropEnabled || !event.dataTransfer?.types.includes('application/x-pokermanic-materia')) return;
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'copy';
+  dragHover.value = true;
+}
+function dragLeave(event: DragEvent) {
+  if (!(event.currentTarget as HTMLElement).contains(event.relatedTarget as Node | null)) dragHover.value = false;
+}
 const emit = defineEmits<{ toggle: []; 'materia-drop': [id: number] }>();
 function dropMateria(event: DragEvent) {
+  dragHover.value = false;
   if (props.variant !== 'hand' || !props.materiaDropEnabled) return;
   const value = event.dataTransfer?.getData('application/x-pokermanic-materia');
   if (!value) return;
@@ -59,12 +70,15 @@ const title = computed(() => `${props.card.rank} of ${props.card.suit}`);
     :data-selected="variant === 'hand' && selected ? 'true' : 'false'"
     :data-scoring-card="variant === 'hand' && scoring ? 'true' : 'false'"
     :data-frozen="magicEffect?.frozen ? 'true' : 'false'"
+    :data-materia-drop-hover="dragHover ? 'true' : undefined"
     :aria-label="variant === 'hand' ? `${selected ? 'Deselect' : 'Select'} ${title}` : title"
     :aria-pressed="variant === 'hand' ? selected : undefined"
     :disabled="variant === 'hand' ? disabled : undefined"
     :style="{ ...(customColor ? { color: customColor } : {}), zIndex: stackIndex }"
+    :class="{ 'ring-4 ring-amber-300 brightness-125 shadow-[0_0_25px_rgba(251,191,36,0.8)]': dragHover }"
     @click="variant === 'hand' && emit('toggle')"
-    @dragover="variant === 'hand' && materiaDropEnabled && $event.preventDefault()"
+    @dragover="dragOver"
+    @dragleave="dragLeave"
     @drop.prevent="dropMateria"
   >
     <span v-if="variant === 'hand' && magicEffect" data-testid="card-magic-badge"
@@ -97,3 +111,12 @@ const title = computed(() => `${props.card.rank} of ${props.card.suit}`);
     </div>
   </component>
 </template>
+
+<style scoped>
+.pm-card[data-materia-hover="true"] {
+  outline: 4px solid #fcd34d;
+  outline-offset: 2px;
+  filter: brightness(1.22);
+  box-shadow: 0 0 28px rgba(251,191,36,.9);
+}
+</style>
