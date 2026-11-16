@@ -59,6 +59,7 @@ const handColumns = computed(() => displayedCards.value.length > 1
                 :disabled="!inRound || (selectedIndexes.length === Math.max(cardsPerPlay, maxCardsPerDiscard) && !selectedIndexes.includes(entry.originalIndex))"
                 :stack-index="displayIndex + 1"
                 :materia-card-index="entry.originalIndex"
+                :materia-drop-enabled="inRound"
                 :custom-color="props.suitColors === 'themed' ? props.customSuitColors[entry.card.suit] : undefined"
                 :magic-effect="magicEffects[cardIdentity(entry.card)]"
                 :modifier="cardModifiers[cardIdentity(entry.card)]"
