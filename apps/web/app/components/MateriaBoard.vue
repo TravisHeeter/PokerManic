@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, onBeforeUnmount } from 'vue';
-import { MATERIA_KINDS, materiaLevel, spellCost, type MateriaState } from '@pokermanic/engine';
+import { MATERIA_KINDS, materiaLevel, spellCost, fireValue, lightningValue, type MateriaState } from '@pokermanic/engine';
 const props = defineProps<{ materia: MateriaState; links: number[]; targetReady: boolean; phase: string }>();
 const emit = defineEmits<{ 'show-info': [id: number]; cast: [id: number, tier: number]; 'drop-cast': [id: number, tier: number, index: number] }>();
 
@@ -11,7 +11,11 @@ function chooseSpell(id: number, tier: number) {
   opened.value = null;
 }
 function dragTier(id: number): number | null {
-  return armed.value?.id === id ? armed.value.tier : null;
+  if (armed.value?.id !== id) return null;
+  const gem = props.materia.collection.find(item => item.id === id);
+  if (!gem || !castable(gem.kind) || props.phase !== 'playing') return null;
+  const tier = armed.value.tier;
+  return tier <= materiaLevel(gem) && props.materia.mp >= spellCost(gem.kind as 'fire'|'ice'|'lightning', materiaLevel(gem), tier) ? tier : null;
 }
 let touchDrag: { id: number; x: number; y: number } | null = null;
 let suppressClick = false;
@@ -95,6 +99,12 @@ function startDrag(event: DragEvent, id: number) {
   opened.value = null;
 }
 const cost = (kind: string, level: number, tier: number) => spellCost(kind as 'fire'|'ice'|'lightning', level, tier);
+function spellLabel(kind: string, tier: number): string {
+  if (kind === 'fire') return `Fire ${tier} - ${fireValue(tier)} chips`;
+  if (kind === 'lightning') return `Lightning ${tier} - +${lightningValue(tier)} mult`;
+  const iceEffects = ['Freeze card', 'Freeze + copy right', 'Freeze + copy neighbors', 'Freeze + copy all'];
+  return `Ice ${tier} - ${iceEffects[tier - 1] ?? 'Freeze'}`;
+}
 const slots = computed(() => props.materia.equipped.map((id,index) => ({
   index, gem: props.materia.collection.find(item => item.id === id)
 })));
@@ -129,13 +139,17 @@ const slots = computed(() => props.materia.equipped.map((id,index) => ({
             <span v-if="dragTier(slot.gem.id) !== null" class="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded bg-amber-300 px-1 text-[10px] font-bold text-slate-950"> {{ ['I','II','III','IV'][(dragTier(slot.gem.id) ?? 1)-1] }} </span>
             <div v-if="opened === slot.gem.id" role="menu" :aria-label="MATERIA_KINDS[slot.gem.kind].name + ' spells'"
               class="absolute bottom-full left-0 z-[100] mb-2 w-52 space-y-1 rounded-lg border border-default bg-elevated p-2 shadow-xl">
-              <p class="text-xs font-semibold">{{ MATERIA_KINDS[slot.gem.kind].name }}</p>
+              <div class="flex items-center justify-between gap-2">
+                <p class="text-xs font-semibold">{{ MATERIA_KINDS[slot.gem.kind].name }} spells</p>
+                <span class="text-xs font-bold text-sky-300">{{ materia.mp }} MP available</span>
+              </div>
               <template v-if="castable(slot.gem.kind)">
                 <UButton v-for="tier in materiaLevel(slot.gem)" :key="tier" size="xs" block
                   :disabled="phase !== 'playing' || materia.mp < cost(slot.gem.kind, materiaLevel(slot.gem), tier)"
-                  :variant="dragTier(slot.gem.id) === tier ? 'solid' : 'outline'"
+                   :variant="dragTier(slot.gem.id) === tier ? 'solid' : 'outline'"
+                  :class="materia.mp < cost(slot.gem.kind, materiaLevel(slot.gem), tier) ? 'opacity-40 grayscale cursor-not-allowed' : ''"
                   @click="chooseSpell(slot.gem.id, tier)">
-                  Select {{ ['I','II','III','IV'][tier-1] }} · {{ cost(slot.gem.kind, materiaLevel(slot.gem), tier) }} MP
+                  {{ spellLabel(slot.gem.kind, tier) }} · {{ cost(slot.gem.kind, materiaLevel(slot.gem), tier) }} MP
                 </UButton>
                 <p class="text-xs text-muted">Choose a spell, then drag this Materia onto a card.</p>
               </template>
