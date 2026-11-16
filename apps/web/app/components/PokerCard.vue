@@ -66,10 +66,6 @@ const title = computed(() => `${props.card.rank} of ${props.card.suit}`);
       :title="modifier.replaceAll('_', ' ')">
       {{ modifierBadges[modifier] }}
     </span>
-    <span v-if="variant === 'hand' && selected" aria-hidden="true" data-testid="selected-card-check"
-      class="pm-card-selected-check absolute right-1 top-1 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-sky-500 text-lg font-black leading-none text-slate-950 shadow-md shadow-black/50 sm:right-2 sm:top-2 sm:h-8 sm:w-8">✓</span>
-    <span v-if="variant === 'hand' && scoring" aria-hidden="true"
-      class="pm-card-scoring-marker absolute bottom-2 right-2 z-20 rounded bg-amber-300 px-1.5 py-0.5 text-[10px] font-black uppercase leading-tight text-slate-950">Scores</span>
 
     <!-- A single centered index layout serves every playable and preview card. -->
     <div class="pm-card-corner pm-card-corner-top" aria-hidden="true">

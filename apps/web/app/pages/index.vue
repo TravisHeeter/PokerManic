@@ -25,7 +25,7 @@ import {
 import type { RunState, ScoringOption, RunUpgradeId, RunProgress, HandSortMode, PermanentUpgradeId, MateriaKind, MateriaBoardPurchase } from '@pokermanic/engine';
 
 useSeoMeta({
-  title: 'PokerManic | Milestone 10 — Materia & Magic',
+  title: 'PokerManic',
   description: 'Earn permanent prestige perks that survive every run.',
 });
 
@@ -488,36 +488,16 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
   <UContainer class="min-h-screen pt-10 pb-28 md:pt-16 md:pb-28">
     <div class="mx-auto max-w-6xl space-y-9">
       <header class="space-y-4">
-        <div class="flex flex-wrap items-center gap-3">
-          <p class="uppercase tracking-[0.25em] text-sm text-amber-300">Milestone 10 / Materia & Magic</p>
-          <UBadge color="primary" variant="subtle">Current milestone</UBadge>
-        </div>
         <div class="space-y-2">
           <h1 class="text-5xl font-bold tracking-tight md:text-6xl">PokerManic</h1>
           <p class="text-lg text-muted">
-            A poker-based survival roguelite in development, built and tested one milestone at a time.
+            A poker-based roguelite in development
           </p>
         </div>
       </header>
 
       <section aria-labelledby="hand-heading" class="space-y-4">
         <UCard>
-          <div class="space-y-6">
-            <div class="flex flex-wrap items-start justify-between gap-4">
-              <div class="space-y-1">
-                <p class="text-xs font-semibold uppercase tracking-widest text-amber-300">
-                  Milestone 10 · Materia & Magic
-                </p>
-                <h2 id="hand-heading" class="text-3xl font-bold">Your hand</h2>
-                <p class="text-sm text-muted">
-                  Play 1 to {{ rules.cardsPerPlay }} cards to earn scoring chips, or discard up to {{ rules.maxCardsPerDiscard }}.
-                  Beat the target, earn upgrade chips, and spend them whenever you like during your run.
-                </p>
-              </div>
-              <UBadge color="success" variant="subtle">Card engine connected</UBadge>
-            </div>
-
-
             <RoundStatus :run="run" :hand="hand" :remaining-deck="remainingDeck"
               @restart-run="restartRun" />
 
@@ -558,7 +538,6 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
             <p class="text-xs text-muted">
               Played and discarded cards are recycled when needed. Purchased perks and Materia persist across new runs until you transcend. Prestige permanently unlocks Materia slots and links.
             </p>
-          </div>
         </UCard>
       </section>
 
