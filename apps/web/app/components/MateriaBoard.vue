@@ -75,6 +75,7 @@ onBeforeUnmount(() => {
   clearDragVisuals();
 });
 const castable = (kind: string) => ['fire','ice','lightning'].includes(kind);
+function endDrag() { document.documentElement.removeAttribute('data-materia-dragging'); }
 function startDrag(event: DragEvent, id: number) {
   if (!event.dataTransfer) return;
   event.dataTransfer.setData('application/x-pokermanic-materia', String(id));
@@ -104,7 +105,7 @@ const slots = computed(() => props.materia.equipped.map((id,index) => ({
               :aria-label="MATERIA_KINDS[slot.gem.kind].name + ', level ' + materiaLevel(slot.gem) + '. ' + MATERIA_KINDS[slot.gem.kind].description"
               :draggable="castable(slot.gem.kind)"
               :data-materia-source="slot.gem.id"
-              @dragend="document.documentElement.removeAttribute('data-materia-dragging')"
+              @dragend="endDrag"
               @dragstart="startDrag($event, slot.gem.id)"
               :style="castable(slot.gem.kind) ? { touchAction: 'none' } : undefined"
               @pointerdown="touchStart($event, slot.gem.id)"
