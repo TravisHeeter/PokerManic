@@ -11,6 +11,7 @@ const props = withDefaults(defineProps<{
   disabled?: boolean;
   stackIndex?: number;
   materiaCardIndex?: number;
+  materiaDropEnabled?: boolean;
   customColor?: string;
   magicEffect?: { chips: number; mult: number; frozen: boolean } | null;
   modifier?: CardModifier | null;
@@ -25,7 +26,7 @@ const props = withDefaults(defineProps<{
 });
 const emit = defineEmits<{ toggle: []; 'materia-drop': [id: number] }>();
 function dropMateria(event: DragEvent) {
-  if (props.variant !== 'hand' || props.disabled) return;
+  if (props.variant !== 'hand' || !props.materiaDropEnabled) return;
   const value = event.dataTransfer?.getData('application/x-pokermanic-materia');
   if (!value) return;
   const id = Number(value);
@@ -63,7 +64,7 @@ const title = computed(() => `${props.card.rank} of ${props.card.suit}`);
     :disabled="variant === 'hand' ? disabled : undefined"
     :style="{ ...(customColor ? { color: customColor } : {}), zIndex: stackIndex }"
     @click="variant === 'hand' && emit('toggle')"
-    @dragover="variant === 'hand' && !disabled && $event.preventDefault()"
+    @dragover="variant === 'hand' && materiaDropEnabled && $event.preventDefault()"
     @drop.prevent="dropMateria"
   >
     <span v-if="variant === 'hand' && magicEffect" data-testid="card-magic-badge"
