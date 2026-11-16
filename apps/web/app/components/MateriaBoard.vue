@@ -6,6 +6,11 @@ const emit = defineEmits<{ 'show-info': [id: number]; cast: [id: number, tier: n
 
 const opened = ref<number | null>(null);
 let touchDrag: { id: number; x: number; y: number } | null = null;
+let suppressClick = false;
+function openGem(id: number) {
+  if (suppressClick) { suppressClick = false; return; }
+  opened.value = opened.value === id ? null : id;
+}
 function touchStart(event: PointerEvent, id: number) {
   if (event.pointerType === 'mouse' || !props.materia.collection.some(g => g.id === id && castable(g.kind))) return;
   touchDrag = { id, x: event.clientX, y: event.clientY };
@@ -15,6 +20,7 @@ function touchEnd(event: PointerEvent) {
   const drag = touchDrag;
   touchDrag = null;
   if (!drag || Math.hypot(event.clientX - drag.x, event.clientY - drag.y) < 20) return;
+  suppressClick = true;
   const card = document.elementFromPoint(event.clientX, event.clientY)?.closest('[data-materia-card-index]');
   const index = Number(card?.getAttribute('data-materia-card-index'));
   if (card && Number.isInteger(index)) {
@@ -54,7 +60,7 @@ const slots = computed(() => props.materia.equipped.map((id,index) => ({
               @dragstart="startDrag($event, slot.gem.id)"
               :style="castable(slot.gem.kind) ? { touchAction: 'none' } : undefined"
               @pointerdown="touchStart($event, slot.gem.id)"
-              @click="opened = opened === slot.gem.id ? null : slot.gem.id">
+              @click="openGem(slot.gem.id)">
               <UIcon :name="MATERIA_KINDS[slot.gem.kind].icon" class="h-6 w-6 text-white" aria-hidden="true" />
               <span class="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-200 px-0.5 text-[10px] font-bold leading-none text-slate-950 shadow ring-1 ring-slate-900" :aria-label="'Level ' + materiaLevel(slot.gem)">
                 {{ materiaLevel(slot.gem) }}
