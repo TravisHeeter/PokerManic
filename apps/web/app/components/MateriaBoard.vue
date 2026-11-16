@@ -7,7 +7,7 @@ const emit = defineEmits<{ 'show-info': [id: number]; cast: [id: number, tier: n
 const opened = ref<number | null>(null);
 let touchDrag: { id: number; x: number; y: number } | null = null;
 function touchStart(event: PointerEvent, id: number) {
-  if (event.pointerType === 'mouse') return;
+  if (event.pointerType === 'mouse' || !props.materia.collection.some(g => g.id === id && castable(g.kind))) return;
   touchDrag = { id, x: event.clientX, y: event.clientY };
   window.addEventListener('pointerup', touchEnd, { once: true });
 }
@@ -52,6 +52,7 @@ const slots = computed(() => props.materia.equipped.map((id,index) => ({
               :aria-label="MATERIA_KINDS[slot.gem.kind].name + ', level ' + materiaLevel(slot.gem) + '. ' + MATERIA_KINDS[slot.gem.kind].description"
               :draggable="castable(slot.gem.kind)"
               @dragstart="startDrag($event, slot.gem.id)"
+              :style="castable(slot.gem.kind) ? { touchAction: 'none' } : undefined"
               @pointerdown="touchStart($event, slot.gem.id)"
               @click="opened = opened === slot.gem.id ? null : slot.gem.id">
               <UIcon :name="MATERIA_KINDS[slot.gem.kind].icon" class="h-6 w-6 text-white" aria-hidden="true" />
