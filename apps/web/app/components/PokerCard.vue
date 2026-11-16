@@ -74,7 +74,7 @@ const title = computed(() => `${props.card.rank} of ${props.card.suit}`);
     :aria-label="variant === 'hand' ? `${selected ? 'Deselect' : 'Select'} ${title}` : title"
     :aria-pressed="variant === 'hand' ? selected : undefined"
     :disabled="variant === 'hand' ? disabled : undefined"
-    :style="{ ...(customColor ? { color: customColor } : {}), zIndex: stackIndex }"
+    :style="{ ...(customColor ? { color: customColor } : {}), zIndex: dragHover ? 100 : stackIndex }"
     :class="{ 'ring-4 ring-amber-300 brightness-125 shadow-[0_0_25px_rgba(251,191,36,0.8)]': dragHover }"
     @click="variant === 'hand' && emit('toggle')"
     @dragover="dragOver"
@@ -114,6 +114,7 @@ const title = computed(() => `${props.card.rank} of ${props.card.suit}`);
 
 <style scoped>
 .pm-card[data-materia-hover="true"] {
+  z-index: 100 !important;
   outline: 4px solid #fcd34d;
   outline-offset: 2px;
   filter: brightness(1.22);
