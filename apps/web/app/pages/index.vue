@@ -546,7 +546,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
               :in-round="inRound"
               :card-style="cardStyle" :suit-font="suitFont" :suit-colors="suitColors" :custom-suit-colors="customSuitColors"
               v-model:sort-mode="sortMode" 
-              @toggle-card="toggleCard" @materia-drop="(id, index) => castSpellOnCard(id, 1, index)" />
+              @toggle-card="toggleCard" @materia-drop="castSpellOnCard" />
 
             <HandActions
               :preview="preview"
