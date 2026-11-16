@@ -60,10 +60,12 @@ const title = computed(() => `${props.card.rank} of ${props.card.suit}`);
     :is="variant === 'hand' ? 'button' : 'div'"
     :type="variant === 'hand' ? 'button' : undefined"
     class="pm-card relative aspect-[5/7] select-none rounded-xl border text-left shadow-lg shadow-black/30"
-    :class="variant === 'hand'
+    :class="
+    variant === 'hand'
       ? ['w-[var(--card-width)]', selected ? '-translate-y-3' : 'hover:-translate-y-1',
          'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 disabled:cursor-not-allowed disabled:opacity-60']
-      : 'w-full min-w-0'"
+      : 'w-full min-w-0'
+    "
     :data-testid="variant === 'hand' ? 'playing-card' : `preview-ace-${card.suit}`"
     :data-suit="card.suit"
     :data-materia-card-index="variant === 'hand' ? materiaCardIndex : undefined"
@@ -75,7 +77,6 @@ const title = computed(() => `${props.card.rank} of ${props.card.suit}`);
     :aria-pressed="variant === 'hand' ? selected : undefined"
     :disabled="variant === 'hand' ? disabled : undefined"
     :style="{ ...(customColor ? { color: customColor } : {}), zIndex: dragHover ? 100 : stackIndex }"
-    :class="{ 'ring-4 ring-amber-300 brightness-125 shadow-[0_0_25px_rgba(251,191,36,0.8)]': dragHover }"
     @click="variant === 'hand' && emit('toggle')"
     @dragover="dragOver"
     @dragleave="dragLeave"
