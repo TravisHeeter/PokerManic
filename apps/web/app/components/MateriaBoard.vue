@@ -1,10 +1,28 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, onBeforeUnmount } from 'vue';
 import { MATERIA_KINDS, materiaLevel, spellCost, type MateriaState } from '@pokermanic/engine';
 const props = defineProps<{ materia: MateriaState; links: number[]; targetReady: boolean; phase: string }>();
-const emit = defineEmits<{ 'show-info': [id: number]; cast: [id: number, tier: number] }>();
+const emit = defineEmits<{ 'show-info': [id: number]; cast: [id: number, tier: number]; 'drop-cast': [id: number, tier: number, index: number] }>();
 
 const opened = ref<number | null>(null);
+let touchDrag: { id: number; x: number; y: number } | null = null;
+function touchStart(event: PointerEvent, id: number) {
+  if (event.pointerType === 'mouse') return;
+  touchDrag = { id, x: event.clientX, y: event.clientY };
+  window.addEventListener('pointerup', touchEnd, { once: true });
+}
+function touchEnd(event: PointerEvent) {
+  const drag = touchDrag;
+  touchDrag = null;
+  if (!drag || Math.hypot(event.clientX - drag.x, event.clientY - drag.y) < 20) return;
+  const card = document.elementFromPoint(event.clientX, event.clientY)?.closest('[data-materia-card-index]');
+  const index = Number(card?.getAttribute('data-materia-card-index'));
+  if (card && Number.isInteger(index)) {
+    opened.value = null;
+    emit('drop-cast', drag.id, 1, index);
+  }
+}
+onBeforeUnmount(() => window.removeEventListener('pointerup', touchEnd));
 const castable = (kind: string) => ['fire','ice','lightning'].includes(kind);
 function startDrag(event: DragEvent, id: number) {
   if (!event.dataTransfer) return;
@@ -34,6 +52,7 @@ const slots = computed(() => props.materia.equipped.map((id,index) => ({
               :aria-label="MATERIA_KINDS[slot.gem.kind].name + ', level ' + materiaLevel(slot.gem) + '. ' + MATERIA_KINDS[slot.gem.kind].description"
               :draggable="castable(slot.gem.kind)"
               @dragstart="startDrag($event, slot.gem.id)"
+              @pointerdown="touchStart($event, slot.gem.id)"
               @click="opened = opened === slot.gem.id ? null : slot.gem.id">
               <UIcon :name="MATERIA_KINDS[slot.gem.kind].icon" class="h-6 w-6 text-white" aria-hidden="true" />
               <span class="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-200 px-0.5 text-[10px] font-bold leading-none text-slate-950 shadow ring-1 ring-slate-900" :aria-label="'Level ' + materiaLevel(slot.gem)">
