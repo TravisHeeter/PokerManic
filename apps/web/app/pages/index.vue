@@ -331,13 +331,23 @@ function equipGem(id: number, slot: number) {
 function unequipGem(slot: number) {
   run.value = { ...run.value, materia: unequipMateria(run.value.materia ?? createMateriaState(),slot) };
 }
-function castSpell(id: number, tier: number) {
-  if (selectedIndexes.value.length !== 1 || !inRound.value) return;
+function castSpellOnCard(id: number, tier: number, index: number) {
+  if (!inRound.value || !Number.isInteger(index) || index < 0 || index >= run.value.hand.length) return;
   try {
-    run.value = { ...run.value, materia: castMateria(run.value.materia ?? createMateriaState(),run.value.hand,id,tier,selectedIndexes.value[0]!,profile.value.materiaLinks ?? [],sortHandForDisplay(run.value.hand,sortMode.value).map(entry => entry.originalIndex)) };
-    lastAction.value = 'Spell cast! The selected card stays selected so Chips, Mult and the hand preview update immediately.';
+    run.value = { ...run.value, materia: castMateria(
+      run.value.materia ?? createMateriaState(), run.value.hand, id, tier, index,
+      profile.value.materiaLinks ?? [],
+      sortHandForDisplay(run.value.hand, sortMode.value).map(entry => entry.originalIndex)
+    ) };
     scoredHand.value = null;
-  } catch (error) { lastAction.value = error instanceof Error ? error.message : 'Spell failed.'; }
+    lastAction.value = 'Spell cast on target card! Chips, Mult and hand preview updated.';
+  } catch (error) {
+    lastAction.value = error instanceof Error ? error.message : 'Spell failed.';
+  }
+}
+function castSpell(id: number, tier: number) {
+  if (selectedIndexes.value.length !== 1) return;
+  castSpellOnCard(id, tier, selectedIndexes.value[0]!);
 }
 function breakFreeze() {
   if (selectedIndexes.value.length !== 1) return;
@@ -541,7 +551,9 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
             <RoundStatus :run="run" :hand="hand" :remaining-deck="remainingDeck"
               @restart-run="restartRun" />
 
-            <MateriaBoard :materia="run.materia ?? createMateriaState()" :links="profile.materiaLinks ?? []" @show-info="selectedMateriaInfoId = $event" />
+            <MateriaBoard :materia="run.materia ?? createMateriaState()" :links="profile.materiaLinks ?? []" @show-info="selectedMateriaInfoId = $event"
+              :target-ready="selectedIndexes.length === 1" :phase="run.phase"
+              @cast="castSpell" @drop-cast="castSpellOnCard" />
 
             <PlayingCardHand :hand="hand" 
               :card-modifiers="{}" :magic-effects="run.materia?.effects ?? {}" 
@@ -554,7 +566,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
               :in-round="inRound"
               :card-style="cardStyle" :suit-font="suitFont" :suit-colors="suitColors" :custom-suit-colors="customSuitColors"
               v-model:sort-mode="sortMode" 
-              @toggle-card="toggleCard" />
+              @toggle-card="toggleCard" @materia-drop="(id, index) => castSpellOnCard(id, 1, index)" />
 
             <HandActions
               :preview="preview"
