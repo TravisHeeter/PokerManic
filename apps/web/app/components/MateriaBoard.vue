@@ -7,6 +7,37 @@ const emit = defineEmits<{ 'show-info': [id: number]; cast: [id: number, tier: n
 const opened = ref<number | null>(null);
 let touchDrag: { id: number; x: number; y: number } | null = null;
 let suppressClick = false;
+let ghost: HTMLDivElement | null = null;
+let hovered: HTMLElement | null = null;
+function setHovered(element: HTMLElement | null) {
+  if (hovered === element) return;
+  hovered?.removeAttribute('data-materia-hover');
+  hovered = element;
+  hovered?.setAttribute('data-materia-hover', 'true');
+}
+function clearDragVisuals() {
+  setHovered(null);
+  ghost?.remove();
+  ghost = null;
+}
+function moveTouch(event: PointerEvent) {
+  if (!touchDrag) return;
+  if (!ghost && Math.hypot(event.clientX - touchDrag.x, event.clientY - touchDrag.y) < 12) return;
+  if (!ghost) {
+    const source = document.querySelector<HTMLElement>(`[data-materia-source="${touchDrag.id}"]`);
+    if (!source) return;
+    ghost = document.createElement('div');
+    ghost.className = 'pointer-events-none fixed z-[9999] flex h-12 w-12 items-center justify-center rounded-full border-2 border-amber-300 bg-slate-800 shadow-[0_0_22px_rgba(251,191,36,0.85)]';
+    ghost.innerHTML = source.innerHTML;
+    ghost.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(ghost);
+    opened.value = null;
+  }
+  ghost.style.left = `${event.clientX - 24}px`;
+  ghost.style.top = `${event.clientY - 24}px`;
+  const element = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>('[data-materia-card-index]');
+  setHovered(element ?? null);
+}
 function openGem(id: number) {
   if (suppressClick) { suppressClick = false; return; }
   opened.value = opened.value === id ? null : id;
@@ -14,11 +45,20 @@ function openGem(id: number) {
 function touchStart(event: PointerEvent, id: number) {
   if (event.pointerType === 'mouse' || !props.materia.collection.some(g => g.id === id && castable(g.kind))) return;
   touchDrag = { id, x: event.clientX, y: event.clientY };
+  window.addEventListener('pointermove', moveTouch);
   window.addEventListener('pointerup', touchEnd, { once: true });
+  window.addEventListener('pointercancel', cancelTouch, { once: true });
+}
+function cancelTouch() {
+  touchDrag = null;
+  window.removeEventListener('pointermove', moveTouch);
+  clearDragVisuals();
 }
 function touchEnd(event: PointerEvent) {
   const drag = touchDrag;
   touchDrag = null;
+  window.removeEventListener('pointermove', moveTouch);
+  clearDragVisuals();
   if (!drag || Math.hypot(event.clientX - drag.x, event.clientY - drag.y) < 20) return;
   suppressClick = true;
   const card = document.elementFromPoint(event.clientX, event.clientY)?.closest('[data-materia-card-index]');
@@ -28,13 +68,19 @@ function touchEnd(event: PointerEvent) {
     emit('drop-cast', drag.id, 1, index);
   }
 }
-onBeforeUnmount(() => window.removeEventListener('pointerup', touchEnd));
+onBeforeUnmount(() => {
+  window.removeEventListener('pointerup', touchEnd);
+  window.removeEventListener('pointermove', moveTouch);
+  window.removeEventListener('pointercancel', cancelTouch);
+  clearDragVisuals();
+});
 const castable = (kind: string) => ['fire','ice','lightning'].includes(kind);
 function startDrag(event: DragEvent, id: number) {
   if (!event.dataTransfer) return;
   event.dataTransfer.setData('application/x-pokermanic-materia', String(id));
   event.dataTransfer.setData('text/plain', String(id));
   event.dataTransfer.effectAllowed = 'copy';
+  document.documentElement.setAttribute('data-materia-dragging', 'true');
   opened.value = null;
 }
 const cost = (kind: string, level: number, tier: number) => spellCost(kind as 'fire'|'ice'|'lightning', level, tier);
@@ -57,6 +103,8 @@ const slots = computed(() => props.materia.equipped.map((id,index) => ({
               :class="MATERIA_KINDS[slot.gem.kind].color === 'blue' ? 'bg-blue-800 border-blue-400' : MATERIA_KINDS[slot.gem.kind].color === 'purple' ? 'bg-purple-800 border-purple-400' : 'bg-green-800 border-green-400'"
               :aria-label="MATERIA_KINDS[slot.gem.kind].name + ', level ' + materiaLevel(slot.gem) + '. ' + MATERIA_KINDS[slot.gem.kind].description"
               :draggable="castable(slot.gem.kind)"
+              :data-materia-source="slot.gem.id"
+              @dragend="document.documentElement.removeAttribute('data-materia-dragging')"
               @dragstart="startDrag($event, slot.gem.id)"
               :style="castable(slot.gem.kind) ? { touchAction: 'none' } : undefined"
               @pointerdown="touchStart($event, slot.gem.id)"
