@@ -77,7 +77,7 @@ export function awardRoundUpgradeChips(
   if (state.round !== progress.rewardedThroughRound + 1) {
     throw new Error('Rounds must be rewarded in order.');
   }
-  const reward = Math.max(1, Math.floor(state.roundChips / 10));
+  const reward = Math.max(1, Math.floor(Math.sqrt(state.roundChips)));
   if (!Number.isSafeInteger(reward) || !Number.isSafeInteger(progress.upgradeChips + reward)) {
     throw new RangeError('Upgrade chip balance exceeded safe precision.');
   }
