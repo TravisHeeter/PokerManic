@@ -6,6 +6,7 @@ defineProps<{
   handsRemaining: number;
   canDiscardSelection: boolean;
   selectedCount: number;
+  cardsPerPlay: number;
   discardsRemaining: number;
 }>();
 const emit = defineEmits<{
@@ -28,10 +29,13 @@ const emit = defineEmits<{
       </div>
       <div class="min-w-0 rounded-md bg-default/50 px-2 py-2">
         <p class="text-[10px] font-semibold uppercase tracking-wide text-muted">Hand</p>
-        <p data-testid="hand-type" class="break-words text-sm font-bold">{{ preview?.label ?? 'Select cards' }}</p>
+        <p data-testid="hand-type" class="break-words text-sm font-bold">{{ preview?.label ?? (selectedCount > cardsPerPlay ? 'Play limit exceeded' : 'Select cards') }}</p>
       </div>
     </div>
-    <p v-if="preview" data-testid="hand-total-score" class="text-center text-xs text-muted">
+    <p v-if="selectedCount > cardsPerPlay" data-testid="play-limit-warning" role="status" class="text-center text-sm text-amber-300">
+      {{ selectedCount }} cards selected — your current play limit is {{ cardsPerPlay }}. Upgrade Cards per Play or deselect {{ selectedCount - cardsPerPlay }}.
+    </p>
+    <p v-else-if="preview" data-testid="hand-total-score" class="text-center text-xs text-muted">
       Estimated score: <strong class="text-amber-300">{{ preview.score.toLocaleString('en-US') }} chips</strong>
     </p>
               <div  role="group" 
