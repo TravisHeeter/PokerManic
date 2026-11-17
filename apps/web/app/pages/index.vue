@@ -560,6 +560,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
               :discards-remaining="run.discardsRemaining"
               :can-discard-selection="canDiscardSelection"
               :selected-count="selectedIndexes.length"
+              :cards-per-play="rules.cardsPerPlay"
               @score-hand="scoreSelectedHand"
               @discard-selected="discardSelectedCards"
               @clear-selection="clearSelection"
