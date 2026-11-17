@@ -25,7 +25,13 @@ export const MATERIA_KINDS: Readonly<Record<MateriaKind, {
   fortune: { name: 'Fortune', color: 'purple', maxLevel: 5, icon: 'i-lucide-sparkles', description: 'When equipped, improves the chances of finding Lightning Materia in discovery rewards.' },
   prestige: { name: 'Prestige', color: 'purple', maxLevel: 4, icon: 'i-lucide-crown', description: 'When equipped, earns bonus Prestige chips on transcendence: +1 chip per Materia level.' },
 };
-export const MAX_MP = 50;
+export const STARTING_MP = 10;
+export const MP_PER_ROUND = 5;
+/** Legacy export: opening round MP, not a fixed cap. */
+export const MAX_MP = STARTING_MP;
+export function roundMaxMp(round: number, starting = STARTING_MP, growth = MP_PER_ROUND): number {
+  return starting + (round - 1) * growth;
+}
 export const XP_LEVELS = [0, 20, 100, 350, 1000]; // Shared XP thresholds through level 5 (Fortune).
 export function materiaLevel(gem: Readonly<MateriaGem>): number {
   const max = MATERIA_KINDS[gem.kind].maxLevel;
@@ -88,8 +94,8 @@ export function claimMateria(state: Readonly<MateriaState>, kind: MateriaKind): 
   return { ...state, collection: [...state.collection, { id: state.nextId, kind, xp: 0 }],
     nextId: state.nextId + 1, discoveries: state.discoveries + 1, offers: [] };
 }
-export function newMateriaRound(state: Readonly<MateriaState>): MateriaState {
-  return { ...state, mp: MAX_MP, castThisRound: [], effects: {}, offers: [] };
+export function newMateriaRound(state: Readonly<MateriaState>, round = 1, starting = STARTING_MP, growth = MP_PER_ROUND): MateriaState {
+  return { ...state, mp: roundMaxMp(round, starting, growth), castThisRound: [], effects: {}, offers: [] };
 }
 export const DEFAULT_FIRE_VALUES = [10, 30, 100] as const;
 export function fireValue(tier: number, values: readonly number[] = DEFAULT_FIRE_VALUES): number { return values[tier - 1] ?? 0; }
