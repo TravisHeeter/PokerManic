@@ -580,7 +580,9 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
   </UContainer>
 
   <!-- The viewport dock must not inherit the centered page container's layout. -->
-  <MateriaDetailsModal :open="selectedMateriaInfo !== null" :gem="selectedMateriaInfo" @close="selectedMateriaInfoId = null" />
+  <MateriaDetailsModal :open="selectedMateriaInfo !== null" :gem="selectedMateriaInfo"
+    :equipped-slot="selectedMateriaInfo ? (run.materia?.equipped.indexOf(selectedMateriaInfo.id) ?? -1) >= 0 ? run.materia!.equipped.indexOf(selectedMateriaInfo.id) : null : null"
+    @close="selectedMateriaInfoId = null" @sell="sellGem" @unequip="unequipGem" />
 
   <RoundCompleteModal :open="roundSummaryOpen" :round="run.round" :score="run.roundChips"
     :required="run.roundTarget" :materia="run.materia ?? createMateriaState(profile.materiaSlots ?? 1)"
