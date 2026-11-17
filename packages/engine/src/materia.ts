@@ -91,14 +91,15 @@ export function claimMateria(state: Readonly<MateriaState>, kind: MateriaKind): 
 export function newMateriaRound(state: Readonly<MateriaState>): MateriaState {
   return { ...state, mp: MAX_MP, castThisRound: [], effects: {}, offers: [] };
 }
-export function fireValue(tier: number): number { return [10,100,1000][tier - 1] ?? 0; }
+export const DEFAULT_FIRE_VALUES = [10, 30, 100] as const;
+export function fireValue(tier: number, values: readonly number[] = DEFAULT_FIRE_VALUES): number { return values[tier - 1] ?? 0; }
 export function lightningValue(tier: number): number { return [1,3,10][tier - 1] ?? 0; }
 export function spellCost(kind: 'fire'|'ice'|'lightning', level: number, tier: number): number {
   if (tier > level || tier < 1) throw new RangeError('Spell not yet learned.');
   const base = kind === 'fire' ? [10,20,40] : kind === 'lightning' ? [20,40,80] : [15,30,50,70];
   return Math.max(1, Math.ceil((base[tier-1] ?? 10) / 2 ** (level-tier)));
 }
-export function castMateria(state: Readonly<MateriaState>, hand: readonly Card[], id: number, tier: number, targetIndex: number, linkedPairs: readonly number[] = [], visibleOrder?: readonly number[]): MateriaState {
+export function castMateria(state: Readonly<MateriaState>, hand: readonly Card[], id: number, tier: number, targetIndex: number, linkedPairs: readonly number[] = [], visibleOrder?: readonly number[], fireValues: readonly number[] = DEFAULT_FIRE_VALUES): MateriaState {
   if (targetIndex < 0 || targetIndex >= hand.length || !Number.isInteger(targetIndex)) throw new RangeError('Choose a card in hand.');
   const slot = state.equipped.indexOf(id);
   const gem = state.collection.find(g => g.id === id);
@@ -132,7 +133,7 @@ export function castMateria(state: Readonly<MateriaState>, hand: readonly Card[]
     const affectedKey = materiaKey(hand[i]!);
     const current = effects[affectedKey] ?? { chips:0,mult:0,frozen:false };
     effects[affectedKey] = kind === 'fire'
-      ? { ...current, chips:current.chips + fireValue(tier) }
+      ? { ...current, chips:current.chips + fireValue(tier, fireValues) }
       : { ...current, mult:current.mult + lightningValue(tier) };
   }
   if (kind === 'ice') {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, onBeforeUnmount } from 'vue';
 import { MATERIA_KINDS, materiaLevel, spellCost, fireValue, lightningValue, type MateriaState } from '@pokermanic/engine';
-const props = defineProps<{ materia: MateriaState; links: number[]; targetReady: boolean; phase: string }>();
+const props = defineProps<{ materia: MateriaState; links: number[]; targetReady: boolean; phase: string; fireValues?: readonly number[] }>();
 const emit = defineEmits<{ 'show-info': [id: number]; cast: [id: number, tier: number]; 'drop-cast': [id: number, tier: number, index: number] }>();
 
 const opened = ref<number | null>(null);
@@ -100,7 +100,7 @@ function startDrag(event: DragEvent, id: number) {
 }
 const cost = (kind: string, level: number, tier: number) => spellCost(kind as 'fire'|'ice'|'lightning', level, tier);
 function spellLabel(kind: string, tier: number): string {
-  if (kind === 'fire') return `Fire ${tier} - ${fireValue(tier)} chips`;
+  if (kind === 'fire') return `Fire ${tier} - ${fireValue(tier, props.fireValues)} chips`;
   if (kind === 'lightning') return `Lightning ${tier} - +${lightningValue(tier)} mult`;
   const iceEffects = ['Freeze card', 'Freeze + copy right', 'Freeze + copy neighbors', 'Freeze + copy all'];
   return `Ice ${tier} - ${iceEffects[tier - 1] ?? 'Freeze'}`;
