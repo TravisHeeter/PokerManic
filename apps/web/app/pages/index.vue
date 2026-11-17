@@ -103,6 +103,11 @@ const scoredHand = ref<ScoringOption | null>(null);
 const roundSummaryOpen = ref(false);
 const selectedMateriaInfoId = ref<number | null>(null);
 const selectedMateriaInfo = computed(() => (run.value.materia?.collection ?? []).find(gem => gem.id === selectedMateriaInfoId.value) ?? null);
+const selectedMateriaEquippedSlot = computed(() => {
+  if (!selectedMateriaInfo.value) return null;
+  const slot = run.value.materia?.equipped.indexOf(selectedMateriaInfo.value.id) ?? -1;
+  return slot >= 0 ? slot : null;
+});
 const lastAction = ref('Run started. Earn upgrade chips by clearing rounds. The perk shop is always open.');
 const canDiscardSelection = computed(() => inRound.value
   && run.value.discardsRemaining > 0
@@ -581,7 +586,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
 
   <!-- The viewport dock must not inherit the centered page container's layout. -->
   <MateriaDetailsModal :open="selectedMateriaInfo !== null" :gem="selectedMateriaInfo"
-    :equipped-slot="selectedMateriaInfo ? (run.materia?.equipped.indexOf(selectedMateriaInfo.id) ?? -1) >= 0 ? run.materia!.equipped.indexOf(selectedMateriaInfo.id) : null : null"
+    :equipped-slot="selectedMateriaEquippedSlot"
     @close="selectedMateriaInfoId = null" @sell="sellGem" @unequip="unequipGem" />
 
   <RoundCompleteModal :open="roundSummaryOpen" :round="run.round" :score="run.roundChips"
