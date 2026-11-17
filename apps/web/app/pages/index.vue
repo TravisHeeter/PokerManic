@@ -20,7 +20,7 @@ import {
   createPermanentProgress, startingUpgradeChips,
   transcendReward, transcendRun, PERMANENT_UPGRADES,
   permanentUpgradeCost, buyPermanentUpgrade, isRunUpgradeUnlocked,
-  MATERIA_KINDS, DEFAULT_FIRE_VALUES, XP_LEVELS, materiaLevel, sortHandForDisplay, beginAnotherRun, createMateriaState, reconcileMateriaSlots, completeMateriaRound, claimMateria, equipMateria, unequipMateria, sellMateria, materiaSaleValue, castMateria, breakMateriaFreeze, applyMateriaScore, buyMateriaBoardUpgrade,
+  MATERIA_KINDS, STARTING_MP, MP_PER_ROUND, roundMaxMp, DEFAULT_FIRE_VALUES, XP_LEVELS, materiaLevel, sortHandForDisplay, beginAnotherRun, createMateriaState, reconcileMateriaSlots, completeMateriaRound, claimMateria, equipMateria, unequipMateria, sellMateria, materiaSaleValue, castMateria, breakMateriaFreeze, applyMateriaScore, buyMateriaBoardUpgrade,
 } from '@pokermanic/engine';
 import type { RunState, ScoringOption, RunUpgradeId, RunProgress, HandSortMode, PermanentUpgradeId, MateriaKind, MateriaBoardPurchase } from '@pokermanic/engine';
 
@@ -29,7 +29,16 @@ useSeoMeta({
   description: 'Earn permanent prestige perks that survive every run.',
 });
 
+const startingMp = ref(STARTING_MP);
+const mpGrowth = ref(MP_PER_ROUND);
 const fireValues = ref<number[]>([...DEFAULT_FIRE_VALUES]);
+function setMpBalance(kind: 'start' | 'growth', event: Event) {
+  const input = event.target as HTMLInputElement;
+  const field = kind === 'start' ? startingMp : mpGrowth;
+  const value = input.valueAsNumber;
+  if (Number.isSafeInteger(value) && value >= 0 && value <= 10000) field.value = value;
+  input.value = String(field.value);
+}
 function setFireValue(tier: number, event: Event) {
   const input = event.target as HTMLInputElement;
   const value = input.valueAsNumber;
@@ -183,7 +192,8 @@ function nextRound() {
   if (run.value.phase !== 'round_won' || roundSummaryOpen.value) return;
   rules.value = nextRoundRules.value;
   if (run.value.materia?.offers.length) { lastAction.value = 'Choose your Materia reward before advancing.'; return; }
-  run.value = advanceRound(run.value, rules.value);
+  const next = advanceRound(run.value, rules.value);
+  run.value = { ...next, materia: { ...(next.materia ?? createMateriaState()), mp: roundMaxMp(next.round, startingMp.value, mpGrowth.value) } };
   roundSummaryOpen.value = false;
   clearSelection();
   lastAction.value = `Round ${run.value.round} started. Reach ${run.value.roundTarget} chips to survive.`;
@@ -209,7 +219,7 @@ function resetToFreshRun(transcending = false) {
   const fresh = beginAnotherRun(run.value, progress.value, profile.value, transcending);
   progress.value = fresh.progress;
   rules.value = fresh.rules;
-  run.value = fresh.run;
+  run.value = { ...fresh.run, materia: { ...(fresh.run.materia ?? createMateriaState()), mp: startingMp.value } };
   selectionMode.value = 'automatic';
   sortMode.value = 'rank';
   clearSelection();
@@ -631,7 +641,13 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
     </template>
     <template #god>
       <section class="space-y-3 rounded-lg border border-default p-3">
-        <h3 class="text-lg font-semibold">Fire balance</h3>
+        <h3 class="text-lg font-semibold">Materia balance</h3>
+        <div class="grid grid-cols-2 gap-2">
+          <label class="space-y-1 text-xs">Starting MP<input type="number" min="0" max="10000" step="1" :value="startingMp" @change="setMpBalance('start', $event)" class="w-full rounded-md border border-default bg-default px-2 py-2 text-sm" /></label>
+          <label class="space-y-1 text-xs">MP per round<input type="number" min="0" max="10000" step="1" :value="mpGrowth" @change="setMpBalance('growth', $event)" class="w-full rounded-md border border-default bg-default px-2 py-2 text-sm" /></label>
+        </div>
+        <p class="text-xs text-muted">MP changes apply on the next round or new run. Next round: {{ roundMaxMp(run.round + 1, startingMp, mpGrowth) }} MP.</p>
+        <UButton size="sm" color="neutral" variant="outline" @click="startingMp = STARTING_MP; mpGrowth = MP_PER_ROUND">Reset MP defaults</UButton>
         <p class="text-xs text-muted">Adjust chips per target for subsequent casts. Changes last until the page is reloaded.</p>
         <div class="grid grid-cols-3 gap-2">
           <label v-for="tier in 3" :key="tier" class="space-y-1 text-xs">

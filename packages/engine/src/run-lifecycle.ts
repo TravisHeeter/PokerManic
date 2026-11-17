@@ -1,4 +1,4 @@
-import { createMateriaState, reconcileMateriaSlots } from './materia.js';
+import { createMateriaState, reconcileMateriaSlots, newMateriaRound } from './materia.js';
 import type { PermanentProgress } from './permanent.js';
 import { startingUpgradeChips } from './permanent.js';
 import { applyRunUpgrades, createRunProgress, type RunProgress } from './progression.js';
@@ -34,7 +34,7 @@ export function beginAnotherRun(
     ...startRun(rules, random),
     cardModifiers: transcend ? {} : { ...previousRun.cardModifiers },
     cardGrowth: {},
-    materia: transcend ? createMateriaState(profile.materiaSlots ?? 1) : reconcileMateriaSlots(previousRun.materia ?? createMateriaState(), profile.materiaSlots ?? 1),
+    materia: transcend ? createMateriaState(profile.materiaSlots ?? 1) : newMateriaRound(reconcileMateriaSlots(previousRun.materia ?? createMateriaState(), profile.materiaSlots ?? 1)),
   };
   return { run, progress, rules };
 }
