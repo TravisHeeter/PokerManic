@@ -20,7 +20,7 @@ import {
   createPermanentProgress, startingUpgradeChips,
   transcendReward, transcendRun, PERMANENT_UPGRADES,
   permanentUpgradeCost, buyPermanentUpgrade, isRunUpgradeUnlocked,
-  MATERIA_KINDS, XP_LEVELS, materiaLevel, sortHandForDisplay, beginAnotherRun, createMateriaState, reconcileMateriaSlots, completeMateriaRound, claimMateria, equipMateria, unequipMateria, sellMateria, materiaSaleValue, castMateria, breakMateriaFreeze, applyMateriaScore, buyMateriaBoardUpgrade,
+  MATERIA_KINDS, DEFAULT_FIRE_VALUES, XP_LEVELS, materiaLevel, sortHandForDisplay, beginAnotherRun, createMateriaState, reconcileMateriaSlots, completeMateriaRound, claimMateria, equipMateria, unequipMateria, sellMateria, materiaSaleValue, castMateria, breakMateriaFreeze, applyMateriaScore, buyMateriaBoardUpgrade,
 } from '@pokermanic/engine';
 import type { RunState, ScoringOption, RunUpgradeId, RunProgress, HandSortMode, PermanentUpgradeId, MateriaKind, MateriaBoardPurchase } from '@pokermanic/engine';
 
@@ -29,6 +29,13 @@ useSeoMeta({
   description: 'Earn permanent prestige perks that survive every run.',
 });
 
+const fireValues = ref<number[]>([...DEFAULT_FIRE_VALUES]);
+function setFireValue(tier: number, event: Event) {
+  const input = event.target as HTMLInputElement;
+  const value = input.valueAsNumber;
+  if (Number.isSafeInteger(value) && value >= 0 && value <= 1000000) fireValues.value[tier - 1] = value;
+  input.value = String(fireValues.value[tier - 1]);
+}
 const progress = ref<RunProgress>(createRunProgress());
 const profile = ref<SavedProfile>({ lifetimeRunsStarted: 1, bestRound: 1, ...createPermanentProgress() });
 const sortMode = ref<HandSortMode>('rank');
@@ -342,7 +349,8 @@ function castSpellOnCard(id: number, tier: number, index: number) {
     run.value = { ...run.value, materia: castMateria(
       run.value.materia ?? createMateriaState(), run.value.hand, id, tier, index,
       profile.value.materiaLinks ?? [],
-      sortHandForDisplay(run.value.hand, sortMode.value).map(entry => entry.originalIndex)
+      sortHandForDisplay(run.value.hand, sortMode.value).map(entry => entry.originalIndex),
+      fireValues.value
     ) };
     scoredHand.value = null;
     lastAction.value = 'Spell cast on target card! Chips, Mult and hand preview updated.';
@@ -536,7 +544,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
             <RoundStatus :run="run" :hand="hand" :remaining-deck="remainingDeck"
               @restart-run="restartRun" />
 
-            <MateriaBoard :materia="run.materia ?? createMateriaState()" :links="profile.materiaLinks ?? []" @show-info="selectedMateriaInfoId = $event"
+            <MateriaBoard :fire-values="fireValues" :materia="run.materia ?? createMateriaState()" :links="profile.materiaLinks ?? []" @show-info="selectedMateriaInfoId = $event"
               :target-ready="selectedIndexes.length === 1" :phase="run.phase"
               @cast="castSpell" @drop-cast="castSpellOnCard" />
 
@@ -622,6 +630,17 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
         @transcend="transcend" @purchase="purchasePermanent" @buy-board="buyMateriaBoard" />
     </template>
     <template #god>
+      <section class="space-y-3 rounded-lg border border-default p-3">
+        <h3 class="text-lg font-semibold">Fire balance</h3>
+        <p class="text-xs text-muted">Adjust chips per target for subsequent casts. Changes last until the page is reloaded.</p>
+        <div class="grid grid-cols-3 gap-2">
+          <label v-for="tier in 3" :key="tier" class="space-y-1 text-xs">
+            <span>Fire {{ tier }} chips</span>
+            <input type="number" min="0" max="1000000" step="1" :value="fireValues[tier - 1]" @change="setFireValue(tier, $event)" class="w-full rounded-md border border-default bg-default px-2 py-2 text-sm" />
+          </label>
+        </div>
+        <UButton size="sm" color="neutral" variant="outline" @click="fireValues = [...DEFAULT_FIRE_VALUES]">Reset Fire defaults</UButton>
+      </section>
       <GodMateriaEditor :materia="run.materia ?? createMateriaState(profile.materiaSlots ?? 1)"
         @add="godAddMateria" @set-kind="godSetMateriaKind" @set-level="godSetMateriaLevel"
         @equip="equipGem" @unequip="unequipGem" @remove="godRemoveMateria" />
