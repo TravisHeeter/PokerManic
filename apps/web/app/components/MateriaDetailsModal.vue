@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { MATERIA_KINDS, XP_LEVELS, materiaLevel, type MateriaGem } from '@pokermanic/engine';
+import { MATERIA_KINDS, XP_LEVELS, materiaLevel, materiaSaleValue, type MateriaGem } from '@pokermanic/engine';
 
-const props = defineProps<{ gem: MateriaGem | null; open: boolean }>();
-const emit = defineEmits<{ close: [] }>();
+const props = defineProps<{ gem: MateriaGem | null; open: boolean; equippedSlot: number | null }>();
+const emit = defineEmits<{ close: []; sell: [id: number]; unequip: [slot: number] }>();
 const details = computed(() => props.gem ? MATERIA_KINDS[props.gem.kind] : null);
 const level = computed(() => props.gem ? materiaLevel(props.gem) : 1);
 const nextThreshold = computed(() => {
@@ -54,7 +54,19 @@ const progress = computed(() => {
           </template>
           <p v-else class="text-sm text-green-300">Maximum level reached</p>
         </div>
-        <UButton block color="neutral" variant="outline" @click="emit('close')">Close</UButton>
+        <div class="space-y-2 border-t border-default pt-3">
+          <UButton v-if="equippedSlot !== null" block color="neutral" variant="outline"
+            data-testid="modal-unequip-materia"
+            @click="emit('unequip', equippedSlot); emit('close')">
+            Unequip from slot {{ equippedSlot + 1 }}
+          </UButton>
+          <UButton block color="warning" variant="outline" data-testid="modal-sell-materia"
+            @click="emit('sell', gem.id)">
+            Sell for {{ materiaSaleValue(gem) }} PP
+          </UButton>
+          <p class="text-xs text-muted">Selling permanently removes this Materia. You'll be asked to confirm.</p>
+        </div>
+        <UButton block color="neutral" variant="ghost" @click="emit('close')">Close</UButton>
       </section>
     </template>
   </UModal>
