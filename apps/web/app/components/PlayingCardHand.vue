@@ -15,6 +15,7 @@ const props = defineProps<{
   inRound: boolean;
   sortMode: HandSortMode;
   cardStyle: string;
+  handLayout?: 'auto' | 'overlap' | 'separate';
   suitFont: string;
   suitColors: 'themed' | 'standard';
   customSuitColors: Partial<Record<CardSuit, string>>;
@@ -27,6 +28,7 @@ const emit = defineEmits<{
 const displayedCards = computed(() => sortHandForDisplay(props.hand, props.sortMode));
 // One fixed-width final grid column anchors the last card to the right edge;
 // preceding narrow columns create an overlapping fan without clipping any card.
+const overlapWidth = computed(() => `${1 + Math.max(0, displayedCards.value.length - 1) * 0.48}`);
 const handColumns = computed(() => displayedCards.value.length > 1
   ? `repeat(${displayedCards.value.length - 1}, minmax(0, 1fr)) var(--card-width)`
   : 'var(--card-width)');
@@ -48,7 +50,8 @@ const handColumns = computed(() => displayedCards.value.length > 1
 
             <div data-testid="card-hand" :data-card-style="props.cardStyle" :data-suit-font="props.suitFont" :data-suit-colors="props.suitColors" aria-label="Current card hand"
               class="relative grid w-full items-start pt-4 [--card-width:clamp(5rem,23vw,9rem)] sm:[--card-width:clamp(6rem,12vw,9rem)]"
-              :style="{ gridTemplateColumns: handColumns }">
+              :class="{ 'pm-hand-overlap': props.handLayout === 'overlap', 'pm-hand-separate': props.handLayout === 'separate' }"
+              :style="{ gridTemplateColumns: props.handLayout === 'separate' ? 'repeat(' + displayedCards.length + ', var(--card-width))' : handColumns }">
               <PokerCard
                 v-for="(entry, displayIndex) in displayedCards"
                 :key="`${round}-${handsPlayed}-${entry.originalIndex}-${entry.card.suit}-${entry.card.rank}`"
@@ -68,3 +71,8 @@ const handColumns = computed(() => displayedCards.value.length > 1
               />
             </div>
 </template>
+
+<style scoped>
+.pm-hand-overlap { max-width: calc(var(--card-width) * v-bind(overlapWidth)); }
+.pm-hand-separate { overflow-x: auto; padding-bottom: 0.75rem; column-gap: 0.375rem; }
+</style>
