@@ -256,3 +256,25 @@ body {
 [data-suit-font="times-new-roman"][data-card-style] { --pm-card-font: "Times New Roman", Georgia, serif; --pm-card-center-font: var(--pm-card-font); --pm-suit-font: "Times New Roman", "Noto Sans Symbols 2", "Segoe UI Symbol", "DejaVu Sans", sans-serif; }
 [data-suit-font="segoe-ui-symbol"][data-card-style] { --pm-card-font: "Segoe UI Symbol", Georgia, serif; --pm-card-center-font: var(--pm-card-font); --pm-suit-font: "Segoe UI Symbol", "Noto Sans Symbols 2", "Segoe UI Symbol", "DejaVu Sans", sans-serif; }
 .pm-font-rank-sample { font-family: var(--pm-card-font); }
+
+
+/* NES: warm cartridge-era colors, pixel lettering and squared tile edges. */
+[data-card-style="nes"] {
+  --pm-card-paper: #FFF1CE;
+  --pm-card-border: #784022;
+  --pm-card-font: "DotGothic16", monospace;
+  --pm-card-center-font: var(--pm-card-font);
+  --pm-spades: #2453A6;
+  --pm-hearts: #C52D24;
+  --pm-clubs: #237B35;
+  --pm-diamonds: #A85A00;
+}
+[data-card-style="nes"] .pm-card {
+  border-width: 2px;
+  border-radius: 2px;
+  background-image: none;
+  box-shadow: inset 0 0 0 2px #F6C65B, 3px 3px 0 #784022, 5px 5px 0 #0004;
+}
+[data-card-style="nes"] .pm-card-rank {
+  letter-spacing: 0;
+}

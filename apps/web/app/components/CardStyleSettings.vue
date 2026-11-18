@@ -33,6 +33,7 @@ const CARD_STYLES = [
   { id: 'art-nouveau', label: 'Art Nouveau' },
   { id: 'cosmic-horror', label: 'Cosmic Horror' },
   { id: 'medieval-illuminated', label: 'Medieval Illuminated' },
+  { id: 'nes', label: 'NES' },
 ] as const;
 const props = defineProps<{
   cardStyle: string;
@@ -55,6 +56,14 @@ const SUIT_ORDER = [
   { id: 'clubs', symbol: '♣' },
 ] as const;
 
+function chooseStyle(style: string) {
+  emit('update:cardStyle', style);
+  if (style === 'nes') {
+    emit('update:suitFont', 'dotgothic16');
+    emit('update:suitColors', 'themed');
+    emit('update:selectedPalette', null);
+  }
+}
 function choosePalette(id: SuitPaletteId | null) {
   emit('update:selectedPalette', id);
   if (props.suitColors !== 'themed') emit('update:suitColors', 'themed');
@@ -107,7 +116,7 @@ function contrast(hex: string) {
         size="sm" color="neutral"
         :variant="props.cardStyle === style.id ? 'solid' : 'outline'"
         :aria-pressed="props.cardStyle === style.id"
-        @click="emit('update:cardStyle', style.id)">{{ style.label }}</UButton>
+        @click="chooseStyle(style.id)">{{ style.label }}</UButton>
     </div>
     <div class="space-y-3 border-t border-default pt-3">
       <h3 class="text-lg font-semibold">Suit colors</h3>
