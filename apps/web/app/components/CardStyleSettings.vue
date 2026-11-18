@@ -7,6 +7,20 @@ const SUIT_FONTS = [
   { id: 'theme', label: 'Theme', description: 'Original card-style font' },
   { id: 'georgia', label: 'Georgia', description: 'Traditional serif look' },
   { id: 'sans', label: 'Sans', description: 'Bold, clear shapes' },
+  { id: 'source-code-pro', label: 'Source Code Pro', description: 'Card font' },
+  { id: 'google-sans', label: 'Google Sans', description: 'Card font' },
+  { id: 'ibm-plex-sans-jp', label: 'IBM Plex Sans JP', description: 'Card font' },
+  { id: 'smokum', label: 'Smokum', description: 'Card font' },
+  { id: 'special-elite', label: 'Special Elite', description: 'Card font' },
+  { id: 'dotgothic16', label: 'DotGothic16', description: 'Card font' },
+  { id: 'dejavu-sans', label: 'DejaVu Sans', description: 'Card font' },
+  { id: 'noto-sans-symbols-2', label: 'Noto Sans Symbols 2', description: 'Card font' },
+  { id: 'noto-sans', label: 'Noto Sans', description: 'Card font' },
+  { id: 'noto-serif', label: 'Noto Serif', description: 'Card font' },
+  { id: 'roboto-mono', label: 'Roboto Mono', description: 'Card font' },
+  { id: 'arial', label: 'Arial', description: 'Card font' },
+  { id: 'times-new-roman', label: 'Times New Roman', description: 'Card font' },
+  { id: 'segoe-ui-symbol', label: 'Segoe UI Symbol', description: 'Card font' },
 ] as const;
 
 const CARD_STYLES = [
@@ -68,8 +82,8 @@ function contrast(hex: string) {
       </div>
     </div>
     <div class="space-y-2 border-t border-default pt-3" data-testid="suit-font-settings">
-      <h3 class="text-lg font-semibold">Suit symbol fonts</h3>
-      <p class="text-xs text-muted">Try different shapes for hearts, spades, clubs and diamonds. Only the suit symbols change; ranks keep their card-style font. Your selection is saved on this device.</p>
+      <h3 class="text-lg font-semibold">Card fonts</h3>
+      <p class="text-xs text-muted">Try different shapes for hearts, spades, clubs and diamonds. Named fonts change ranks and suits together. Original four options change suits only. Missing glyphs use a fallback font. Your selection is saved on this device.</p>
       <div class="grid grid-cols-2 gap-2 sm:grid-cols-4" role="group" aria-label="Suit symbol font">
         <button v-for="font in SUIT_FONTS" :key="font.id" type="button"
           :data-testid="`suit-font-${font.id}`" :data-suit-font="font.id" :data-card-style="props.cardStyle"
@@ -77,6 +91,7 @@ function contrast(hex: string) {
           class="min-w-0 space-y-1 rounded-lg border p-2 text-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
           :class="props.suitFont === font.id ? 'border-amber-300 bg-amber-300/10' : 'border-default bg-elevated/30'"
           @click="emit('update:suitFont', font.id)">
+          <span class="pm-font-rank-sample block text-xl leading-tight">A K Q J 10</span>
           <span class="pm-suit-font-sample block text-2xl leading-tight">♥ ♠</span>
           <span class="pm-suit-font-sample block text-2xl leading-tight">♦ ♣</span>
           <span class="block text-sm font-semibold">{{ font.label }}</span>
