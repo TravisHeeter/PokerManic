@@ -1,3 +1,13 @@
+@import url("https://fonts.googleapis.com/css2?family=Source+Code+Pro&display=swap&text=A2345678910JQK%20%E2%99%A0%E2%99%A5%E2%99%A6%E2%99%A3");
+@import url("https://fonts.googleapis.com/css2?family=Google+Sans&display=swap&text=A2345678910JQK%20%E2%99%A0%E2%99%A5%E2%99%A6%E2%99%A3");
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP&display=swap&text=A2345678910JQK%20%E2%99%A0%E2%99%A5%E2%99%A6%E2%99%A3");
+@import url("https://fonts.googleapis.com/css2?family=Smokum&display=swap&text=A2345678910JQK%20%E2%99%A0%E2%99%A5%E2%99%A6%E2%99%A3");
+@import url("https://fonts.googleapis.com/css2?family=Special+Elite&display=swap&text=A2345678910JQK%20%E2%99%A0%E2%99%A5%E2%99%A6%E2%99%A3");
+@import url("https://fonts.googleapis.com/css2?family=DotGothic16&display=swap&text=A2345678910JQK%20%E2%99%A0%E2%99%A5%E2%99%A6%E2%99%A3");
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+Symbols+2&display=swap&text=A2345678910JQK%20%E2%99%A0%E2%99%A5%E2%99%A6%E2%99%A3");
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans&display=swap&text=A2345678910JQK%20%E2%99%A0%E2%99%A5%E2%99%A6%E2%99%A3");
+@import url("https://fonts.googleapis.com/css2?family=Noto+Serif&display=swap&text=A2345678910JQK%20%E2%99%A0%E2%99%A5%E2%99%A6%E2%99%A3");
+@import url("https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap&text=A2345678910JQK%20%E2%99%A0%E2%99%A5%E2%99%A6%E2%99%A3");
 @import "tailwindcss";
 @import "@nuxt/ui";
 
@@ -230,3 +240,19 @@ body {
 .pm-card-modifier-badge[data-card-modifier="echo"] { background: #1d4ed8; }
 .pm-card-modifier-badge[data-card-modifier="growing"] { background: #047857; }
 .pm-card-modifier-badge[data-card-modifier^="wild_"] { background: #6d28d9; }
+
+[data-suit-font="source-code-pro"][data-card-style] { --pm-card-font: "Source Code Pro", Georgia, serif; --pm-card-center-font: var(--pm-card-font); --pm-suit-font: "Source Code Pro", "Noto Sans Symbols 2", "Segoe UI Symbol", "DejaVu Sans", sans-serif; }
+[data-suit-font="google-sans"][data-card-style] { --pm-card-font: "Google Sans", Georgia, serif; --pm-card-center-font: var(--pm-card-font); --pm-suit-font: "Google Sans", "Noto Sans Symbols 2", "Segoe UI Symbol", "DejaVu Sans", sans-serif; }
+[data-suit-font="ibm-plex-sans-jp"][data-card-style] { --pm-card-font: "IBM Plex Sans JP", Georgia, serif; --pm-card-center-font: var(--pm-card-font); --pm-suit-font: "IBM Plex Sans JP", "Noto Sans Symbols 2", "Segoe UI Symbol", "DejaVu Sans", sans-serif; }
+[data-suit-font="smokum"][data-card-style] { --pm-card-font: "Smokum", Georgia, serif; --pm-card-center-font: var(--pm-card-font); --pm-suit-font: "Smokum", "Noto Sans Symbols 2", "Segoe UI Symbol", "DejaVu Sans", sans-serif; }
+[data-suit-font="special-elite"][data-card-style] { --pm-card-font: "Special Elite", Georgia, serif; --pm-card-center-font: var(--pm-card-font); --pm-suit-font: "Special Elite", "Noto Sans Symbols 2", "Segoe UI Symbol", "DejaVu Sans", sans-serif; }
+[data-suit-font="dotgothic16"][data-card-style] { --pm-card-font: "DotGothic16", Georgia, serif; --pm-card-center-font: var(--pm-card-font); --pm-suit-font: "DotGothic16", "Noto Sans Symbols 2", "Segoe UI Symbol", "DejaVu Sans", sans-serif; }
+[data-suit-font="dejavu-sans"][data-card-style] { --pm-card-font: "DejaVu Sans", Georgia, serif; --pm-card-center-font: var(--pm-card-font); --pm-suit-font: "DejaVu Sans", "Noto Sans Symbols 2", "Segoe UI Symbol", "DejaVu Sans", sans-serif; }
+[data-suit-font="noto-sans-symbols-2"][data-card-style] { --pm-card-font: "Noto Sans Symbols 2", Georgia, serif; --pm-card-center-font: var(--pm-card-font); --pm-suit-font: "Noto Sans Symbols 2", "Noto Sans Symbols 2", "Segoe UI Symbol", "DejaVu Sans", sans-serif; }
+[data-suit-font="noto-sans"][data-card-style] { --pm-card-font: "Noto Sans", Georgia, serif; --pm-card-center-font: var(--pm-card-font); --pm-suit-font: "Noto Sans", "Noto Sans Symbols 2", "Segoe UI Symbol", "DejaVu Sans", sans-serif; }
+[data-suit-font="noto-serif"][data-card-style] { --pm-card-font: "Noto Serif", Georgia, serif; --pm-card-center-font: var(--pm-card-font); --pm-suit-font: "Noto Serif", "Noto Sans Symbols 2", "Segoe UI Symbol", "DejaVu Sans", sans-serif; }
+[data-suit-font="roboto-mono"][data-card-style] { --pm-card-font: "Roboto Mono", Georgia, serif; --pm-card-center-font: var(--pm-card-font); --pm-suit-font: "Roboto Mono", "Noto Sans Symbols 2", "Segoe UI Symbol", "DejaVu Sans", sans-serif; }
+[data-suit-font="arial"][data-card-style] { --pm-card-font: "Arial", Georgia, serif; --pm-card-center-font: var(--pm-card-font); --pm-suit-font: "Arial", "Noto Sans Symbols 2", "Segoe UI Symbol", "DejaVu Sans", sans-serif; }
+[data-suit-font="times-new-roman"][data-card-style] { --pm-card-font: "Times New Roman", Georgia, serif; --pm-card-center-font: var(--pm-card-font); --pm-suit-font: "Times New Roman", "Noto Sans Symbols 2", "Segoe UI Symbol", "DejaVu Sans", sans-serif; }
+[data-suit-font="segoe-ui-symbol"][data-card-style] { --pm-card-font: "Segoe UI Symbol", Georgia, serif; --pm-card-center-font: var(--pm-card-font); --pm-suit-font: "Segoe UI Symbol", "Noto Sans Symbols 2", "Segoe UI Symbol", "DejaVu Sans", sans-serif; }
+.pm-font-rank-sample { font-family: var(--pm-card-font); }
