@@ -14,7 +14,10 @@ describe('materia progression', () => {
     });
   });
   it('caps progress for max-level materia', () => {
-    expect(materiaProgress({ id: 2, kind: 'fortune', xp: 900 })).toMatchObject({
+    expect(materiaProgress({ id: 2, kind: 'fortune', xp: 999 })).toMatchObject({
+      level: 4, isMaxLevel: false, nextLevelXp: 1000, xpToNextLevel: 1,
+    });
+    expect(materiaProgress({ id: 2, kind: 'fortune', xp: 1000 })).toMatchObject({
       level: 5, isMaxLevel: true, nextLevelXp: null, xpToNextLevel: 0, progress: 1,
     });
   });
