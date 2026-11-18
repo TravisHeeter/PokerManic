@@ -53,7 +53,7 @@ describe('run transitions', () => {
     };
     const previous: RunState = {
       ...startRun(applyRunUpgrades(DEFAULT_ROUND_RULES, progress), () => 0.5),
-      round: 6, phase: 'round_won',
+      round: 6, phase: 'round_won', potentialPrestige: 3,
       cardModifiers: { 'hearts:A': 'multiplier' },
     };
     const afterPrestige = transcendRun(previous, profile);
