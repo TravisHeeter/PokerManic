@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_ROUND_RULES, startRun } from '../src/rounds.js';
+import { DEFAULT_ROUND_RULES, startRun, advanceRound, playScoringHand } from '../src/rounds.js';
 import {
   createPermanentProgress, isRunUpgradeUnlocked, transcendReward, transcendRun,
   buyPermanentUpgrade, permanentUpgradeCost, startingUpgradeChips,
@@ -10,10 +10,27 @@ describe('prestige unlocks', () => {
     const opening = startRun();
     expect(transcendReward(opening)).toBe(0);
     expect(() => transcendRun(opening, createPermanentProgress())).toThrow();
-    const won = { ...opening, phase: 'round_won' as const, round: 6 };
+    const won = { ...opening, phase: 'round_won' as const, round: 6, potentialPrestige: 3 };
     const earned = transcendRun(won, createPermanentProgress());
     expect(earned.prestigeChips).toBe(3);
     expect(earned.transcends).toBe(1);
+  });
+  it('banks prestige on even-round victories and carries it into later rounds', () => {
+    let run = startRun(DEFAULT_ROUND_RULES, () => 0.5);
+    for (let round = 1; round <= 6; round++) {
+      // A nearly completed round lets a real scoring play trigger victory.
+      run = playScoringHand({ ...run, roundChips: run.roundTarget - 1 }, [0]);
+      expect(run.phase).toBe('round_won');
+      expect(run.potentialPrestige).toBe(Math.floor(round / 2));
+      expect(transcendReward(run)).toBe(Math.floor(round / 2));
+      if (round < 6) run = advanceRound(run, DEFAULT_ROUND_RULES, () => 0.5);
+    }
+    expect(transcendRun(run, createPermanentProgress()).prestigeChips).toBe(3);
+  });
+  it('retains the reward fallback for legacy saves without banked prestige', () => {
+    const legacy = { ...startRun(), phase: 'round_won' as const, round: 6 };
+    delete legacy.potentialPrestige;
+    expect(transcendReward(legacy)).toBe(3);
   });
   it('unlocks each perk exactly once without changing any run rules', () => {
     let profile = { ...createPermanentProgress(), prestigeChips: 300 };
