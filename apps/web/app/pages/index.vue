@@ -48,6 +48,7 @@ function setFireValue(tier: number, event: Event) {
 const progress = ref<RunProgress>(createRunProgress());
 const profile = ref<SavedProfile>({ lifetimeRunsStarted: 1, bestRound: 1, ...createPermanentProgress() });
 const sortMode = ref<HandSortMode>('rank');
+const handLayout = ref<'auto' | 'overlap' | 'separate'>('auto');
 const cardStyle = ref('classic');
 const suitFont = ref('symbol');
 const suitColors = ref<'themed' | 'standard'>('themed');
@@ -449,6 +450,8 @@ function persistSave() {
 }
 onMounted(() => {
   try {
+    const savedLayout = localStorage.getItem('pokermanic.hand-layout.v1');
+    if (savedLayout === 'auto' || savedLayout === 'overlap' || savedLayout === 'separate') handLayout.value = savedLayout;
     const savedStyle = localStorage.getItem(CARD_STYLE_STORAGE_KEY);
     if (savedStyle && validCardStyles.has(savedStyle)) cardStyle.value = savedStyle;
     const savedSuitFont = localStorage.getItem(SUIT_FONT_STORAGE_KEY);
@@ -488,6 +491,9 @@ watch(selectedPalette, value => {
 watch(suitColors, value => {
   if (!import.meta.client) return;
   try { localStorage.setItem(SUIT_COLORS_STORAGE_KEY, value); } catch { /* Optional preference. */ }
+});
+watch(handLayout, value => {
+  try { localStorage.setItem('pokermanic.hand-layout.v1', value); } catch { /* Optional preference. */ }
 });
 watch(cardStyle, value => {
   if (!import.meta.client) return;
@@ -567,7 +573,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
               :round="run.round" 
               :hands-played="run.handsPlayed" 
               :in-round="inRound"
-              :card-style="cardStyle" :suit-font="suitFont" :suit-colors="suitColors" :custom-suit-colors="customSuitColors"
+              :hand-layout="handLayout" :card-style="cardStyle" :suit-font="suitFont" :suit-colors="suitColors" :custom-suit-colors="customSuitColors"
               v-model:sort-mode="sortMode" 
               @toggle-card="toggleCard" @materia-drop="castSpellOnCard" />
 
@@ -664,7 +670,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
         @export="exportSave" @import="importSave" @new-run="restartRun" />
     </template>
     <template #settings>
-      <CardStyleSettings v-model:card-style="cardStyle" v-model:suit-font="suitFont" v-model:suit-colors="suitColors"
+      <CardStyleSettings v-model:hand-layout="handLayout" v-model:card-style="cardStyle" v-model:suit-font="suitFont" v-model:suit-colors="suitColors"
         v-model:selected-palette="selectedPalette" />
     </template>
   </PerkShop>
