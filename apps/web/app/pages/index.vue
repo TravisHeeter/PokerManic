@@ -57,7 +57,7 @@ const SUIT_PALETTE_STORAGE_KEY = 'pokermanic.suit-palette.v1';
 const SUIT_COLORS_STORAGE_KEY = 'pokermanic.suit-colors.v1';
 const CARD_STYLE_STORAGE_KEY = 'pokermanic.card-style.v1';
 const SUIT_FONT_STORAGE_KEY = 'pokermanic.suit-font.v1';
-const validSuitFonts = new Set(['symbol', 'theme', 'georgia', 'sans']);
+const validSuitFonts = new Set(["symbol","theme","georgia","sans","source-code-pro","google-sans","ibm-plex-sans-jp","smokum","special-elite","dotgothic16","dejavu-sans","noto-sans-symbols-2","noto-sans","noto-serif","roboto-mono","arial","times-new-roman","segoe-ui-symbol"]);
 const validCardStyles = new Set([
   'classic', 'victorian', 'deco', 'cyber', 'bold-victorian',
   'vivid-gothic', 'art-nouveau', 'cosmic-horror', 'medieval-illuminated',
