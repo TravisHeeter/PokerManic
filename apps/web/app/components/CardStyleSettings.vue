@@ -37,11 +37,13 @@ const CARD_STYLES = [
 ] as const;
 const props = defineProps<{
   cardStyle: string;
+  handLayout: 'auto' | 'overlap' | 'separate';
   suitFont: string;
   suitColors: 'themed' | 'standard';
   selectedPalette: SuitPaletteId | null;
 }>();
 const emit = defineEmits<{
+  'update:handLayout': [layout: 'auto' | 'overlap' | 'separate'];
   'update:cardStyle': [style: string];
   'update:suitFont': [font: string];
   'update:suitColors': [value: 'themed' | 'standard'];
@@ -107,6 +109,15 @@ function contrast(hex: string) {
           <span class="block text-[10px] text-muted">{{ font.description }}</span>
         </button>
       </div>
+    </div>
+    <div class="space-y-2 border-t border-default pt-3">
+      <h3 class="text-lg font-semibold">Hand layout</h3>
+      <div role="group" aria-label="Hand layout" class="flex flex-wrap gap-2">
+        <UButton v-for="layout in (['auto', 'overlap', 'separate'] as const)" :key="layout" size="sm" color="neutral"
+          :variant="props.handLayout === layout ? 'solid' : 'outline'" :aria-pressed="props.handLayout === layout"
+          @click="emit('update:handLayout', layout)">{{ { auto: 'Automatic', overlap: 'Always overlap', separate: 'Never overlap' }[layout] }}</UButton>
+      </div>
+      <p class="text-xs text-muted">Never overlap allows horizontal scrolling on narrow screens.</p>
     </div>
     <h3 id="card-settings-heading" class="text-lg font-semibold">Card styles</h3>
     <p class="text-xs text-muted">Choose how playing cards look. Your choice is saved on this device.</p>
