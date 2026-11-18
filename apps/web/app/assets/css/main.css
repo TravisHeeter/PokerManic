@@ -209,7 +209,7 @@ body {
 .pm-card-corner-top { top: 0.22rem; left: 0.22rem; }
 .pm-card-corner-bottom { right: 0.22rem; bottom: 0.22rem; transform: rotate(180deg); }
 .pm-card-corner-rank { font-size: clamp(1.05rem, 2vw, 1.5rem); font-weight: 700; line-height: 0.9; }
-.pm-card-corner-suit { font-size: clamp(0.95rem, 1.7vw, 1.25rem); line-height: 0.86; margin-top: -0.03rem; }
+.pm-card-corner-suit { font-size: clamp(0.95rem, 1.7vw, 1.25rem); line-height: 0.86; margin-top: 0.2rem; }
 
 
 /* Selection is intentionally theme-independent: cyan outline, elevation, and a check.
