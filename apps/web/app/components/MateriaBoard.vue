@@ -1,9 +1,54 @@
 <script setup lang="ts">
-import { computed, ref, onBeforeUnmount } from 'vue';
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
 import { MATERIA_KINDS, materiaLevel, spellCost, fireValue, lightningValue, type MateriaState } from '@pokermanic/engine';
 const props = defineProps<{ materia: MateriaState; links: number[]; targetReady: boolean; phase: string; fireValues?: readonly number[] }>();
-const emit = defineEmits<{ 'show-info': [id: number]; cast: [id: number, tier: number]; 'drop-cast': [id: number, tier: number, index: number] }>();
+const emit = defineEmits<{ equip: [id: number, slot: number]; 'show-info': [id: number]; cast: [id: number, tier: number]; 'drop-cast': [id: number, tier: number, index: number] }>();
 
+const board = ref<HTMLElement | null>(null);
+const swapSlot = ref<number | null>(null);
+const swappable = computed(() => props.materia.collection.filter(gem => !props.materia.equipped.includes(gem.id)));
+let holdTimer: ReturnType<typeof setTimeout> | null = null;
+let holdStart: { x: number; y: number } | null = null;
+function cancelHold() {
+  if (holdTimer !== null) clearTimeout(holdTimer);
+  holdTimer = null;
+  holdStart = null;
+}
+function openSwap(slot: number) {
+  cancelTouch();
+  opened.value = null;
+  swapSlot.value = slot;
+}
+function startHold(event: PointerEvent, slot: number) {
+  if (event.pointerType === 'mouse' || !event.isPrimary) return;
+  cancelHold();
+  suppressClick = false;
+  holdStart = { x: event.clientX, y: event.clientY };
+  holdTimer = setTimeout(() => {
+    suppressClick = true;
+    openSwap(slot);
+  }, 500);
+}
+function moveHold(event: PointerEvent) {
+  if (holdStart && Math.hypot(event.clientX - holdStart.x, event.clientY - holdStart.y) > 10) cancelHold();
+}
+function dismiss(event: PointerEvent) {
+  if (!board.value?.contains(event.target as Node)) {
+    swapSlot.value = null;
+    opened.value = null;
+  }
+}
+function swapGem(id: number, slot: number) {
+  armed.value = null;
+  emit('equip', id, slot);
+  swapSlot.value = null;
+}
+onMounted(() => {
+  window.addEventListener('pointerdown', dismiss);
+  window.addEventListener('pointermove', moveHold);
+  window.addEventListener('pointerup', cancelHold);
+  window.addEventListener('pointercancel', cancelHold);
+});
 const opened = ref<number | null>(null);
 const armed = ref<{ id: number; tier: number } | null>(null);
 function chooseSpell(id: number, tier: number) {
@@ -52,6 +97,7 @@ function moveTouch(event: PointerEvent) {
 }
 function openGem(id: number) {
   if (suppressClick) { suppressClick = false; return; }
+  swapSlot.value = null;
   opened.value = opened.value === id ? null : id;
 }
 function touchStart(event: PointerEvent, id: number) {
@@ -62,6 +108,9 @@ function touchStart(event: PointerEvent, id: number) {
   window.addEventListener('pointercancel', cancelTouch, { once: true });
 }
 function cancelTouch() {
+  cancelHold();
+  window.removeEventListener('pointerup', touchEnd);
+  window.removeEventListener('pointercancel', cancelTouch);
   touchDrag = null;
   window.removeEventListener('pointermove', moveTouch);
   clearDragVisuals();
@@ -82,6 +131,11 @@ function touchEnd(event: PointerEvent) {
   }
 }
 onBeforeUnmount(() => {
+  cancelHold();
+  window.removeEventListener('pointerdown', dismiss);
+  window.removeEventListener('pointermove', moveHold);
+  window.removeEventListener('pointerup', cancelHold);
+  window.removeEventListener('pointercancel', cancelHold);
   window.removeEventListener('pointerup', touchEnd);
   window.removeEventListener('pointermove', moveTouch);
   window.removeEventListener('pointercancel', cancelTouch);
@@ -110,7 +164,7 @@ const slots = computed(() => props.materia.equipped.map((id,index) => ({
 })));
 </script>
 <template>
-  <section data-testid="materia-board" aria-label="Equipped Materia" class="rounded-xl border border-default bg-elevated/40 p-3 space-y-2">
+  <section ref="board" @keydown.esc="swapSlot = null; opened = null" data-testid="materia-board" aria-label="Equipped Materia" class="rounded-xl border border-default bg-elevated/40 p-3 space-y-2">
     <div class="flex items-center justify-between gap-2">
       <h3 class="text-sm font-semibold">Materia Board</h3>
       <span class="text-sm font-semibold text-sky-300">MP {{ materia.mp }} / 50</span>
@@ -120,7 +174,7 @@ const slots = computed(() => props.materia.equipped.map((id,index) => ({
         <div v-if="i > 0" :class="links.includes(Math.floor((i-1)/2)) && i % 2 === 1 ? 'bg-amber-400 h-1 w-6 rounded' : 'bg-muted h-px w-3'" aria-hidden="true" />
         <div class="flex flex-col items-center gap-1">
           <div v-if="slot.gem" class="relative">
-            <button type="button" class="relative flex h-11 w-11 items-center justify-center rounded-full border-2 shadow-inner cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
+            <button type="button" class="select-none relative flex h-11 w-11 items-center justify-center rounded-full border-2 shadow-inner cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
               :aria-label="MATERIA_KINDS[slot.gem.kind].name + ', level ' + materiaLevel(slot.gem) + '. ' + MATERIA_KINDS[slot.gem.kind].description"
               :draggable="dragTier(slot.gem.id) !== null && phase === 'playing'"
               :data-materia-source="slot.gem.id"
@@ -129,7 +183,12 @@ const slots = computed(() => props.materia.equipped.map((id,index) => ({
               @dragend="endDrag"
               @dragstart="startDrag($event, slot.gem.id)"
               :style="dragTier(slot.gem.id) !== null ? { touchAction: 'none' } : undefined"
-              @pointerdown="touchStart($event, slot.gem.id)"
+              @pointerdown="touchStart($event, slot.gem.id); startHold($event, slot.index)"
+              @dblclick.prevent="openSwap(slot.index)"
+              @contextmenu.prevent
+              @keydown.shift.f10.prevent="openSwap(slot.index)"
+              :aria-expanded="swapSlot === slot.index || opened === slot.gem.id"
+              aria-haspopup="dialog"
               @click="openGem(slot.gem.id)">
               <UIcon :name="MATERIA_KINDS[slot.gem.kind].icon" class="h-6 w-6 text-white" aria-hidden="true" />
               <span class="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-200 px-0.5 text-[10px] font-bold leading-none text-slate-950 shadow ring-1 ring-slate-900" :aria-label="'Level ' + materiaLevel(slot.gem)">
@@ -137,6 +196,19 @@ const slots = computed(() => props.materia.equipped.map((id,index) => ({
               </span>
             </button>
             <span v-if="dragTier(slot.gem.id) !== null" class="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded bg-amber-300 px-1 text-[10px] font-bold text-slate-950"> {{ ['I','II','III','IV'][(dragTier(slot.gem.id) ?? 1)-1] }} </span>
+            <div v-if="swapSlot === slot.index" role="dialog" aria-label="Swap Materia"
+              data-testid="materia-swap-popover"
+              class="absolute bottom-full left-0 z-[100] mb-2 w-56 max-w-[calc(100vw-2rem)] space-y-1 rounded-lg border border-default bg-elevated p-2 shadow-xl">
+              <p class="text-xs font-semibold">Swap {{ MATERIA_KINDS[slot.gem.kind].name }} Materia</p>
+              <div class="max-h-56 space-y-1 overflow-y-auto">
+                <UButton v-for="gem in swappable" :key="gem.id" size="sm" block color="neutral" variant="outline"
+                  :icon="MATERIA_KINDS[gem.kind].icon" @click="swapGem(gem.id, slot.index)">
+                  {{ MATERIA_KINDS[gem.kind].name }} · Lv. {{ materiaLevel(gem) }}
+                </UButton>
+              </div>
+              <p v-if="!swappable.length" class="text-xs text-muted">No unequipped Materia available to swap.</p>
+              <UButton size="xs" block color="neutral" variant="ghost" @click="swapSlot = null">Close</UButton>
+            </div>
             <div v-if="opened === slot.gem.id" role="menu" :aria-label="MATERIA_KINDS[slot.gem.kind].name + ' spells'"
               class="absolute bottom-full left-0 z-[100] mb-2 w-52 space-y-1 rounded-lg border border-default bg-elevated p-2 shadow-xl">
               <div class="flex items-center justify-between gap-2">

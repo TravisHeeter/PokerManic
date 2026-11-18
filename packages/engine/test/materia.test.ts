@@ -26,7 +26,8 @@ describe('Materia discovery and spellcasting', () => {
     expect(spellCost('fire',2,2)).toBe(20);
   });
   it('allows repeated casts while MP is available and changes only scoring cards', () => {
-    const state = equipMateria(claimMateria({ ...createMateriaState(),offers:['fire'] },'fire'),1,0);
+    // Round nine has enough MP to exercise repeated casts and exhaustion.
+    const state = newMateriaRound(equipMateria(claimMateria({ ...createMateriaState(),offers:['fire'] },'fire'),1,0), 9);
     const cast = castMateria(state,hand,1,1,0);
     expect(cast.mp).toBe(40);
     const twice = castMateria(cast,hand,1,1,0);
@@ -42,6 +43,7 @@ describe('Materia discovery and spellcasting', () => {
     expect(applyMateriaScore({ ...base, scoringCardIndices:[2] },hand,cast).score).toBe(5);
     expect(releasePlayedMagic(cast,[hand[0]!]).effects['hearts:K']).toBeUndefined();
     const refreshed = newMateriaRound(cast);
+    expect(refreshed.mp).toBe(10);
     expect(refreshed.effects).toEqual({});
     expect(refreshed.castThisRound).toEqual([]);
   });
@@ -60,6 +62,8 @@ describe('Materia discovery and spellcasting', () => {
     state = claimMateria({ ...state,offers:['fire'] },'fire');
     state = claimMateria({ ...state,offers:['ice'] },'ice');
     state = equipMateria(equipMateria(state,1,0),2,1);
+    // Fund the Fire + level-two Ice combination using a later-round refill.
+    state = newMateriaRound(state, 7);
     state = castMateria(state,hand,1,1,0);
     state = { ...state,collection:state.collection.map(g=>g.kind==='ice'?{...g,xp:20}:g) };
     state = castMateria(state,hand,2,2,0);

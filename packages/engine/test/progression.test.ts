@@ -37,7 +37,7 @@ describe('in-run shop with prestige unlock gates', () => {
     const originalRun = structuredClone(run);
     const original = createRunProgress();
     const earned = awardRoundUpgradeChips(run, original);
-    expect(earned.upgradeChips).toBe(12);
+    expect(earned.upgradeChips).toBe(10);
     expect(earned.rewardedThroughRound).toBe(1);
     expect(run.roundChips).toBe(120);
     expect(run).toEqual(originalRun);
@@ -47,7 +47,7 @@ describe('in-run shop with prestige unlock gates', () => {
     expect(() => awardRoundUpgradeChips({...run,phase:'game_over'}, original)).toThrow();
     expect(() => awardRoundUpgradeChips(won(3), original)).toThrow();
     const second = awardRoundUpgradeChips(won(2, 115), earned);
-    expect(second.upgradeChips).toBe(23);
+    expect(second.upgradeChips).toBe(20);
   });
 
   it('buys perks with separate currency and applies changes only to future round rules', () => {
@@ -88,7 +88,7 @@ describe('in-run shop with prestige unlock gates', () => {
     const progress = awardRoundUpgradeChips(won(), createRunProgress());
     const lost = { ...active, phase: 'game_over' as const };
     expect(() => purchaseRunUpgrade(lost, progress, 'extra_discard', fullUnlocks)).toThrow('run has ended');
-    expect(progress.upgradeChips).toBe(12);
+    expect(progress.upgradeChips).toBe(10);
   });
 
   it('locks manual hand choice until the perk is purchased', () => {
