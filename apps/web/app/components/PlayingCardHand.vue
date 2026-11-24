@@ -49,7 +49,7 @@ const handColumns = computed(() => displayedCards.value.length > 1
             </div>
 
             <div data-testid="card-hand" :data-card-style="props.cardStyle" :data-suit-font="props.suitFont" :data-suit-colors="props.suitColors" aria-label="Current card hand"
-              class="relative grid w-full items-start pt-4 [--card-width:clamp(5rem,23vw,9rem)] sm:[--card-width:clamp(6rem,12vw,9rem)]"
+              class="pm-card-hand relative grid w-full items-start pt-4 [--card-width:clamp(2.75rem,16vw,4.25rem)] sm:[--card-width:clamp(6rem,12vw,9rem)]"
               :class="{ 'pm-hand-overlap': props.handLayout === 'overlap', 'pm-hand-separate': props.handLayout === 'separate' }"
               :style="{ gridTemplateColumns: props.handLayout === 'separate' ? 'repeat(' + displayedCards.length + ', var(--card-width))' : handColumns }">
               <PokerCard
@@ -75,4 +75,9 @@ const handColumns = computed(() => displayedCards.value.length > 1
 <style scoped>
 .pm-hand-overlap { max-width: calc(var(--card-width) * v-bind(overlapWidth)); }
 .pm-hand-separate { overflow-x: auto; padding-bottom: 0.75rem; column-gap: 0.375rem; }
+@media (max-width: 639px) {
+  .pm-card-hand { grid-template-columns: repeat(5, var(--card-width)) !important; column-gap: 0.25rem; row-gap: 0.75rem; }
+  .pm-hand-overlap { max-width: none; }
+  .pm-hand-separate { overflow-x: visible; }
+}
 </style>
