@@ -300,6 +300,29 @@ describe('Milestone 5 immediate purchase effects', () => {
 });
 
 describe('combined formation scoring through the run engine', () => {
+  it('upgrades Straight + Pair to Straight + Three of a kind when a third nine is selected', () => {
+    const played = [
+      c('K', 'hearts'), c('Q', 'diamonds'), c('J', 'spades'), c('10', 'diamonds'),
+      c('9', 'spades'), c('9', 'hearts'), c('9', 'clubs'),
+    ];
+    expect(listEligiblePokerHands(played.slice(0, 6))[0]).toMatchObject({
+      combinationType: 'overlapping', multiplier: 6, score: 240,
+    });
+    const expected = {
+      combinationType: 'overlapping', baseChips: 60, multiplier: 7, score: 420,
+      components: [{ category: 'straight' }, { category: 'three_of_a_kind' }],
+    };
+    expect(listEligiblePokerHands(played)[0]).toMatchObject(expected);
+
+    const playedKeys = new Set(played.map(card => `${card.rank}:${card.suit}`));
+    const deck = createStandardDeck().filter(card => !playedKeys.has(`${card.rank}:${card.suit}`));
+    const state = { ...fixture(), hand: [...played, deck[0]!], drawPile: deck.slice(1), roundTarget: 9999 };
+    const rules = { ...DEFAULT_ROUND_RULES, cardsPerPlay: 7 };
+    const next = playScoringHand(state, [0, 1, 2, 3, 4, 5, 6], undefined, undefined, rules, () => 0.5);
+    expect(next.lastScored).toMatchObject(expected);
+    expect(next.roundChips).toBe(420);
+  });
+
   it('awards overlapping Flush + Pair 270 chips while consuming six physical cards once', () => {
     const played = [
       c('10','clubs'),c('8','clubs'),c('4','clubs'),c('3','clubs'),c('2','clubs'),

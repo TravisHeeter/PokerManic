@@ -25,7 +25,7 @@ const emit = defineEmits<{
       </div>
       <div class="min-w-0 rounded-md bg-default/50 px-2 py-2">
         <p class="text-[10px] font-semibold uppercase tracking-wide text-muted">Mult</p>
-        <p data-testid="hand-mult" class="text-lg font-bold tabular-nums text-red-300">×{{ preview?.multiplier ?? 1 }}</p>
+        <p data-testid="hand-mult" class="text-lg font-bold tabular-nums text-red-300">{{ preview?.combinationType === 'separate' ? 'Separate' : `×${preview?.multiplier ?? 1}` }}</p>
       </div>
       <div class="min-w-0 rounded-md bg-default/50 px-2 py-2">
         <p class="text-[10px] font-semibold uppercase tracking-wide text-muted">Hand</p>

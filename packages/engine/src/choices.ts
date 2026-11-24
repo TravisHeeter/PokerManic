@@ -161,6 +161,12 @@ function categoryStrength(option: ScoringOption): number {
     : CATEGORY_STRENGTH[option.category];
 }
 
+function secondaryCategoryStrength(option: ScoringOption): number {
+  if (!option.components) return 0;
+  const [first, second] = option.components;
+  return Math.min(CATEGORY_STRENGTH[first.category], CATEGORY_STRENGTH[second.category]);
+}
+
 function isContained(a: readonly number[], b: readonly number[]): boolean {
   const bSet = new Set(b);
   return a.every((index) => bSet.has(index));
@@ -173,7 +179,10 @@ function isContained(a: readonly number[], b: readonly number[]): boolean {
  * A formation wholly contained in another does not count as an extra hand.
  * Avoid High Card add-ons and composite-of-composite scoring.
  */
-function combinedOptions(options: readonly ScoringOption[]): ScoringOption[] {
+function combinedOptions(
+  options: readonly ScoringOption[],
+  cards: readonly Card[],
+): ScoringOption[] {
   const candidates = options.filter((option) => option.category !== 'high_card'
     && option.category !== 'combination');
   const result: ScoringOption[] = [];
@@ -192,6 +201,10 @@ function combinedOptions(options: readonly ScoringOption[]): ScoringOption[] {
       const union = [...new Set([...a.scoringCardIndices, ...b.scoringCardIndices])]
         .sort((x, y) => x - y);
       const overlap = union.length < a.scoringCardIndices.length + b.scoringCardIndices.length;
+      // Swapping one card for another of the same rank can yield the same
+      // formation on overlapping cards, such as two versions of 9–K.
+      if (overlap && a.category === b.category
+        && compareRanks(numericRankKey(a, cards), numericRankKey(b, cards)) === 0) continue;
       const baseChips = a.baseChips + b.baseChips;
       const multiplier = overlap ? a.multiplier + b.multiplier : 0;
       const score = overlap ? baseChips * multiplier : a.score + b.score;
@@ -259,11 +272,12 @@ export function listEligiblePokerHands(cards: readonly Card[], modifiers: Readon
     }
   }
 
-  options.push(...combinedOptions(options));
+  options.push(...combinedOptions(options, validCards));
   options.sort((a, b) =>
     categoryStrength(b) - categoryStrength(a)
     || Number(Boolean(b.components)) - Number(Boolean(a.components))
     || b.scoringCardIndices.length - a.scoringCardIndices.length
+    || secondaryCategoryStrength(b) - secondaryCategoryStrength(a)
     || compareRanks(numericRankKey(a, validCards), numericRankKey(b, validCards))
     || a.id.localeCompare(b.id),
   );
