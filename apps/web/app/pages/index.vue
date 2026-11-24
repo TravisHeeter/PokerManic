@@ -562,7 +562,7 @@ const { data: health, error, status, refresh } = await useFetch('/api/health');
 
             <MateriaBoard :fire-values="fireValues" :materia="run.materia ?? createMateriaState()" :links="profile.materiaLinks ?? []" @show-info="selectedMateriaInfoId = $event"
               :target-ready="selectedIndexes.length === 1" :phase="run.phase"
-              @cast="castSpell" @drop-cast="castSpellOnCard" />
+              @equip="equipGem" @cast="castSpell" @drop-cast="castSpellOnCard" />
 
             <PlayingCardHand :hand="hand" 
               :card-modifiers="{}" :magic-effects="run.materia?.effects ?? {}" 
