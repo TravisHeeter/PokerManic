@@ -276,8 +276,8 @@ export function listEligiblePokerHands(cards: readonly Card[], modifiers: Readon
   options.sort((a, b) =>
     categoryStrength(b) - categoryStrength(a)
     || Number(Boolean(b.components)) - Number(Boolean(a.components))
-    || b.scoringCardIndices.length - a.scoringCardIndices.length
     || secondaryCategoryStrength(b) - secondaryCategoryStrength(a)
+    || b.scoringCardIndices.length - a.scoringCardIndices.length
     || compareRanks(numericRankKey(a, validCards), numericRankKey(b, validCards))
     || a.id.localeCompare(b.id),
   );
