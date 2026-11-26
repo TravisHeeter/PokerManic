@@ -31,6 +31,27 @@ const emit = defineEmits<{
         <p class="text-[10px] font-semibold uppercase tracking-wide text-muted">Hand</p>
         <p data-testid="hand-type" class="break-words text-sm font-bold">{{ preview?.label ?? (selectedCount > cardsPerPlay ? 'Play limit exceeded' : 'Select cards') }}</p>
       </div>
+      <ul
+        v-if="preview?.components && selectedCount <= cardsPerPlay"
+        data-testid="hand-score-breakdown"
+        aria-label="Scoring hand contributions"
+        class="col-span-full grid gap-1 border-t border-default pt-2 text-xs"
+      >
+        <li
+          v-for="component in preview.components"
+          :key="component.id"
+          class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 text-left"
+        >
+          <span class="font-medium">{{ component.label }}</span>
+          <span class="flex flex-wrap gap-x-2 tabular-nums text-muted">
+            <span>{{ component.baseChips.toLocaleString('en-US') }} base chips</span>
+            <span v-if="preview.combinationType === 'separate'">
+              ×{{ component.multiplier }} = {{ component.score.toLocaleString('en-US') }} chips
+            </span>
+            <span v-else class="text-red-300">+{{ component.multiplier }} mult</span>
+          </span>
+        </li>
+      </ul>
     </div>
     <p v-if="selectedCount > cardsPerPlay" data-testid="play-limit-warning" role="status" class="text-center text-sm text-amber-300">
       {{ selectedCount }} cards selected — your current play limit is {{ cardsPerPlay }}. Upgrade Cards per Play or deselect {{ selectedCount - cardsPerPlay }}.
